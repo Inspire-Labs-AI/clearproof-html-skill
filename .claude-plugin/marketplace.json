@@ -1,0 +1,11 @@
+{
+  "name": "lucid",
+  "owner": { "name": "Inspire Labs AI" },
+  "plugins": [
+    {
+      "name": "lucid",
+      "source": "./",
+      "description": "Answers and code reviews as pages people understand fast."
+    }
+  ]
+}

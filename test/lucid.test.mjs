@@ -1,0 +1,215 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+import { parseDraft } from '../skills/lucid/scripts/lib/parse.mjs';
+import { md } from '../skills/lucid/scripts/lib/md.mjs';
+import { layoutGraph, isotonic } from '../skills/lucid/scripts/lib/layout.mjs';
+import { parseFlow } from '../skills/lucid/scripts/lib/components/flow.mjs';
+import { parseSequence } from '../skills/lucid/scripts/lib/components/sequence.mjs';
+import { renderDraft, fillRows } from '../skills/lucid/scripts/lib/render.mjs';
+import { lintDraft } from '../skills/lucid/scripts/lib/lint.mjs';
+import { parseUnified } from '../skills/lucid/scripts/lib/git.mjs';
+import { DraftError } from '../skills/lucid/scripts/lib/util.mjs';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const CLI = join(ROOT, 'skills/lucid/scripts/lucid.mjs');
+
+function demoRepo() {
+  const dir = mkdtempSync(join(tmpdir(), 'lucid-test-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
+  git('init', '-q', '-b', 'main');
+  git('config', 'user.email', 't@t');
+  git('config', 'user.name', 't');
+  mkdirSync(join(dir, 'src'));
+  writeFileSync(join(dir, 'src/a.js'), 'export const a = 1;\nexport const b = 2;\n');
+  writeFileSync(join(dir, 'src/b.js'), 'export function f() {\n  return 1;\n}\n');
+  git('add', '-A');
+  git('commit', '-qm', 'base');
+  writeFileSync(join(dir, 'src/a.js'), 'export const a = 10;\nexport const b = 2;\n');
+  writeFileSync(join(dir, 'src/b.js'), 'export function f() {\n  return 2;\n}\n');
+  writeFileSync(join(dir, 'src/new.js'), 'console.log("hi");\n');
+  return dir;
+}
+
+test('front matter, intro and panels with attributes', () => {
+  const d = parseDraft('---\ntitle: T\ntldr: x\n---\nIntro.\n\n## One {span=2 say="hi there" #first}\nBody\n```flow LR\nA -> B\n```\n## Two\nMore');
+  assert.equal(d.meta.title, 'T');
+  assert.equal(d.intro[0].text.trim(), 'Intro.');
+  assert.equal(d.panels.length, 2);
+  assert.deepEqual(d.panels[0].attrs, { span: '2', say: 'hi there', id: 'first' });
+  assert.equal(d.panels[0].id, 'first');
+  assert.equal(d.panels[0].blocks[1].lang, 'flow');
+  assert.equal(d.panels[0].blocks[1].args, 'LR');
+  assert.equal(d.panels[0].blocks[1].line, 9);
+});
+
+test('bad front matter value names the valid choices', () => {
+  assert.throws(() => parseDraft('---\nverdict: maybe\n---\n'), (e) => e instanceof DraftError && /approve \| changes/.test(e.message));
+  assert.throws(() => parseDraft('```flow\nA -> B\n'), /never closed/);
+});
+
+test('markdown: tables with status badges, nested lists, inline escaping', () => {
+  const html = md('| A | B |\n|---|---|\n| x | ok fine |\n| y | no |\n\n- one\n  - nested\n- two\n\n<script>alert(1)</script> **b** `c<d`');
+  assert.match(html, /st-ok/);
+  assert.match(html, /st-no/);
+  assert.match(html, /<ul><li>one<ul><li>nested<\/li><\/ul><\/li><li>two<\/li><\/ul>/);
+  assert.ok(!html.includes('<script>'));
+  assert.match(html, /<code>c&lt;d<\/code>/);
+  assert.match(md('[x](javascript:alert(1))'), /href="#"/);
+});
+
+test('isotonic regression keeps order with least squares', () => {
+  assert.deepEqual(isotonic([1, 3, 2, 4]), [1, 2.5, 2.5, 4]);
+});
+
+test('layout: no two nodes in a layer overlap, ranks follow edges, cycles survive', () => {
+  const nodes = ['A', 'B', 'C', 'D', 'E'].map((id) => ({ id, w: 80, h: 30 }));
+  const edges = [['A', 'B'], ['A', 'C'], ['B', 'D'], ['C', 'D'], ['D', 'E'], ['E', 'A']].map(([from, to]) => ({ from, to }));
+  for (const dir of ['TB', 'LR']) {
+    const L = layoutGraph({ nodes, edges, dir });
+    const P = [...L.nodes.values()];
+    for (let i = 0; i < P.length; i++)
+      for (let j = i + 1; j < P.length; j++) {
+        const a = P[i];
+        const b = P[j];
+        const overlap = Math.abs(a.x - b.x) < (a.w + b.w) / 2 && Math.abs(a.y - b.y) < (a.h + b.h) / 2;
+        assert.ok(!overlap, `${dir}: nodes overlap`);
+      }
+    const axis = dir === 'TB' ? 'y' : 'x';
+    assert.ok(L.nodes.get('A')[axis] < L.nodes.get('B')[axis]);
+    assert.ok(L.nodes.get('D')[axis] < L.nodes.get('E')[axis]);
+    assert.equal(L.edges.length, edges.length);
+  }
+});
+
+test('flow: shapes, fan-out, chains, notes, colons inside node names', () => {
+  const g = parseFlow('(Start) -> {Ok?}\n{Ok?} -> *Done & [(DB)]: yes | caption\nA -> B -> C: last\nX --> [(Store: tokens)]: put');
+  assert.equal(g.nodes.get('Start').shape, 'round');
+  assert.equal(g.nodes.get('Ok?').shape, 'decision');
+  assert.equal(g.nodes.get('DB').shape, 'db');
+  assert.ok(g.nodes.get('Done').hot);
+  const fan = g.edges.filter((e) => e.from === 'Ok?');
+  assert.equal(fan.length, 2);
+  assert.equal(fan[0].note, 'caption');
+  assert.deepEqual(g.edges.filter((e) => e.step === 3).map((e) => e.label), ['', 'last']);
+  assert.ok(g.nodes.has('Store: tokens'));
+  assert.equal(g.edges.at(-1).label, 'put');
+  assert.equal(g.steps, 4);
+});
+
+test('sequence: participants, notes, phases, captions; bad line is an error with its line', () => {
+  const s = parseSequence('participants: C, S\nC -> S: SYN | starts\nnote S: LISTEN\n== close ==\nS --> C: ACK');
+  assert.deepEqual(s.parts, ['C', 'S']);
+  assert.equal(s.steps, 2);
+  assert.equal(s.rows[0].note, 'starts');
+  assert.throws(() => parseSequence('C -> S: ok\nwhat is this'), (e) => e.line === 2);
+});
+
+test('grid rows fill so there are no holes', () => {
+  assert.deepEqual(fillRows([1, 2, 1, 1], 2), [2, 2, 1, 1]);
+  assert.deepEqual(fillRows([1], 2), [2]);
+});
+
+test('lint: tldr, long sentences, wordy words, passive voice, walls of text', () => {
+  const doc = parseDraft(`---\ntitle: T\n---\n## P\nWe utilize the cache in order to make it fast. The value is computed by the worker. ${'word '.repeat(30)}end.\n\n## Wall\n${'Plain words here. '.repeat(60)}`);
+  const rules = lintDraft(doc).map((w) => `${w.rule}:${w.message}`);
+  assert.ok(rules.some((r) => r.startsWith('structure:no tldr')));
+  assert.ok(rules.some((r) => r.includes('"utilize"')));
+  assert.ok(rules.some((r) => r.includes('"in order to"')));
+  assert.ok(rules.some((r) => r.startsWith('passive')));
+  assert.ok(rules.some((r) => r.startsWith('length')));
+  assert.ok(rules.some((r) => r.startsWith('wall')));
+});
+
+test('explain page renders every example component into one self-contained file', () => {
+  const src = readFileSync(join(ROOT, 'examples/tcp.md'), 'utf8');
+  const r = renderDraft(src, { cwd: ROOT });
+  assert.equal(r.meta.kind, 'explain');
+  assert.equal(r.warnings.length, 0, r.warnings.map((w) => w.message).join('\n'));
+  assert.match(r.html, /<svg class="seq"/);
+  assert.match(r.html, /<svg class="graph"/);
+  assert.match(r.html, /class="quiz"/);
+  assert.ok(!/<script src=|<link /.test(r.html), 'no external assets');
+  assert.ok(!r.html.includes('[object Object]'));
+  assert.match(r.html, /id="lucid-source"/);
+});
+
+test('code references are checked against real files', () => {
+  const ok = renderDraft('---\ntitle: T\ntldr: x\n---\n## A\nSee [[package.json:1]].\n```code package.json:1-3\n2: name\n```', { cwd: ROOT });
+  assert.match(ok.html, /class="ref" href="vscode:\/\/file\/.*package\.json:1" data-snip=/);
+  assert.throws(() => renderDraft('## A\nSee [[nope/missing.js:3]].', { cwd: ROOT }), /does not exist/);
+  assert.throws(() => renderDraft('## A\n```code package.json:1-99999\n```', { cwd: ROOT }), /out of range/);
+  assert.throws(() => renderDraft('## A\n```code package.json:1-3\n9: outside\n```', { cwd: ROOT }), /outside the shown range/);
+});
+
+test('review: diff index, hunk notes, coverage, untracked files', () => {
+  const dir = demoRepo();
+  const index = execFileSync('node', [CLI, 'diff', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  assert.match(index, /3 files · \+3 −2 · 3 hunks/);
+  assert.match(index, /A src\/new\.js \[untracked\]/);
+
+  const draft = '---\ntitle: R\ntldr: Small constant change.\nverdict: approve\nbase: HEAD\n---\n## A\n```diff H1\n+1: a is now 10\n```\n';
+  const partial = renderDraft(draft, { cwd: dir });
+  assert.equal(partial.meta.kind, 'review');
+  assert.equal(partial.coverage.covered, 1);
+  assert.deepEqual(partial.warnings.filter((w) => w.rule === 'coverage').map((w) => w.message.split(' ')[0]), ['H2', 'H3']);
+  assert.match(partial.html, /1\/3 changes explained/);
+  assert.match(partial.html, /not explained/);
+
+  const full = renderDraft(`${draft}\n## B\n[[H2]] and [[H3]] are trivial.`, { cwd: dir });
+  assert.equal(full.coverage.covered, 3);
+  assert.equal(full.warnings.filter((w) => w.rule === 'coverage').length, 0);
+
+  assert.throws(() => renderDraft('## A\n```diff H9\n```', { cwd: dir, base: 'HEAD' }), /no hunk H9/);
+  assert.throws(() => renderDraft('## A\n```diff H1\n+7: nope\n```', { cwd: dir, base: 'HEAD' }), /does not match/);
+  assert.throws(() => renderDraft('---\nstyle: strict\nbase: HEAD\ntitle: R\ntldr: x\n---\n## A\n```diff H1\n```', { cwd: dir }), /strict/);
+});
+
+test('unified diff parser tracks old and new line numbers', () => {
+  const [f] = parseUnified('diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1,3 +1,3 @@ fn\n a\n-b\n+B\n c\n');
+  assert.equal(f.add, 1);
+  assert.equal(f.del, 1);
+  const lines = f.hunks[0].lines;
+  assert.deepEqual(lines.map((l) => [l.t, l.old, l.new]), [[' ', 1, 1], ['-', 2, undefined], ['+', undefined, 2], [' ', 3, 3]]);
+});
+
+test('CLI: errors give line, component and a correct example; exit code 1', () => {
+  const r = spawnSync('node', [CLI, 'render', '-', '--no-open'], { input: '## A\n```flow\nA -> \n```\n', encoding: 'utf8', env: { ...process.env, LUCID_HOME: mkdtempSync(join(tmpdir(), 'lucid-home-')) } });
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /✗ L\d+ \[flow\]/);
+  assert.match(r.stdout, /correct example:/);
+});
+
+test('CLI: render writes the page and reports sections', () => {
+  const home = mkdtempSync(join(tmpdir(), 'lucid-home-'));
+  const r = spawnSync('node', [CLI, 'render', join(ROOT, 'examples/tcp.md'), '--no-open'], { encoding: 'utf8', cwd: ROOT, env: { ...process.env, LUCID_HOME: home } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /^✓ .*pages\/how-tcp-opens-and-closes-a-connection\.html/m);
+  assert.match(r.stdout, /7 sections/);
+  const help = spawnSync('node', [CLI, 'help', 'flow'], { encoding: 'utf8' });
+  assert.match(help.stdout, /Each arrow line is one playback step/);
+});
+
+test('lint quotes the sentence and also reads diff notes and step captions', () => {
+  const doc = parseDraft('---\ntitle: T\ntldr: x\n---\n## A\nThe token is checked first.\n```flow\nA -> B: go | The request is rejected here.\n```\n```code package.json:1-3\n2: The name is read by npm.\n```');
+  const msgs = lintDraft(doc).filter((w) => w.rule === 'passive').map((w) => w.message);
+  assert.equal(msgs.length, 3);
+  assert.ok(msgs.every((m) => /in ".+"/.test(m)), msgs.join('\n'));
+});
+
+test('sections with wide tables take the full row', () => {
+  const r = renderDraft('## A\n| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |\n\n## B\ntext\n\n## C\ntext', { cwd: ROOT });
+  assert.match(r.html, /<section class="panel span-full" id="a"/);
+  assert.match(r.html, /<section class="panel span-1" id="b"/);
+});
+
+test('flow edge labels render above all edge lines', () => {
+  const r = renderDraft('## A\n```flow\nA -> B: one\nA -> C: two\n```', { cwd: ROOT });
+  const svg = r.html.slice(r.html.indexOf('<svg class="graph"'));
+  assert.ok(svg.lastIndexOf('<path d="M') < svg.indexOf('class="elabel"'));
+});
