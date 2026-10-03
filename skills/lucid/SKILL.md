@@ -46,8 +46,8 @@ Rules that make pages good:
 - **Write in plain English (ASD-STE100 style):** one idea per sentence, ≤25 words (≤20 for steps), active voice, steps as commands, common words (use, not utilize). lint warns.
 - **Ground every claim about code:** `[[src/auth.js:42]]` or `[[src/auth.js:40-52]]` inline (hover shows the real lines); ```` ```code src/auth.js:40-60 ```` to show them. lucid fails on a missing file or line — that is the point.
 - **No invented numbers.** Charts take real values; say "illustrative" otherwise.
-- Layout: explain pages are a 2-column grid of sections (review pages: 1 column). A section alone on its row stretches to fill it, and tables with 4+ columns go full width automatically. Give `{span=full}` to wide diagrams, LR flows and tables with long cells. `say="…"` sets what the tour narrates for that section.
-- Put a `glossary` in the intro (before the first `##`) or in its own last section.
+- Layout: explain pages are a 2-column grid of sections (review pages: 1 column). A section alone on its row stretches to fill it; sequences, LR flows, code, and tables with 4+ columns go full width automatically. Give `{span=full}` to wide diagrams, LR flows and tables with long cells. `say="…"` sets what the tour narrates for that section.
+- Put a `glossary` in its own section near the end: hover definitions work everywhere, and a glossary first delays the overview.
 
 ## 3. Components (pick by the shape of the information)
 
@@ -76,9 +76,9 @@ Rules that make pages good:
    - **Intent** — what the change is for and the approach, before any code.
    - ```` ```changemap ```` — the shape: `routes.js -> session.js: calls`. Keep arrow labels to 1–2 words (empty body = file list with sizes).
    - **Walkthrough** — one section per idea, **in the order data flows, not file order**. Each shows ```` ```diff H3 ```` with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says.
-   - ```` ```risks ```` — `high | src/x.js:42 | what breaks`, ranked.
+   - ```` ```risks ```` — `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Include behaviour changes for callers (API shape, defaults).
    - ```` ```checklist ```` — what a human must still verify (tests, rollout, data).
-   - Optional ```` ```quiz ```` — one question that proves the reviewer understood the risky part.
+   - Optional ```` ```quiz ```` — only when the risky part is subtle. Keep reviews lean: no glossary, no padding.
 3. **Account for every hunk.** Show it in a `diff` block or cite it inline (`[[H4]] only renames a variable`). The page header shows "N/M changes explained"; render warns about each unexplained hunk, and the "All changes" appendix flags it. Aim for M/M.
 
 ## 5. Render, check, look

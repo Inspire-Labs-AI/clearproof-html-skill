@@ -97,6 +97,23 @@ Their friction reports drove fixes in this version: cut-off tables are now detec
 mean, diff notes and step captions are linted, edge labels no longer sit under nodes, and `check --section` gives a
 sharp close-up.
 
+## How does it compare?
+
+A blind benchmark against [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in
+HTML", with the same model and new tasks ([details](BENCHMARK.md), n = 1 per cell):
+
+| | Direct HTML | answer-me-with-html | lucid |
+|---|---|---|---|
+| Explain (DNS): judge's ranking | 3rd | 2nd | **1st** (narrowly) |
+| Review: planted bugs on the page | 4/4 | 4/4 | 4/4 |
+| Review: can the judge verify each claim against the code? (1–5) | 3 | 2 | **5** |
+| Review: can the judge tell nothing was skipped? (1–5) | 3 | 1 | **5** |
+| Review: judge's ranking | 2nd | 3rd | **1st** |
+| Wall time, explain / review | 153 s / 112 s | **46 s / 63 s** | 71 s / 69 s |
+
+Bug finding comes from the model, not the skill: every condition found all four bugs. lucid's advantage is that a
+reviewer can *check* the findings and *prove* the review covered everything.
+
 ## Install
 
 Node.js 20+. Nothing to `npm install`. Video export and `--check` use Playwright and ffmpeg if they are present.

@@ -213,3 +213,14 @@ test('flow edge labels render above all edge lines', () => {
   const svg = r.html.slice(r.html.indexOf('<svg class="graph"'));
   assert.ok(svg.lastIndexOf('<path d="M') < svg.indexOf('class="elabel"'));
 });
+
+test('status badges need a lowercase keyword, so "No such name" stays text', () => {
+  const html = md('| a | b |\n|---|---|\n| No such name | no |');
+  assert.match(html, /<td>No such name<\/td>/);
+  assert.match(html, /st-no/);
+});
+
+test('risks rank critical above high', () => {
+  const r = renderDraft('## R\n```risks\nhigh | Off by one\ncritical | SQL injection\n```', { cwd: ROOT });
+  assert.ok(r.html.indexOf('r-critical') < r.html.indexOf('r-high'));
+});

@@ -1,12 +1,13 @@
 import { inline } from '../md.mjs';
 import { DraftError } from '../util.mjs';
 
-const ORDER = { high: 0, med: 1, low: 2 };
+const ORDER = { critical: 0, high: 1, med: 2, low: 3 };
 
 export default {
   name: 'risks',
   summary: 'Ranked risks: what could break, where, and how bad.',
   syntax: `\`\`\`risks
+critical | src/db.js:12 | User input reaches the SQL text (injection)     level: critical | high | med | low
 high | src/auth.js:42 | Expired tokens are accepted for one request     level | where | what
 med | H4 | Retry has no upper bound                                  "where" can be a hunk id
 low | Log line includes the user id                                   or omitted
@@ -16,7 +17,7 @@ low | Log line includes the user id                                   or omitted
     const items = text.split('\n').map((l) => l.trim()).filter(Boolean).map((l, k) => {
       const parts = l.split(/\s+\|\s+/);
       const level = parts[0].toLowerCase().replace('medium', 'med');
-      if (!(level in ORDER)) throw new DraftError(`Risk level must be high, med or low. Got "${parts[0]}"`, { line: k + 1 });
+      if (!(level in ORDER)) throw new DraftError(`Risk level must be critical, high, med or low. Got "${parts[0]}"`, { line: k + 1 });
       const [where, what] = parts.length >= 3 ? [parts[1], parts.slice(2).join(' | ')] : [null, parts[1] ?? ''];
       return { level, where, what };
     });

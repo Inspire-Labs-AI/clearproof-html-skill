@@ -29,9 +29,9 @@ export function inline(text, ctx = {}) {
 }
 
 function statusCell(cell, ctx) {
-  const m = cell.match(/^(ok|yes|no|warn|maybe)\b\s*(.*)$/i);
+  const m = cell.match(/^(ok|yes|no|warn|maybe)(?:\s+(.*))?$/); // lowercase only: "No such name" stays text
   if (!m) return inline(cell, ctx);
-  const [cls, glyph] = STATUS[m[1].toLowerCase()];
+  const [cls, glyph] = STATUS[m[1]];
   return `<span class="st st-${cls}"><b aria-hidden="true">${glyph}</b>${m[2] ? ` ${inline(m[2], ctx)}` : `<span class="sr">${cls}</span>`}</span>`;
 }
 

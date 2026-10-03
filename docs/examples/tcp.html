@@ -200,8 +200,8 @@ rect.s3, circle.s3, .sw.s3 { fill: var(--s3); background: var(--s3); } path.ln.s
 .timeline time { text-align: right; font: 600 13px var(--mono); color: var(--ink-3); padding-top: 2px; }
 .timeline li.hot time { color: var(--accent); }
 .timeline p { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
-.kv, .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: .6em 0; }
-.kv div, .glossary div { background: var(--surface); padding: 8px 12px; }
+.kv, .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: .6em 0; background: var(--surface); }
+.kv div, .glossary div { padding: 8px 12px; box-shadow: 0 0 0 .5px var(--line); }
 .kv dt, .glossary dt { font-size: 11.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
 .glossary dt { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); }
 .kv dd, .glossary dd { margin: 2px 0 0; font-size: 14px; }
@@ -215,8 +215,9 @@ figure.code figcaption .ref { font: 600 12.5px var(--mono); }
 figure.code figcaption code { font-size: 11.5px; }
 .scroll { overflow-x: auto; }
 figure.code table { font: 12.5px/1.55 var(--mono); width: 100%; }
-figure.code td { padding: 0 10px; white-space: pre; vertical-align: top; }
-figure.code td.ln { width: 1%; text-align: right; color: var(--ink-3); user-select: none; padding: 0 6px; }
+figure.code td { padding: 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
+figure.code td.src { padding-left: 2.1em; text-indent: -1.2em; } /* wrapped lines hang under the code, not the +/- sign */
+figure.code td.ln { width: 1%; text-align: right; color: var(--ink-3); user-select: none; padding: 0 6px; white-space: nowrap; overflow-wrap: normal; text-indent: 0; }
 figure.code tr.add td { background: var(--add); } figure.code tr.add td.src { color: var(--add-ink); }
 figure.code tr.del td { background: var(--del); } figure.code tr.del td.src { color: var(--del-ink); }
 figure.code tr.hl td.src { box-shadow: inset 3px 0 var(--warn); }
@@ -237,7 +238,8 @@ a.ref.hunk { background: var(--ink); color: var(--surface); font-weight: 700; }
 .risks { list-style: none; padding: 0; margin: .4em 0; }
 .risks li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .risks li:last-child { border-bottom: 0; }
-.lvl { flex: none; width: 46px; text-align: center; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-radius: 5px; padding: 2px 0; }
+.lvl { flex: none; width: 58px; text-align: center; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-radius: 5px; padding: 2px 0; }
+.r-critical .lvl { background: var(--risk); color: var(--surface); }
 .r-high .lvl { background: var(--risk-soft); color: var(--risk); }
 .r-med .lvl { background: var(--warn-soft); color: var(--warn); }
 .r-low .lvl { background: var(--sunk); color: var(--ink-3); }
@@ -346,7 +348,7 @@ footer { text-align: center; color: var(--ink-3); font-size: 12px; padding: 0 0 
 </div>
 <div class="tourbar" hidden><button type="button" data-act="tprev" aria-label="Previous">‹</button><button type="button" data-act="tpause" aria-label="Pause">❚❚</button><button type="button" data-act="tnext" aria-label="Next">›</button><p class="tcap" aria-live="polite"></p><button type="button" data-act="tstop" aria-label="Close tour">✕</button></div>
 <div class="snip" role="tooltip" hidden></div>
-<footer>Made with lucid 0.1.0 · 2026-10-03 11:04</footer>
+<footer>Made with lucid 0.1.0 · 2026-10-03 18:57</footer>
 <script type="application/json" id="lucid-glossary">{"ISN":"Initial sequence number. Each side picks a random one per connection.","SYN":"Synchronize. The flag that asks to start a connection.","MSL":"Maximum segment lifetime. How long a stray packet can survive, often 2 minutes."}</script>
 <script type="text/plain" id="lucid-source">---
 title: How TCP opens and closes a connection

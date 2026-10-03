@@ -143,7 +143,9 @@ function narration(p) {
 function page({ meta, introHtml, panels, appendix, coverage, review, source, glossary }) {
   const cols = Math.max(1, Math.min(Number(meta.cols) || (review ? 1 : 2), 3));
   // Tables with 4+ columns, or long cells, need the full row; authors can still set span themselves.
-  const wide = (p) => p.blocks.some((b) => b.type === 'md' && b.text.split('\n').some((l) => /^\s*\|/.test(l) && (l.split('|').length - 2 >= 4 || l.length > 110)));
+  const wide = (p) =>
+    p.blocks.some((b) => b.type === 'md' && b.text.split('\n').some((l) => /^\s*\|/.test(l) && (l.split('|').length - 2 >= 4 || l.length > 110))) ||
+    p.blocks.some((b) => b.type === 'fence' && (b.lang === 'sequence' || b.lang === 'code' || b.lang === 'diff' || (['flow', 'changemap'].includes(b.lang) && /\bLR\b/.test(b.args))));
   const spans = fillRows(panels.map((p) => (p.attrs.span === 'full' ? cols : Number(p.attrs.span) || (wide(p) ? cols : 1))), cols);
   const sections = panels
     .map((p, i) => `<section class="panel${spans[i] >= cols ? ' span-full' : ` span-${spans[i]}`}" id="${esc(p.id)}" data-say="${esc(narration(p))}"><h2><span class="num">${i + 1}</span> ${inline(p.title)}${p.attrs.meta ? ` <small>${esc(p.attrs.meta)}</small>` : ''}</h2>${p.html}</section>`)
@@ -158,7 +160,7 @@ function page({ meta, introHtml, panels, appendix, coverage, review, source, glo
     const d = coverage.diff;
     const [vText, vCls] = VERDICT[meta.verdict] ?? [];
     const pct = coverage.total ? Math.round((coverage.covered / coverage.total) * 100) : 100;
-    reviewHead = `<div class="review-head">${vText ? `<span class="verdict v-${vCls}">${vText}</span>` : ''}<span class="chip"><b>base</b> <code>${esc(d.base.sha ? d.base.sha.slice(0, 10) : 'none')}</code> ${esc(d.base.label)}</span><span class="chip"><b>${d.files.length}</b> files <b class="a">+${d.add}</b> <b class="d">−${d.del}</b></span><a class="coverage${coverage.missing.length ? ' partial' : ''}" href="#all-changes" title="Hunks shown or referenced in the walkthrough"><span class="meter"><i style="width:${pct}%"></i></span> ${coverage.covered}/${coverage.total} changes explained</a></div>`;
+    reviewHead = `<div class="review-head">${vText ? `<span class="verdict v-${vCls}">${vText}</span>` : ''}<span class="chip"><b>base</b> <code>${esc(d.base.sha ? d.base.sha.slice(0, 10) : 'none')}</code>${d.base.sha && d.base.sha.startsWith(d.base.label) ? '' : ` ${esc(d.base.label)}`}</span><span class="chip"><b>${d.files.length}</b> files <b class="a">+${d.add}</b> <b class="d">−${d.del}</b></span><a class="coverage${coverage.missing.length ? ' partial' : ''}" href="#all-changes" title="Hunks shown or referenced in the walkthrough"><span class="meter"><i style="width:${pct}%"></i></span> ${coverage.covered}/${coverage.total} changes explained</a></div>`;
   }
   const mode = meta.mode && meta.mode !== 'auto' ? ` data-theme="${meta.mode}"` : '';
   const title = meta.title || panels[0]?.title || 'Lucid page';
