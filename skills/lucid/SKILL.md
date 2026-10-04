@@ -68,7 +68,7 @@ Rules that make pages good:
 | check understanding | `quiz` | `? question`, `- [x] right :: why`, `- [ ] wrong :: why it is wrong`, `> summary`; open: `? q` + `= answer`. Ask what would *happen* (change a condition, trace a request, pick a fix), never recall of names. Explain every option. |
 | how sure is each claim | `claims` | `verified \| claim \| [[file:line]] / H3 / run / URL`, `inferred \| claim \| what it rests on`, `unverified \| claim` |
 | things to verify | `checklist` | `- [ ] item [[file:line]]` (ticks persist) |
-| proof: real command output | `run` | `$ command`, `expect: text`, `absent: text`, `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
+| proof: real command output | `run` | `$ command`, `shows: text` (evidence of behaviour), `expect:` / `absent:` (assertions), `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
 | comparison | Markdown table | cells starting `ok` / `no` / `warn` become ✓ ✗ ! |
 
 `flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Names of nodes and actors that you use in the section's prose light up the diagram on hover automatically — so use the same names in both.
@@ -80,16 +80,16 @@ Rules that make pages good:
 The header automatically shows provenance (base, head, uncommitted work) and a **Grounded** strip: code references checked, hunks shown, commands run, claims verified. Make those numbers high — that is what lets a reviewer trust the page.
 
 1. `$L diff` — read the index: base, files, hunk ids (`H1`…), and the changed lines (committed, uncommitted and untracked). Use `--base <rev>` if the user names one. Read surrounding code where you need context. If some work is uncommitted or `[untracked]`, check that the committed part stands on its own (imports, migrations) — merging only the commits is a common way to break things.
-2. Write the draft. Copy `base:` from the diff output into the front matter. Structure:
+2. Write the draft. Copy `base:` from the diff output into the front matter. A reviewer is busy: verdict and risks first, evidence next, walkthrough last. Structure:
    - `tldr` + `verdict: approve | changes | discuss | block` — the finding, not a summary of the diff.
-   - **Intent** — what the change is for and the approach, before any code.
+   - **Risks first** (section 1) — ```` ```risks ```` with `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Under each serious risk add indented lines: `why:` (the mechanism), `trigger:` (a concrete input, e.g. the exploit payload), `fix:`. Include behaviour changes for callers (API shape, defaults) and committed code that depends on uncommitted or untracked files.
+   - **Proof** — ```` ```run ```` blocks that reproduce each critical/high risk by **calling the real code** (import the module, run a test) — not by copying a line into `eval`. Use `shows:` with the buggy output (the page shows "✓ output shows …" as evidence). If the real code cannot run (missing dependency), say so in `note:` and mark the claim inferred. Fast, local, read-only; never destructive or networked. Render with `--allow-run`.
+   - **Intent** — what the change is for and the approach, in 2–4 bullets.
    - ```` ```changemap ```` — the shape: `routes.js -> session.js: calls`. Keep arrow labels to 1–2 words (empty body = file list with sizes).
-   - **Walkthrough** — one section per idea, **in the order data flows, not file order**; one step may show hunks from several files (```` ```diff H2,H4 ````). Each shows ```` ```diff H3 ```` with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says. State the exact value the behaviour turns on (`TTL = 60_000`, `page * 20`). When the code does not say why, say so: "likely…, though nothing in the code states it" — never invent intent.
-   - ```` ```risks ```` — `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Under each serious risk add indented lines: `why:` (the mechanism), `trigger:` (a concrete input, e.g. the exploit payload), `fix:`. Include behaviour changes for callers (API shape, defaults).
-   - ```` ```run ```` — **prove the top risks.** Reproduce each critical/high bug with a fast, local, read-only command (a one-line `node -e`, a test, a grep) and an `expect:` line stating the correct behaviour; the page shows ✗ when the bug is real. Render with `--allow-run`. Never run anything destructive or networked.
+   - **Walkthrough** — one section per idea, **in the order data flows, not file order**; one step may show hunks from several files (```` ```diff H2,H4 ````). Each shows the diff with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says. State the exact value the behaviour turns on (`TTL = 60_000`, `page * 20`). When the code does not say why, say so: "likely…, though nothing in the code states it" — never invent intent.
    - ```` ```claims ```` — the 3–6 claims the verdict rests on, each `verified` (with evidence), `inferred` or `unverified`.
-   - ```` ```checklist ```` — what a human must still verify (tests, rollout, data).
-   - Optional ```` ```quiz ```` — only when the risky part is subtle. Keep reviews lean: no glossary, no padding.
+   - ```` ```checklist ```` — the fix list and what a human must still verify.
+   - **No quiz, no glossary, no filler in reviews.** Aim for under 6 screens.
 3. **Account for every hunk.** Show it in a `diff` block or cite it inline (`[[H4]] only renames a variable`). The page header shows "N/M changes explained"; render warns about each unexplained hunk, and the "All changes" appendix flags it. Aim for M/M.
 
 ## 5. Render, check, look

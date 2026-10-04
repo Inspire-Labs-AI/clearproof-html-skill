@@ -13,12 +13,13 @@ export function parseRun(text) {
     const t = raw.trim();
     if (!t) return;
     let m;
-    if ((m = t.match(/^\$\s+(.+)$/))) steps.push((cur = { cmd: m[1], expect: [], absent: [], note: '', line: k + 1 }));
+    if ((m = t.match(/^\$\s+(.+)$/))) steps.push((cur = { cmd: m[1], expect: [], absent: [], shows: [], note: '', line: k + 1 }));
     else if (!cur) throw new DraftError('Start each command with "$ "', { line: k + 1, example: '$ npm test -- auth\nexpect: 3 passing' });
     else if ((m = t.match(/^expect:\s*(.+)$/i))) cur.expect.push(m[1]);
     else if ((m = t.match(/^absent:\s*(.+)$/i))) cur.absent.push(m[1]);
+    else if ((m = t.match(/^shows:\s*(.+)$/i))) cur.shows.push(m[1]);
     else if ((m = t.match(/^note:\s*(.+)$/i))) cur.note = m[1];
-    else throw new DraftError(`Cannot read run line: "${t}". Use "$ command", "expect: text", "absent: text" or "note: text"`, { line: k + 1 });
+    else throw new DraftError(`Cannot read run line: "${t}". Use "$ command", "shows: text", "expect: text", "absent: text" or "note: text"`, { line: k + 1 });
   });
   if (!steps.length) throw new DraftError('run needs at least one "$ command" line', { line: 1 });
   return steps;
@@ -36,12 +37,14 @@ export default {
   name: 'run',
   summary: 'Proof: run a command at render time and embed its real output, exit code and checks (needs --allow-run).',
   syntax: `\`\`\`run [timeout=20]
-$ node -e "console.log(require('./src/orders.js').offset(1))"     command, run from the repository root
-expect: 0                    the output must contain this (✓ / ✗ shown on the page)
-absent: Error                the output must not contain this
+$ node -e "import('./src/orders.js').then(m => console.log(m.offset(1)))"     command, run from the repository root
+shows: 20                    evidence: the output shows this behaviour (use it to prove a bug)
+expect: 0                    assertion: correct behaviour must produce this (✓ / ✗ on the page)
+absent: Error                assertion: the output must not contain this
 note: Page 1 should start at row 0.                 one-line caption
 \`\`\`
-Use it for: reproducing a bug, showing a test failing or passing, real tool output (dig, curl -I, git log).
+Call the real code (import the module, run the test) rather than copying a line into eval; if that is impossible, say why in note:.
+Use it for: reproducing a bug (shows:), showing a test failing or passing, real tool output (dig, curl -I, git log).
 Render with --allow-run. Keep commands fast, local and read-only.`,
   example: '```run\n$ git log --oneline -3\nnote: The last three commits\n```',
   render(text, ctx) {
@@ -57,13 +60,15 @@ Render with --allow-run. Keep commands fast, local and read-only.`,
       const out = `${r.stdout ?? ''}${r.stderr ? (r.stdout ? '\n' : '') + r.stderr : ''}`.replace(/\x1b\[[0-9;]*m/g, '');
       const timedOut = r.error?.code === 'ETIMEDOUT';
       const code = timedOut ? 'timeout' : r.status ?? 'signal';
+      // shows: evidence of behaviour (e.g. the bug); expect/absent: assertions of correct behaviour.
       const checks = [
-        ...s.expect.map((e) => ({ ok: out.includes(e), text: `contains “${e}”` })),
-        ...s.absent.map((e) => ({ ok: !out.includes(e), text: `does not contain “${e}”` })),
+        ...s.shows.map((e) => ({ ok: out.includes(e), kind: 'shows', text: out.includes(e) ? `output shows “${e}”` : `output does not show “${e}”` })),
+        ...s.expect.map((e) => ({ ok: out.includes(e), kind: 'expect', text: out.includes(e) ? `as expected: “${e}”` : `expected “${e}” — not in the output` })),
+        ...s.absent.map((e) => ({ ok: !out.includes(e), kind: 'absent', text: !out.includes(e) ? `as expected: no “${e}”` : `“${e}” appears in the output` })),
       ];
       ctx.runs.push({ cmd: s.cmd, code, checks });
       const badge = checks.length
-        ? checks.map((c) => `<span class="chk ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</span>`).join('')
+        ? checks.map((c) => `<span class="chk ${c.kind} ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</span>`).join('')
         : '';
       return `<div class="run-step"><div class="run-head"><code class="cmd">$ ${esc(s.cmd)}</code><span class="exit ${code === 0 ? 'ok' : 'no'}">exit ${esc(code)}</span><span class="ms">${ms} ms</span></div>${s.note ? `<p class="run-note">${inline(s.note, ctx)}</p>` : ''}<pre class="out">${esc(clip(out)) || '<i>(no output)</i>'}</pre>${badge ? `<div class="checks">${badge}</div>` : ''}</div>`;
     });

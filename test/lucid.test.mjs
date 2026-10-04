@@ -264,3 +264,15 @@ test('diagram parts carry ids so prose names can light them up', () => {
   assert.match(r.html, /class="node box" data-step="1" data-id="API"/);
   assert.match(r.html, /data-from="API" data-to="DB"/);
 });
+
+test('run shows: is evidence of behaviour, reported separately from expectations', () => {
+  const r = renderDraft('## P\n```run\n$ node -e "console.log(\'offset 20\')"\nshows: offset 20\nexpect: offset 0\n```', { cwd: ROOT, allowRun: true });
+  assert.match(r.html, /chk shows ok">✓ output shows “offset 20”/);
+  assert.match(r.html, /chk expect no">✗ expected “offset 0” — not in the output/);
+  assert.match(r.html, /1 of 1 behaviours reproduced · 0 of 1 expectations held/);
+});
+
+test('reviews warn about quiz and glossary padding', () => {
+  const doc = parseDraft('---\ntitle: R\ntldr: x\nkind: review\n---\n## Q\n```quiz\n? a\n= b\n```');
+  assert.ok(lintDraft(doc).some((w) => w.rule === 'review' && /quiz/.test(w.message)));
+});

@@ -76,6 +76,11 @@ export function lintDraft(doc, { coverage } = {}) {
     const n = words(clean(prose));
     if (!visual && n > 160 && !/\|/.test(prose)) out.push({ line: p.line, rule: 'wall', message: `"${p.title}" is ${n} words of prose and no visual; add a diagram, table or list, or cut` });
   }
+  if (meta.kind === 'review') {
+    for (const b of panels.flatMap((p) => p.blocks)) {
+      if (b.type === 'fence' && ['quiz', 'glossary'].includes(b.lang)) out.push({ line: b.line, rule: 'review', message: `a ${b.lang} in a review is padding for a busy reviewer`, suggestion: 'drop it' });
+    }
+  }
   if (coverage) {
     for (const h of coverage.missing) {
       out.push({ line: 0, rule: 'coverage', message: `${h.id} ${h.file} (+${h.add} −${h.del}) is never shown or referenced`, suggestion: `show it in a \`\`\`diff ${h.id} block or mention [[${h.id}]] in the text` });

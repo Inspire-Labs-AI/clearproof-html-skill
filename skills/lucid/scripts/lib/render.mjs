@@ -120,7 +120,12 @@ function grounding(ctx, coverage) {
   if (coverage) items.push(`<span><b>${coverage.covered}/${coverage.total}</b> changed hunks shown</span>`);
   if (ctx.runs.length) {
     const checks = ctx.runs.flatMap((r) => r.checks);
-    items.push(`<span><b>${ctx.runs.length}</b> command${ctx.runs.length === 1 ? '' : 's'} run for real${checks.length ? ` · ${checks.filter((c) => c.ok).length} of ${checks.length} expectations held` : ''}</span>`);
+    const shown = checks.filter((c) => c.kind === 'shows');
+    const asserted = checks.filter((c) => c.kind !== 'shows');
+    const parts = [];
+    if (shown.length) parts.push(`${shown.filter((c) => c.ok).length} of ${shown.length} behaviours reproduced`);
+    if (asserted.length) parts.push(`${asserted.filter((c) => c.ok).length} of ${asserted.length} expectations held`);
+    items.push(`<span><b>${ctx.runs.length}</b> command${ctx.runs.length === 1 ? '' : 's'} run for real${parts.length ? ` · ${parts.join(' · ')}` : ''}</span>`);
   }
   const c = ctx.claims;
   const total = (c.verified ?? 0) + (c.inferred ?? 0) + (c.unverified ?? 0);
