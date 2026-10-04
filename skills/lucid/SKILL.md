@@ -44,6 +44,7 @@ Rules that make pages good:
 - **Answer first.** `tldr` is the conclusion, not the topic. Then 3–8 sections (reviews: up to 10), each answering one question, ordered the way understanding builds (why → shape → mechanism → edge cases → check).
 - **Explainers open with "The short version":** a numbered list of 3–7 plain steps a newcomer can follow, before any diagram or table. Readers rate this the clearest part of a page.
 - **Draw the real data, not boxes.** Put actual values in diagrams: `[g; p]` record nodes for keys, fields or memory cells, `~` to fade what the process skips, `*` for the path it takes. A diagram of generic steps ("Row 1 → Row 2 → …") explains nothing — cut it.
+- **Keep run commands short and portable:** put a longer benchmark in a small script file and run it (`$ node bench/stride.js`); lucid shows the repo as `.` and temp dirs as `$TMP`.
 - **Never retype a measured number.** If a `run` block measured it, chart exactly those numbers (lint checks) or show the run output alone.
 - **Write for a named reader.** `for: a backend dev new to databases` in the front matter shows as "Written for: …" and should change what you include, not just the wording.
 - **Show, then tell.** Prefer a concrete example (real names, real numbers, real tool output via ```` ```run ````) over abstract description. State what you simplified in one `callout info` line; honest caveats raise trust.
@@ -80,7 +81,7 @@ Rules that make pages good:
 
 ## 4. Review mode (code understanding)
 
-The header automatically shows provenance (base, head, uncommitted work) and a **Grounded** strip: code references checked, hunks shown, commands run, claims verified. Make those numbers high — that is what lets a reviewer trust the page.
+The header automatically shows provenance (base, head, uncommitted work) and a **Checked** strip: code references checked, hunks shown, commands run, claims verified. Make those numbers high — that is what lets a reviewer trust the page.
 
 1. `$L diff` — read the index: base, files, hunk ids (`H1`…), and the changed lines (committed, uncommitted and untracked). Use `--base <rev>` if the user names one. Read surrounding code where you need context. If some work is uncommitted or `[untracked]`, check that the committed part stands on its own (imports, migrations) — merging only the commits is a common way to break things.
 2. Write the draft. Copy `base:` from the diff output into the front matter. A reviewer is busy: verdict and risks first, evidence next, walkthrough last. Structure:

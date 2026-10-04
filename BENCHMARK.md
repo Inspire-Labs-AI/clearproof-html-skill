@@ -1,84 +1,96 @@
-# Benchmark: lucid vs answer-me-with-html vs asking for HTML directly
+# Benchmark: lucid vs visual-explainer vs answer-me-with-html vs plain HTML
 
-Run on 2026-10-03. One run per cell (n = 1), so treat these as a first signal, not a verdict.
+Blind, screenshot-judged comparisons with the same model under every condition. Last run on 2026-10-04.
 
-## Setup
+## Contestants
 
-The same model ran every condition as a fresh agent with no prior context.
-
-| Condition | What the agent had |
+| | What the agent had |
 |---|---|
-| **A — direct HTML** | "Answer me with an HTML page", plus a screenshot tool so it could check its own page |
-| **B — answer-me-with-html** | That skill's SKILL.md and CLI (v0.2) |
-| **C — lucid** | This skill's SKILL.md and CLI (v0.1) |
+| **A — plain HTML** | "Answer me with an HTML page", plus a screenshot tool to check its own page |
+| **B — [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html)** | That skill's SKILL.md and CLI (v0.2) |
+| **C — lucid** | This skill (the version at the time of each round) |
+| **D — [visual-explainer](https://github.com/nicobailon/visual-explainer)** | The most adopted skill in this space (10.2k★): SKILL.md, references, templates, commands |
 
-Two tasks, both new to every agent:
-
-1. **Explain:** "How does DNS resolution work — what happens between typing a URL and getting an IP address?"
-2. **Review:** "An AI agent wrote this branch (including uncommitted work). Help me understand it and tell me if it is
-   safe to merge." The branch (3 files, +28 −3) hides four bugs, fixed in an answer key before any run:
-   off-by-one pagination, a cross-user data leak through the cache key, cache invalidation that never matches, and SQL
-   injection through `sort`.
-
-Two **blind judges** (fresh agents) saw only screen-sized screenshots of each page under shuffled labels, with no
-interaction. The explain judge answered six fixed DNS questions from each page alone. The review judge played the
-engineer who must decide whether to merge without reading the code.
+Each run was a fresh agent with no prior context. Each page was then judged by a fresh agent that saw **only
+screen-sized screenshots**, under shuffled labels, with no idea which skill made what. The explain judges answered six
+comprehension questions from each page alone; the review judges played an engineer deciding whether to merge without
+reading the code. Answer keys and planted bugs were fixed before any run.
 
 ## Results
 
-### Explain (DNS)
+### Review: "An AI agent wrote this branch — is it safe to merge?"
 
-| | Direct HTML | answer-me-with-html | **lucid** |
-|---|---|---|---|
-| Comprehension questions answered from the page | 6/6 | 6/6 | 6/6 |
-| Clarity / Visuals / Readability / Trust (1–5) | 5 / 3 / 4 / 5 | 4 / 5 / 4 / 4 | 4 / 5 / 4 / 4 |
-| Judge's ranking | 3rd | 2nd | **1st** (close to 2nd) |
-| Wall time | 153 s | **46 s** | 71 s |
+| Round | Task | lucid | plain HTML | visual-explainer | answer-me-with-html |
+|---|---|---|---|---|---|
+| 1 | orders pagination, 4 planted bugs | **1st** | 2nd | — | 3rd |
+| 2, set 1 | password reset, 4 planted bugs | **1st** | 2nd | 3rd | 4th |
+| 2, set 2 | same task, independent runs | **1st** | 2nd | 3rd | 4th |
 
-### Review (planted bugs)
+**lucid ranked first in every review judgment.** In round 2 both judges gave it 5/5 on *ability to verify*,
+*completeness* and *overall trust*. Typical judge line: "the only page that proves its claims: executed commands with
+real output for the key bugs, a Verified / Inferred / Not-verified label on every claim, and a 4/4 hunks-explained
+index proving coverage." Every condition found the planted bugs; finding them is the model's job. The difference is
+whether a reviewer can **check** the findings and **know nothing was skipped**.
 
-| | Direct HTML | answer-me-with-html | **lucid** |
-|---|---|---|---|
-| Planted bugs on the page | 4/4 | 4/4 | 4/4 |
-| Time to verdict (1–5) | 5 | 5 | 5 |
-| Clarity of risks (1–5) | **5** | 4 | 3 |
-| Ability to verify claims against code (1–5) | 3 | 2 | **5** |
-| Completeness: could the judge tell nothing was skipped? (1–5) | 3 | 1 | **5** |
-| Judge's confidence in its merge decision (1–5) | 4–5 | 3 | **5** |
-| Judge's ranking | 2nd | 3rd | **1st** |
-| Wall time | 112 s | **63 s** | 69 s |
+### Explain: a new topic each round
 
-## What this says
+| Round | Topic | 1st | 2nd | 3rd | 4th |
+|---|---|---|---|---|---|
+| 1 | DNS | **lucid** (narrowly) | answer-me-with-html | plain HTML | — |
+| 2, set 1 | database indexes | visual-explainer | plain HTML | lucid | answer-me-with-html |
+| 2, set 2 | database indexes | visual-explainer | plain HTML | answer-me-with-html | lucid |
+| 3, set 1 | CPU caches | plain HTML (18/20) | visual-explainer (18) | lucid (15) | answer-me-with-html (14) |
+| 3, set 2 | CPU caches | visual-explainer (18/20) | plain HTML (17) | lucid (16) | answer-me-with-html (12) |
 
-- **Finding bugs is the model's job, not the skill's.** All three conditions found all four planted bugs. No skill
-  makes the model smarter, and claiming otherwise would be dishonest.
-- **lucid wins on trust in a review.** It was the only page where the judge could check every claim against the actual
-  changed lines and prove nothing was skipped ("3/3 changes explained", with the hunk totals adding up to the diff
-  stat). For AI-written code, which is Arpit's problem, that is the point: a confident page proves nothing unless you
-  can see the code under each claim.
-- **lucid wins on explaining, narrowly.** It ranked first for the DNS page, close to answer-me-with-html. Its edge was
-  the diagrams and their completeness: cache flow, message sequence, delegation tree, a TTL table and a quiz.
-- **It is about 2× faster than writing HTML by hand.** answer-me-with-html is faster still (its pages are smaller);
-  lucid spends the difference on the visual check and on reading code.
-- **The judges saw static screenshots.** Step-through diagrams, hover previews, the tour and the video were never
-  exercised, so lucid's interactive features are not in these scores.
+**Explainers: visual-explainer leads; lucid is third and closing.** Between rounds 2 and 3 lucid moved from 3rd/4th
+to a steady 3rd, 2–3 points behind on a 20-point scale. It scores the **highest trust** in every explain round
+(real measurements, claim labels), but loses on **visuals**: the leaders hand-draw bespoke, often interactive figures
+(a cache simulator with live hit/miss counts, a B-tree walk with real keys). lucid's components are cheaper and safer
+but less expressive.
 
-## Problems the benchmark found in lucid, all fixed after the run
+### Cost and speed (round 2 and 3 averages per page)
 
-| Problem | Seen by | Fix |
+| | plain HTML | answer-me-with-html | lucid | visual-explainer |
+|---|---|---|---|---|
+| Explain | 124 s | 66 s | 114 s | 400 s |
+| Review | 140 s | 77 s | 87 s | 326 s |
+| Tokens per run | ~60–75k | ~60–70k | ~60–65k | ~120–135k |
+
+visual-explainer's figures cost about **4× the time and 2× the tokens** of lucid.
+
+## How the harness was kept honest
+
+Three harness bugs were found and fixed before results were counted, and every affected round was re-judged:
+
+1. **Scroll-revealed content.** visual-explainer fades sections in on scroll; static capture showed blank screens and
+   unfairly sank it. Fixed: the tiler scrolls through each page like a reader.
+2. **Smooth scrolling.** lucid's smooth scroll made the first tile start mid-page, hiding its verdict and summary.
+   Fixed: instant scrolling, and every page's first tile was checked by eye before judging.
+3. **Lost pages.** Some answer-me-with-html agents deleted earlier pages in a shared output folder. Those runs were
+   repeated in separate folders with the same prompt.
+
+The explain topic changed every round, so lucid was never re-tested on a topic it had been tuned against. Examples in
+SKILL.md were also scrubbed of a benchmark topic that had leaked into them.
+
+## What each round changed in lucid
+
+| After | Judges said | Change |
 |---|---|---|
-| A table cell "No such name" rendered as "✗ such name" | explain judge | only lowercase `ok` / `no` / `warn` become badges |
-| An empty grey cell in a key-value grid | explain judge | the grid draws borders per cell |
-| Long code lines cut off at the right edge | review judge | code wraps with a hanging indent; nothing hides off-screen |
-| No severity above "high": a data leak ranked the same as an off-by-one | review judge | new `critical` level |
-| Base commit printed twice in the header | review judge | printed once |
-| Small sequence-diagram labels in a half-width card | explain judge | sequences, LR flows, code and diffs take the full row |
-| A glossary placed first delayed the overview | explain judge | SKILL.md now puts the glossary last |
+| Round 1 | "No such name" became "✗ such name"; code cut off at the right edge; no critical tier | lowercase status keywords; wrapping code; `critical` risks |
+| Survey of 10 competing skills | — | claim ledger, Checked strip, linked highlighting, side-by-side code, explained quiz options |
+| Round 2 review | red ✗ chips read like failures; risks too far down; quiz padding | `shows:` evidence; risks first; lint against padding |
+| Round 2 explain | generic boxes; numbers retyped wrongly from a benchmark | record nodes with real data, faded skipped paths, `waffle`, log charts, a lint that checks chart numbers against run output, one reading column |
+| Round 3 explain | raw /tmp paths; "0.08 int per square"; self-awarded badge | paths tidied in run output, small waffles use one cell per unit, neutral "Checked" label |
 
-## Not measured yet
+## Limits
 
-- Several runs per cell, so differences can be told apart from noise.
-- Real people instead of model judges.
-- The interactive features: whether step-through and hover previews speed up understanding.
-- Output tokens and cost per answer. The agent harness reported only total tokens, which were within 15% of each other
-  across all six runs (60k–68k, mostly shared context).
+- n = 2 per cell in rounds 2–3, and model judges rather than people.
+- Judges see static screenshots: step-through diagrams, hover links, tours and video are not scored, which favours
+  pages that pack everything into the static view.
+- One model family produced and judged everything.
+
+## Next, to win explainers too
+
+The gap is figure expressiveness. The plan is a **live figure** component: a small, declared simulation (state,
+steps, one or two controls) that lucid renders and animates, so a draft can say "simulate a 4-line cache over this
+access pattern" without the model hand-writing JavaScript.

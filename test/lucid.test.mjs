@@ -242,7 +242,7 @@ test('risks keep indented detail lines under their item', () => {
 test('claims: verified needs evidence; counts feed the grounding strip', () => {
   assert.throws(() => renderDraft('## C\n```claims\nverified | It is fast\n```', { cwd: ROOT }), /names no evidence/);
   const r = renderDraft('---\ntitle: T\ntldr: x\n---\n## C\nSee [[package.json:1]].\n```claims\nverified | Name is set | [[package.json:2]]\ninferred | Probably fine | no tests\nunverified | Scales\n```', { cwd: ROOT });
-  assert.match(r.html, /class="grounding"/);
+  assert.match(r.html, /class="grounding"[^>]*><i>Checked<\/i>/);
   assert.match(r.html, /<b>2<\/b> code references checked/);
   assert.match(r.html, /<b>1<\/b> verified · <b>1<\/b> inferred · <b>1<\/b> unverified claims/);
 });
@@ -304,4 +304,14 @@ test('record and faded nodes draw real data; chart values must match run output'
 test('log-scale charts reject non-positive values', () => {
   assert.throws(() => renderDraft('## C\n```chart bar scale=log\nA | 0\n```', { cwd: ROOT }), /above 0/);
   assert.match(renderDraft('## C\n```chart bar scale=log\nA | 4\nB | 10000\n```', { cwd: ROOT }).html, /Log scale/);
+});
+
+test('run output hides machine paths; small waffles use one cell per unit', async () => {
+  const { tidyPaths } = await import('../skills/lucid/scripts/lib/components/run.mjs');
+  assert.equal(tidyPaths('cat /tmp/claude-0/abc/def/results.txt', '/repo'), 'cat $TMP/results.txt');
+  assert.equal(tidyPaths('/repo/src/a.js and /repo', '/repo'), './src/a.js and .');
+  const r = renderDraft('## W\n```waffle unit=ints\nOne line | 16 of 16\nUsed by a column walk | 1 of 16\n```', { cwd: ROOT });
+  const rows = r.html.split('class="wrow"').slice(1);
+  assert.equal((rows[0].match(/<i/g) ?? []).length, 16);
+  assert.ok(!/Each square/.test(r.html));
 });

@@ -27,14 +27,17 @@ Each cell stands for whole ÷ ${CELLS}; any non-zero part fills at least one cel
       return { label, part, whole, note };
     });
     if (!rows.length || rows.length > 4) throw new DraftError('waffle needs 1–4 rows', { line: 1 });
+    // Small wholes get one cell per unit; large ones share CELLS cells.
+    const cellsFor = (whole) => (Number.isInteger(whole) && whole <= CELLS ? whole : CELLS);
     return `<figure class="waffle">${rows
       .map((r, i) => {
-        const filled = r.part === 0 ? 0 : Math.max(1, Math.round((r.part / r.whole) * CELLS));
+        const n = cellsFor(r.whole);
+        const filled = r.part === 0 ? 0 : Math.max(1, Math.round((r.part / r.whole) * n));
         const pct = (r.part / r.whole) * 100;
         const pctText = pct >= 1 || pct === 0 ? `${+pct.toFixed(1)}%` : `${+pct.toPrecision(2)}%`;
-        const cells = Array.from({ length: CELLS }, (_, j) => `<i${j < filled ? ' class="on"' : ''}></i>`).join('');
+        const cells = Array.from({ length: n }, (_, j) => `<i${j < filled ? ' class="on"' : ''}></i>`).join('');
         return `<div class="wrow" data-step="${i + 1}"><div class="wlab"><strong>${inline(r.label, ctx)}</strong><span class="wnum">${fmt(r.part)}${unit ? ` ${esc(r.part === 1 ? unit.replace(/s$/, '') : unit)}` : ''} <small>of ${fmt(r.whole)} · ${pctText}</small></span>${r.note ? `<span class="wnote">${inline(r.note, ctx)}</span>` : ''}</div><div class="wgrid" role="img" aria-label="${esc(`${r.label}: ${fmt(r.part)} of ${fmt(r.whole)}`)}">${cells}</div></div>`;
       })
-      .join('')}${rows.every((r) => r.whole === rows[0].whole) ? `<figcaption>Each square = ${fmt(+(rows[0].whole / CELLS).toPrecision(3))}${unit ? ` ${esc(unit)}` : ''}.</figcaption>` : ''}</figure>`;
+      .join('')}${rows.every((r) => r.whole === rows[0].whole) && cellsFor(rows[0].whole) === CELLS && rows[0].whole > CELLS ? `<figcaption>Each square = ${fmt(+(rows[0].whole / CELLS).toPrecision(3))}${unit ? ` ${esc(unit)}` : ''}.</figcaption>` : ''}</figure>`;
   },
 };

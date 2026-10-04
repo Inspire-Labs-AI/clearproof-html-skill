@@ -25,6 +25,15 @@ export function parseRun(text) {
   return steps;
 }
 
+// Machine-specific paths are noise to a reader: show the repo as "." and temp/home dirs as short names.
+export function tidyPaths(text, root) {
+  let t = String(text);
+  if (root) t = t.split(root + '/').join('./').split(root).join('.');
+  return t
+    .replace(/\/tmp\/[^\s'"`]*\/([^\s/'"`]+)/g, '$TMP/$1')
+    .replace(new RegExp(`${(process.env.HOME || '/root').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=/)`, 'g'), '~');
+}
+
 function clip(out) {
   const lines = out.replace(/\s+$/, '').split('\n');
   if (lines.length <= MAX_LINES) return lines.join('\n');
@@ -70,7 +79,7 @@ Render with --allow-run. Keep commands fast, local and read-only.`,
       const badge = checks.length
         ? checks.map((c) => `<span class="chk ${c.kind} ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</span>`).join('')
         : '';
-      return `<div class="run-step"><div class="run-head"><code class="cmd">$ ${esc(s.cmd)}</code><span class="exit ${code === 0 ? 'ok' : 'no'}">exit ${esc(code)}</span><span class="ms">${ms} ms</span></div>${s.note ? `<p class="run-note">${inline(s.note, ctx)}</p>` : ''}<pre class="out">${esc(clip(out)) || '<i>(no output)</i>'}</pre>${badge ? `<div class="checks">${badge}</div>` : ''}</div>`;
+      return `<div class="run-step"><div class="run-head"><code class="cmd">$ ${esc(tidyPaths(s.cmd, ctx.repo.root))}</code><span class="exit ${code === 0 ? 'ok' : 'no'}">exit ${esc(code)}</span><span class="ms">${ms} ms</span></div>${s.note ? `<p class="run-note">${inline(s.note, ctx)}</p>` : ''}<pre class="out">${esc(clip(tidyPaths(out, ctx.repo.root))) || '<i>(no output)</i>'}</pre>${badge ? `<div class="checks">${badge}</div>` : ''}</div>`;
     });
     return `<figure class="run"><figcaption>Ran while this page was made · real output</figcaption>${blocks.join('')}</figure>`;
   },

@@ -99,6 +99,37 @@ sharp close-up.
 
 ## How does it compare?
 
+Blind, screenshot-judged rounds against [visual-explainer](https://github.com/nicobailon/visual-explainer) (10.2k★),
+[answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in HTML", with the same
+model and new tasks each round ([full results and method](BENCHMARK.md)):
+
+| | lucid | visual-explainer | plain HTML | answer-me-with-html |
+|---|---|---|---|---|
+| **Reviews of AI-written branches** (3 judgments) | **1st, 1st, 1st** | 3rd, 3rd | 2nd ×3 | 3rd, 4th, 4th |
+| Explainers (rounds 2–3, 4 judgments) | 3rd, 4th, 3rd, 3rd | 1st, 1st, 2nd, 1st | 2nd, 2nd, 1st, 2nd | 4th, 3rd, 4th, 4th |
+| Time per page (explain / review) | 114 s / 87 s | 400 s / 326 s | 124 s / 140 s | 66 s / 77 s |
+
+**For reviewing AI-written code, lucid is first in every judgment**, with 5/5 on verifiability, completeness and
+trust: real hunks with notes, executed proof of the bugs, a verified/inferred claim ledger, and an "N/N changes
+explained" index. **For explainers, visual-explainer leads** with bespoke hand-drawn figures at about 4× the time and
+2× the tokens; lucid is a close third and has the highest trust score in every explain round.
+
+## Does an agent actually use it well?
+
+We gave SKILL.md, and nothing else, to fresh agents with no context:
+
+- **Explain** ("git merge vs rebase"): 7 sections, 4 diagrams, a glossary and a quiz. One fix round (a passive
+  sentence, overlapping groups), then a clean render.
+- **Review** (the demo branch above): verdict *block*, **4/4 hunks explained**. It found both bugs in the change and
+  one we had not planted: the committed `session.js` imports `refresh.js`, which is untracked, so merging only the
+  commits would break startup.
+
+Their friction reports drove fixes in this version: cut-off tables are now detected, warnings quote the sentence they
+mean, diff notes and step captions are linted, edge labels no longer sit under nodes, and `check --section` gives a
+sharp close-up.
+
+## How does it compare?
+
 A blind benchmark against [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in
 HTML", with the same model and new tasks ([details](BENCHMARK.md), n = 1 per cell):
 

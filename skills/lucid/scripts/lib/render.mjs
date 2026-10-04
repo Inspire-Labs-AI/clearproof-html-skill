@@ -139,7 +139,7 @@ function grounding(ctx, coverage) {
   const c = ctx.claims;
   const total = (c.verified ?? 0) + (c.inferred ?? 0) + (c.unverified ?? 0);
   if (total) items.push(`<span><b>${c.verified ?? 0}</b> verified · <b>${c.inferred ?? 0}</b> inferred · <b>${c.unverified ?? 0}</b> unverified claims</span>`);
-  return items.length ? `<div class="grounding" title="Checked by lucid while making this page, not asserted by the model"><i>Grounded</i>${items.join('')}</div>` : '';
+  return items.length ? `<div class="grounding" title="Checked by lucid while making this page, not asserted by the model"><i>Checked</i>${items.join('')}</div>` : '';
 }
 
 // Make lone panels fill their row so the grid has no holes.
