@@ -43,6 +43,7 @@ Server --> Client: SYN+ACK
 Rules that make pages good:
 - **Answer first.** `tldr` is the conclusion, not the topic. Then 3–8 sections (reviews: up to 10), each answering one question, ordered the way understanding builds (why → shape → mechanism → edge cases → check).
 - **Explainers open with "The short version":** a numbered list of 3–7 plain steps a newcomer can follow, before any diagram or table. Readers rate this the clearest part of a page.
+- **Write for a named reader.** `for: a backend dev new to databases` in the front matter shows as "Written for: …" and should change what you include, not just the wording.
 - **Show, then tell.** Prefer a concrete example (real names, real numbers, real tool output via ```` ```run ````) over abstract description. State what you simplified in one `callout info` line; honest caveats raise trust.
 - **One visual per section** where the information has a shape; prose only for the why. More than ~160 words of prose with no visual is flagged.
 - **Write in plain English (ASD-STE100 style):** one idea per sentence, ≤25 words (≤20 for steps), active voice, steps as commands, common words (use, not utilize). lint warns.
@@ -63,24 +64,30 @@ Rules that make pages good:
 | key facts | `kv` | `Key: value` |
 | jargon | `glossary` | `Term: definition` → every later use gets a hover definition |
 | conclusion / warning | `callout key\|info\|tip\|ok\|warn\|risk Title` | Markdown body |
-| real code with notes | `code path:10-40` | `12: note`, `14-18: note on a range` |
-| check understanding | `quiz` | `? question`, `- [x] right`, `- [ ] wrong`, `> why`; open: `? q` + `= answer` |
+| real code with notes | `code path:10-40 [side]` | `12: note`, `14-18: note on a range`; `side` puts plain-English notes in a column beside the code — best for line-by-line walkthroughs |
+| check understanding | `quiz` | `? question`, `- [x] right :: why`, `- [ ] wrong :: why it is wrong`, `> summary`; open: `? q` + `= answer`. Ask what would *happen* (change a condition, trace a request, pick a fix), never recall of names. Explain every option. |
+| how sure is each claim | `claims` | `verified \| claim \| [[file:line]] / H3 / run / URL`, `inferred \| claim \| what it rests on`, `unverified \| claim` |
 | things to verify | `checklist` | `- [ ] item [[file:line]]` (ticks persist) |
 | proof: real command output | `run` | `$ command`, `expect: text`, `absent: text`, `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
 | comparison | Markdown table | cells starting `ok` / `no` / `warn` become ✓ ✗ ! |
 
-`flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
+`flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Names of nodes and actors that you use in the section's prose light up the diagram on hover automatically — so use the same names in both.
+
+**Every number gets a picture** (a `chart`, a table, a timeline) or it gets cut. When several cases differ in one detail, show the same small diagram once per case rather than one diagram with every branch. Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
 
 ## 4. Review mode (code understanding)
+
+The header automatically shows provenance (base, head, uncommitted work) and a **Grounded** strip: code references checked, hunks shown, commands run, claims verified. Make those numbers high — that is what lets a reviewer trust the page.
 
 1. `$L diff` — read the index: base, files, hunk ids (`H1`…), and the changed lines (committed, uncommitted and untracked). Use `--base <rev>` if the user names one. Read surrounding code where you need context. If some work is uncommitted or `[untracked]`, check that the committed part stands on its own (imports, migrations) — merging only the commits is a common way to break things.
 2. Write the draft. Copy `base:` from the diff output into the front matter. Structure:
    - `tldr` + `verdict: approve | changes | discuss | block` — the finding, not a summary of the diff.
    - **Intent** — what the change is for and the approach, before any code.
    - ```` ```changemap ```` — the shape: `routes.js -> session.js: calls`. Keep arrow labels to 1–2 words (empty body = file list with sizes).
-   - **Walkthrough** — one section per idea, **in the order data flows, not file order**. Each shows ```` ```diff H3 ```` with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says.
+   - **Walkthrough** — one section per idea, **in the order data flows, not file order**; one step may show hunks from several files (```` ```diff H2,H4 ````). Each shows ```` ```diff H3 ```` with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says. State the exact value the behaviour turns on (`TTL = 60_000`, `page * 20`). When the code does not say why, say so: "likely…, though nothing in the code states it" — never invent intent.
    - ```` ```risks ```` — `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Under each serious risk add indented lines: `why:` (the mechanism), `trigger:` (a concrete input, e.g. the exploit payload), `fix:`. Include behaviour changes for callers (API shape, defaults).
    - ```` ```run ```` — **prove the top risks.** Reproduce each critical/high bug with a fast, local, read-only command (a one-line `node -e`, a test, a grep) and an `expect:` line stating the correct behaviour; the page shows ✗ when the bug is real. Render with `--allow-run`. Never run anything destructive or networked.
+   - ```` ```claims ```` — the 3–6 claims the verdict rests on, each `verified` (with evidence), `inferred` or `unverified`.
    - ```` ```checklist ```` — what a human must still verify (tests, rollout, data).
    - Optional ```` ```quiz ```` — only when the risky part is subtle. Keep reviews lean: no glossary, no padding.
 3. **Account for every hunk.** Show it in a `diff` block or cite it inline (`[[H4]] only renames a variable`). The page header shows "N/M changes explained"; render warns about each unexplained hunk, and the "All changes" appendix flags it. Aim for M/M.

@@ -205,7 +205,7 @@ export function renderGraph({ nodes, edges, groups, steps }, { dir = 'TB', uid, 
     const cls = ['edge', e.kind === '-->' ? 'dashed' : '', e.kind === '==>' ? 'thick' : ''].filter(Boolean).join(' ');
     const marks = `${e.kind === '<->' ? ` marker-start="url(#${id}a)"` : ''} marker-end="url(#${id}a)"`;
     const note = e.note || e.label || `${e.from} → ${e.to}`;
-    parts.push(`<g class="${cls}" data-step="${e.step}" data-note="${esc(note)}"><path d="${pathD(e.points, LR)}"${marks}/></g>`);
+    parts.push(`<g class="${cls}" data-step="${e.step}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" data-note="${esc(note)}"><path d="${pathD(e.points, LR)}"${marks}/></g>`);
     if (e.label) labels.push(`<g class="${cls}" data-step="${e.step}">${
       e.label
         ? `<text class="elabel" x="${e.labelPos.x.toFixed(1)}" y="${(e.labelPos.y - ((wrap(e.label, 180, 12).length - 1) * 15) / 2 + 4).toFixed(1)}">${wrap(e.label, 180, 12)
@@ -220,7 +220,7 @@ export function renderGraph({ nodes, edges, groups, steps }, { dir = 'TB', uid, 
     const m = measured.get(n.id);
     const y0 = p.y - ((m.lines.length - 1) * LINE) / 2 + 4.5 + (n.shape === 'db' ? 4 : 0);
     const extra = decorate ? decorate(n, p) : '';
-    parts.push(`<g class="node ${n.shape}${n.hot ? ' hot' : ''}" data-step="${n.step}">${shapeSvg(n, p)}<text x="${p.x}" y="${y0}">${m.lines
+    parts.push(`<g class="node ${n.shape}${n.hot ? ' hot' : ''}" data-step="${n.step}" data-id="${esc(n.id)}">${shapeSvg(n, p)}<text x="${p.x}" y="${y0}">${m.lines
       .map((l, j) => `<tspan x="${p.x}" dy="${j ? LINE : 0}">${esc(l)}</tspan>`)
       .join('')}</text>${extra}</g>`);
   }

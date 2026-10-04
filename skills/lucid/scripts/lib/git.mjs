@@ -111,9 +111,13 @@ export function loadDiff(cwd, base) {
     h.id = `H${++n}`;
     h.file = f.path;
   }
+  const head = tryGit(root, ['rev-parse', '--verify', 'HEAD']);
+  const dirty = Boolean(tryGit(root, ['status', '--porcelain']));
   const diff = {
     root,
     base: b,
+    head,
+    dirty,
     files,
     hunks: files.flatMap((f) => f.hunks),
     add: files.reduce((s, f) => s + f.add, 0),

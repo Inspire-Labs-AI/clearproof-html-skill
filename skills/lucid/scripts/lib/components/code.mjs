@@ -21,6 +21,7 @@ export default {
 34: The token is read before the expiry check      note on one line
 41-44: This retry loop has no upper bound           note on a range (highlighted)
 \`\`\`
+Add "side" after the path to put the notes in a column beside the code (best for walking through code line by line).
 The path is relative to the repository root. lucid fails if the file or lines do not exist.
 For code that is not in a file (an example you made up), use a normal fence: \`\`\`js`,
   example: '```code src/server.js:10-24\n12: Port comes from the environment\n```',
@@ -38,6 +39,22 @@ For code that is not in a file (an example you made up), use a normal fence: \`\
     }
     const hl = (ln) => notes.some((n) => ln >= n.start && ln <= n.end);
     const rows = [];
+    if (/\bside\b/.test(ctx.args)) {
+      // Code and plain English side by side: each note sits next to the lines it explains.
+      const sorted = [...notes].sort((a, b) => a.start - b.start);
+      for (let j = 1; j < sorted.length; j++) {
+        if (sorted[j].start <= sorted[j - 1].end && sorted[j].start !== sorted[j - 1].start) throw new DraftError(`Side notes ${sorted[j - 1].start}-${sorted[j - 1].end} and ${sorted[j].start}-${sorted[j].end} overlap; side mode needs separate ranges`, { line: sorted[j].line });
+      }
+      for (let ln = s; ln <= e; ln++) {
+        const starts = notes.filter((n) => n.start === ln);
+        const covered = notes.some((n) => ln > n.start && ln <= n.end);
+        const note = starts.length
+          ? `<td class="side" rowspan="${Math.max(...starts.map((n) => n.end - n.start + 1))}"><div class="cnote">${starts.map((n) => inline(n.text, ctx)).join('<br>')}</div></td>`
+          : covered ? '' : '<td class="side"></td>';
+        rows.push(`<tr class="${hl(ln) ? 'hl' : ''}"><td class="ln">${ln}</td><td class="src">${esc(r.lines[ln - 1]) || ' '}</td>${note}</tr>`);
+      }
+      return `<figure class="code sbs"><figcaption><a class="ref" href="${esc(ctx.repo.href(r.abs, r.rel, s))}">${esc(r.rel)}</a> <span>lines ${s}–${e}</span></figcaption><div class="scroll"><table>${rows.join('')}</table></div></figure>`;
+    }
     for (let ln = s; ln <= e; ln++) {
       rows.push(`<tr class="${hl(ln) ? 'hl' : ''}"><td class="ln">${ln}</td><td class="src">${esc(r.lines[ln - 1]) || ' '}</td></tr>`);
       for (const n of notes.filter((x) => x.end === ln)) rows.push(`<tr class="note-row"><td></td><td><div class="cnote">${inline(n.text, ctx)}</div></td></tr>`);

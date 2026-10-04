@@ -140,6 +140,42 @@
     }
   }
 
+  /* linked highlighting: names in the prose light up the matching part of the section's diagram */
+  for (const sec of $$('main > section')) {
+    const figs = $$('figure.diagram', sec);
+    if (!figs.length) continue;
+    const names = [...new Set(figs.flatMap((f) => $$('[data-id]', f).map((g) => g.dataset.id)))].filter((n) => n.length >= 3).sort((a, b) => b.length - a.length);
+    if (!names.length) continue;
+    const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(^|[^\\w])(' + names.map(escRe).join('|') + ')(?![\\w])');
+    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => n.parentElement.closest('svg, code, pre, a, abbr, h2, button, .xref, figure.code, .player') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (let node of nodes) {
+      let m;
+      while (node && (m = node.nodeValue.match(re))) {
+        const at = m.index + m[1].length;
+        const after = node.splitText(at);
+        node = after.splitText(m[2].length);
+        const span = document.createElement('span');
+        span.className = 'xref'; span.dataset.x = m[2]; span.tabIndex = 0;
+        after.replaceWith(span); span.append(after);
+      }
+    }
+    const light = (name, on) => {
+      for (const f of figs) {
+        f.classList.toggle('linking', on);
+        $$('[data-id], [data-from]', f).forEach((g) => g.classList.toggle('lit', on && (g.dataset.id === name || g.dataset.from === name || g.dataset.to === name)));
+      }
+    };
+    sec.addEventListener('mouseover', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('mouseout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+    sec.addEventListener('focusin', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('focusout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+  }
+
   /* quiz */
   for (const quiz of $$('.quiz')) {
     let right = 0; let done = 0; const total = $$('.q', quiz).length;
@@ -147,6 +183,7 @@
     const finish = (q, ok) => {
       if (q.dataset.done) return;
       q.dataset.done = '1'; done++; if (ok) right++;
+      $$('.owhy', q).forEach((w) => w.removeAttribute('hidden'));
       $('.why', q)?.removeAttribute('hidden');
       if (score && done === total) score.textContent = right + ' of ' + total + ' right on the first try.';
     };
@@ -156,6 +193,7 @@
       const opt = e.target.closest('.opt'); if (!opt || q.dataset.done) return;
       const ok = opt.dataset.ok === 'true';
       opt.classList.add(ok ? 'right' : 'wrong');
+      opt.querySelector('.owhy')?.removeAttribute('hidden');
       const multi = q.dataset.multi === 'true';
       if (!ok) { q.dataset.miss = '1'; $$('.opt', q).forEach((o) => o.dataset.ok === 'true' && o.classList.add('right')); finish(q, false); return; }
       const all = $$('.opt', q).filter((o) => o.dataset.ok === 'true').every((o) => o.classList.contains('right'));

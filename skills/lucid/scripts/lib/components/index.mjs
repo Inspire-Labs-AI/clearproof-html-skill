@@ -13,6 +13,7 @@ import diff from './diff.mjs';
 import changemap from './changemap.mjs';
 import risks from './risks.mjs';
 import run from './run.mjs';
+import claims from './claims.mjs';
 
-export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks, run].map((c) => [c.name, c]));
+export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks, run, claims].map((c) => [c.name, c]));
 export const RAW = new Set(['html', 'svg']);

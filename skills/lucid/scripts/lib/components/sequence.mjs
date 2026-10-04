@@ -104,7 +104,7 @@ note Client, API: TLS from here     note across parties
           y += 18;
         } else shape = `<line x1="${x1}" y1="${ty + 6}" x2="${x2 + (x2 > x1 ? -2 : 2)}" y2="${ty + 6}" marker-end="url(#${id}a)"/>`;
         const anchor = x1 === x2 ? ' text-anchor="start"' : '';
-        body.push(`<g class="${cls}" data-step="${r.step}" data-note="${esc(note)}">${shape}<text x="${lx}" y="${y + 8}"${anchor}>${lines
+        body.push(`<g class="${cls}" data-step="${r.step}" data-from="${esc(r.from)}" data-to="${esc(r.to)}" data-note="${esc(note)}">${shape}<text x="${lx}" y="${y + 8}"${anchor}>${lines
           .map((l, j) => `<tspan x="${lx}" dy="${j ? 15 : 0}">${esc(l)}</tspan>`)
           .join('')}</text><text class="num" x="${Math.min(x1, x2) + (x1 === x2 ? -14 : 8)}" y="${ty + 2}">${r.step}</text></g>`);
         y += lines.length * 15 + 22;
@@ -112,7 +112,7 @@ note Client, API: TLS from here     note across parties
     }
     const H = y + 10;
     const heads = parts
-      .map((p, j) => `<g class="actor"><line x1="${X[j]}" y1="${head}" x2="${X[j]}" y2="${H - 6}"/><rect x="${X[j] - (colW - 24) / 2}" y="4" width="${colW - 24}" height="${head - 8}" rx="6"/><text x="${X[j]}" y="${head / 2 + 5}">${esc(p)}</text></g>`)
+      .map((p, j) => `<g class="actor" data-id="${esc(p)}"><line x1="${X[j]}" y1="${head}" x2="${X[j]}" y2="${H - 6}"/><rect x="${X[j] - (colW - 24) / 2}" y="4" width="${colW - 24}" height="${head - 8}" rx="6"/><text x="${X[j]}" y="${head / 2 + 5}">${esc(p)}</text></g>`)
       .join('');
     const playable = !ctx.args.split(/\s+/).includes('static');
     const svg = `<svg class="seq" viewBox="0 0 ${Math.ceil(width)} ${Math.ceil(H)}" style="max-width:${Math.ceil(width)}px" role="img" aria-label="Sequence diagram"><defs><marker id="${id}a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs>${heads}${body.join('')}</svg>`;

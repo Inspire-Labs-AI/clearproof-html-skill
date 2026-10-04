@@ -34,6 +34,8 @@ export function renderDraft(source, opts = {}) {
     repo,
     covered: new Set(),
     runs: [],
+    claims: {},
+    refs: 0,
     allowRun: Boolean(opts.allowRun),
     glossary: [],
     stats: {},
@@ -48,6 +50,7 @@ export function renderDraft(source, opts = {}) {
         ctx.covered.add(id);
         return `<a class="ref hunk" href="#all-${id}">${id}</a>`;
       }
+      ctx.refs++;
       return repo.chip(r, ctx.line);
     },
   };
@@ -105,8 +108,24 @@ export function renderDraft(source, opts = {}) {
     throw err;
   }
 
-  const html = page({ meta, introHtml, panels, appendix, coverage, review, source, glossary: ctx.glossary, ctx });
+  const html = page({ meta, introHtml, panels, appendix, coverage, review, source, glossary: ctx.glossary, ctx, grounding: grounding(ctx, coverage) });
   return { html, warnings, meta, coverage, runs: ctx.runs, stats: { panels: panels.length, components: ctx.stats } };
+}
+
+// What on this page was checked by the machine rather than asserted by the model.
+function grounding(ctx, coverage) {
+  const items = [];
+  const codeBlocks = ctx.stats.code ?? 0;
+  if (ctx.refs || codeBlocks) items.push(`<span><b>${ctx.refs + codeBlocks}</b> code reference${ctx.refs + codeBlocks === 1 ? '' : 's'} checked against the files</span>`);
+  if (coverage) items.push(`<span><b>${coverage.covered}/${coverage.total}</b> changed hunks shown</span>`);
+  if (ctx.runs.length) {
+    const checks = ctx.runs.flatMap((r) => r.checks);
+    items.push(`<span><b>${ctx.runs.length}</b> command${ctx.runs.length === 1 ? '' : 's'} run for real${checks.length ? ` · ${checks.filter((c) => c.ok).length} of ${checks.length} expectations held` : ''}</span>`);
+  }
+  const c = ctx.claims;
+  const total = (c.verified ?? 0) + (c.inferred ?? 0) + (c.unverified ?? 0);
+  if (total) items.push(`<span><b>${c.verified ?? 0}</b> verified · <b>${c.inferred ?? 0}</b> inferred · <b>${c.unverified ?? 0}</b> unverified claims</span>`);
+  return items.length ? `<div class="grounding" title="Checked by lucid while making this page, not asserted by the model"><i>Grounded</i>${items.join('')}</div>` : '';
 }
 
 // Make lone panels fill their row so the grid has no holes.
@@ -142,7 +161,7 @@ function narration(p) {
   return cut || p.title;
 }
 
-function page({ meta, introHtml, panels, appendix, coverage, review, source, glossary }) {
+function page({ meta, introHtml, panels, appendix, coverage, review, source, glossary, grounding }) {
   const cols = Math.max(1, Math.min(Number(meta.cols) || (review ? 1 : 2), 3));
   // Tables with 4+ columns, or long cells, need the full row; authors can still set span themselves.
   const wide = (p) =>
@@ -155,14 +174,14 @@ function page({ meta, introHtml, panels, appendix, coverage, review, source, glo
   const toc = panels.length >= 3 || review
     ? `<nav class="toc" aria-label="Contents"><p>Contents</p><ol>${panels.map((p) => `<li><a href="#${esc(p.id)}">${inline(p.title)}</a></li>`).join('')}${review ? '<li class="all"><a href="#all-changes">All changes</a></li>' : ''}</ol></nav>`
     : '';
-  const known = new Set(['title', 'subtitle', 'tldr', 'kind', 'cols', 'mode', 'style', 'base', 'verdict', 'link', 'lang']);
+  const known = new Set(['title', 'subtitle', 'tldr', 'kind', 'cols', 'mode', 'style', 'base', 'verdict', 'link', 'lang', 'for']);
   const chips = Object.entries(meta).filter(([k]) => !known.has(k)).map(([k, v]) => `<span class="chip"><b>${esc(k)}</b> ${inline(v)}</span>`);
   let reviewHead = '';
   if (review && coverage) {
     const d = coverage.diff;
     const [vText, vCls] = VERDICT[meta.verdict] ?? [];
     const pct = coverage.total ? Math.round((coverage.covered / coverage.total) * 100) : 100;
-    reviewHead = `<div class="review-head">${vText ? `<span class="verdict v-${vCls}">${vText}</span>` : ''}<span class="chip"><b>base</b> <code>${esc(d.base.sha ? d.base.sha.slice(0, 10) : 'none')}</code>${d.base.sha && d.base.sha.startsWith(d.base.label) ? '' : ` ${esc(d.base.label)}`}</span><span class="chip"><b>${d.files.length}</b> files <b class="a">+${d.add}</b> <b class="d">−${d.del}</b></span><a class="coverage${coverage.missing.length ? ' partial' : ''}" href="#all-changes" title="Hunks shown or referenced in the walkthrough"><span class="meter"><i style="width:${pct}%"></i></span> ${coverage.covered}/${coverage.total} changes explained</a></div>`;
+    reviewHead = `<div class="review-head">${vText ? `<span class="verdict v-${vCls}">${vText}</span>` : ''}<span class="chip"><b>base</b> <code>${esc(d.base.sha ? d.base.sha.slice(0, 10) : 'none')}</code>${d.base.sha && d.base.sha.startsWith(d.base.label) ? '' : ` ${esc(d.base.label)}`}</span>${d.head ? `<span class="chip"><b>head</b> <code>${esc(d.head.slice(0, 10))}</code>${d.dirty ? ' + uncommitted work' : ''}</span>` : ''}<span class="chip"><b>${d.files.length}</b> files <b class="a">+${d.add}</b> <b class="d">−${d.del}</b></span><a class="coverage${coverage.missing.length ? ' partial' : ''}" href="#all-changes" title="Hunks shown or referenced in the walkthrough"><span class="meter"><i style="width:${pct}%"></i></span> ${coverage.covered}/${coverage.total} changes explained</a></div>`;
   }
   const mode = meta.mode && meta.mode !== 'auto' ? ` data-theme="${meta.mode}"` : '';
   const title = meta.title || panels[0]?.title || 'Lucid page';
@@ -183,7 +202,9 @@ ${asset('style.css')}
 <h1>${inline(title)}</h1>
 ${meta.subtitle ? `<p class="sub">${inline(meta.subtitle)}</p>` : ''}
 ${reviewHead}
+${meta.for ? `<p class="for">Written for: ${inline(meta.for)}</p>` : ''}
 ${meta.tldr ? `<div class="tldr"><span>In one line</span><p>${inline(meta.tldr)}</p></div>` : ''}
+${grounding}
 ${introHtml ? `<div class="intro">${introHtml}</div>` : ''}
 ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
 </header>

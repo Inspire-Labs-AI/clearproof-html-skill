@@ -238,3 +238,29 @@ test('risks keep indented detail lines under their item', () => {
   const r = renderDraft('## R\n```risks\nhigh | Page 1 skips rows\n  why: offset = page × 20\n  fix: (page − 1) × 20\n```', { cwd: ROOT });
   assert.match(r.html, /<ul class="rdetail"><li>why: offset = page × 20<\/li><li>fix: \(page − 1\) × 20<\/li><\/ul>/);
 });
+
+test('claims: verified needs evidence; counts feed the grounding strip', () => {
+  assert.throws(() => renderDraft('## C\n```claims\nverified | It is fast\n```', { cwd: ROOT }), /names no evidence/);
+  const r = renderDraft('---\ntitle: T\ntldr: x\n---\n## C\nSee [[package.json:1]].\n```claims\nverified | Name is set | [[package.json:2]]\ninferred | Probably fine | no tests\nunverified | Scales\n```', { cwd: ROOT });
+  assert.match(r.html, /class="grounding"/);
+  assert.match(r.html, /<b>2<\/b> code references checked/);
+  assert.match(r.html, /<b>1<\/b> verified · <b>1<\/b> inferred · <b>1<\/b> unverified claims/);
+});
+
+test('code side mode puts notes in a column; overlapping side notes are an error', () => {
+  const r = renderDraft('## C\n```code package.json:1-6 side\n2: the name\n3-4: version and description\n```', { cwd: ROOT });
+  assert.match(r.html, /figure class="code sbs"/);
+  assert.match(r.html, /<td class="side" rowspan="2"><div class="cnote">version and description/);
+  assert.throws(() => renderDraft('## C\n```code package.json:1-6 side\n2-4: a\n3: b\n```', { cwd: ROOT }), /overlap/);
+});
+
+test('quiz options carry their own explanations', () => {
+  const r = renderDraft('## Q\n```quiz\n? Pick one\n- [x] Right :: because\n- [ ] Wrong :: because not\n```', { cwd: ROOT });
+  assert.match(r.html, /data-ok="true">Right<span class="owhy" hidden>because<\/span>/);
+});
+
+test('diagram parts carry ids so prose names can light them up', () => {
+  const r = renderDraft('## A\nThe API calls the DB.\n```flow\nAPI -> DB: query\n```', { cwd: ROOT });
+  assert.match(r.html, /class="node box" data-step="1" data-id="API"/);
+  assert.match(r.html, /data-from="API" data-to="DB"/);
+});

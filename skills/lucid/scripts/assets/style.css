@@ -315,3 +315,34 @@ pre.out { margin: 8px 12px 10px; padding: 10px 12px; background: var(--sunk); bo
 .chk.ok { background: var(--ok-soft); color: var(--ok); } .chk.no { background: var(--risk-soft); color: var(--risk); }
 .rdetail { margin: 4px 0 0; padding-left: 1.1em; font-size: 13.5px; color: var(--ink-2); }
 .rdetail li { margin: 2px 0; }
+
+/* grounding strip, audience line, claims */
+.for { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-3); }
+.grounding { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 8px 0 4px; font-size: 12.5px; color: var(--ink-2); }
+.grounding i { font-style: normal; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--ok); background: var(--ok-soft); border-radius: 99px; padding: 1px 9px; }
+.grounding b { color: var(--ink); }
+.claims { display: grid; gap: 8px; margin: .6em 0; }
+.claim { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.claim p { margin: 0; }
+.claim .ev { margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+.cs { font-size: 11.5px; font-weight: 700; border-radius: 99px; padding: 2px 9px; text-align: center; }
+.c-verified .cs { background: var(--ok-soft); color: var(--ok); }
+.c-inferred .cs { background: var(--warn-soft); color: var(--warn); }
+.c-unverified .cs { background: var(--sunk); color: var(--ink-3); }
+@media (max-width: 560px) { .claim { grid-template-columns: 1fr; gap: 4px; } .cs { justify-self: start; } }
+
+/* linked highlighting */
+.xref { border-bottom: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: default; }
+.xref:hover, .xref:focus { background: var(--accent-soft); outline: none; }
+.linking [data-id]:not(.lit), .linking [data-from]:not(.lit) { opacity: .18; }
+.linking .lit rect, .linking .lit polygon, .linking .node.lit path { stroke: var(--accent); stroke-width: 2.4; }
+.linking .lit > path, .linking .lit > line { stroke: var(--accent); }
+.linking .lit text { fill: var(--accent-ink); }
+
+/* side-by-side code, quiz option explanations */
+figure.sbs td.side { width: 32%; white-space: normal; text-indent: 0; padding: 2px 10px; vertical-align: top; border-left: 1px solid var(--line); background: var(--surface); }
+figure.sbs td.side .cnote { max-width: none; }
+figure.sbs td.src { padding-left: 10px; text-indent: 0; }
+.owhy { display: block; margin-top: 4px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.opt.right .owhy, .opt.wrong .owhy { color: var(--ink-2); }
+@media (max-width: 700px) { figure.sbs td.side { width: 45%; } }
