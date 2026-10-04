@@ -33,6 +33,8 @@ export function renderDraft(source, opts = {}) {
   const ctx = {
     repo,
     covered: new Set(),
+    runs: [],
+    allowRun: Boolean(opts.allowRun),
     glossary: [],
     stats: {},
     uid: () => `l${++seq}`,
@@ -104,7 +106,7 @@ export function renderDraft(source, opts = {}) {
   }
 
   const html = page({ meta, introHtml, panels, appendix, coverage, review, source, glossary: ctx.glossary, ctx });
-  return { html, warnings, meta, coverage, stats: { panels: panels.length, components: ctx.stats } };
+  return { html, warnings, meta, coverage, runs: ctx.runs, stats: { panels: panels.length, components: ctx.stats } };
 }
 
 // Make lone panels fill their row so the grid has no holes.

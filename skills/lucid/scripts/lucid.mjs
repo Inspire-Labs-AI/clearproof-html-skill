@@ -21,6 +21,7 @@ const HELP = `lucid ${VERSION} — answers and code reviews as pages people can 
       --open / --no-open    open in the browser (default: open on a desktop, never in CI or over SSH)
       --base <rev>          review: diff base (default: merge-base with the default branch)
       --mode <auto|light|dark>
+      --allow-run           execute run blocks (real command output on the page)
   lucid diff [--base <rev>] [--brief] [--max-lines N]
                                           index of the change: files, hunk ids (H1, H2, ...) and their lines
   lucid check <page.html> [--shot <png>] [--section <n|id>]
@@ -126,7 +127,7 @@ async function cmdRender(opts) {
   const src = readDraft(opts._[0]);
   let result;
   try {
-    result = renderDraft(src, { cwd: process.cwd(), base: opts.base, meta: { mode: opts.mode } });
+    result = renderDraft(src, { cwd: process.cwd(), base: opts.base, allowRun: opts.allowRun, meta: { mode: opts.mode } });
   } catch (e) {
     return printError(e, src);
   }
@@ -137,6 +138,12 @@ async function cmdRender(opts) {
   const comps = Object.entries(result.stats.components).map(([k, v]) => (v > 1 ? `${k}×${v}` : k)).join(', ');
   console.log(`✓ ${out}`);
   console.log(`  ${result.stats.panels} sections${comps ? ` · ${comps}` : ''}${result.coverage ? ` · ${result.coverage.covered}/${result.coverage.total} hunks explained` : ''}`);
+  if (result.runs.length) {
+    const checks = result.runs.flatMap((r) => r.checks);
+    const failed = result.runs.filter((r) => r.code !== 0).length;
+    console.log(`  ran ${result.runs.length} command${result.runs.length > 1 ? 's' : ''}${failed ? ` (${failed} exited non-zero)` : ''}${checks.length ? ` · checks ${checks.filter((c) => c.ok).length}/${checks.length} passed` : ''}`);
+    for (const r of result.runs) for (const c of r.checks) if (!c.ok) console.log(`  ✗ $ ${r.cmd}: expected output that ${c.text}`);
+  }
   if (result.warnings.length) {
     console.log(`  ${result.warnings.length} warning${result.warnings.length > 1 ? 's' : ''} (fix and re-render; max 2 rounds):`);
     result.warnings.slice(0, 25).forEach((w) => console.log(`  ${formatWarning(w)}`));
@@ -192,7 +199,7 @@ async function main() {
     case 'lint': {
       const src = readDraft(opts._[0]);
       try {
-        const r = renderDraft(src, { cwd: process.cwd(), base: opts.base });
+        const r = renderDraft(src, { cwd: process.cwd(), base: opts.base, allowRun: opts.allowRun });
         if (!r.warnings.length) console.log('✓ no warnings');
         r.warnings.forEach((w) => console.log(formatWarning(w)));
       } catch (e) {

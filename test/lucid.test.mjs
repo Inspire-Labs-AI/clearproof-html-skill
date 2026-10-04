@@ -224,3 +224,17 @@ test('risks rank critical above high', () => {
   const r = renderDraft('## R\n```risks\nhigh | Off by one\ncritical | SQL injection\n```', { cwd: ROOT });
   assert.ok(r.html.indexOf('r-critical') < r.html.indexOf('r-high'));
 });
+
+test('run executes only with allowRun, embeds real output and checks expectations', () => {
+  const draft = '## P\n```run\n$ node -e "console.log(6*7)"\nexpect: 42\nabsent: Error\n$ node -e "console.log(1)"\nexpect: 2\n```';
+  assert.throws(() => renderDraft(draft, { cwd: ROOT }), /--allow-run/);
+  const r = renderDraft(draft, { cwd: ROOT, allowRun: true });
+  assert.match(r.html, /<pre class="out">42<\/pre>/);
+  assert.deepEqual(r.runs.map((x) => x.checks.map((c) => c.ok)), [[true, true], [false]]);
+  assert.match(r.html, /exit 0/);
+});
+
+test('risks keep indented detail lines under their item', () => {
+  const r = renderDraft('## R\n```risks\nhigh | Page 1 skips rows\n  why: offset = page × 20\n  fix: (page − 1) × 20\n```', { cwd: ROOT });
+  assert.match(r.html, /<ul class="rdetail"><li>why: offset = page × 20<\/li><li>fix: \(page − 1\) × 20<\/li><\/ul>/);
+});

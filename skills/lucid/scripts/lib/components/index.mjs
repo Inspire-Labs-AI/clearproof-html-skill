@@ -12,6 +12,7 @@ import glossary from './glossary.mjs';
 import diff from './diff.mjs';
 import changemap from './changemap.mjs';
 import risks from './risks.mjs';
+import run from './run.mjs';
 
-export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks].map((c) => [c.name, c]));
+export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks, run].map((c) => [c.name, c]));
 export const RAW = new Set(['html', 'svg']);

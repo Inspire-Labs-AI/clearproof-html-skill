@@ -42,6 +42,8 @@ Server --> Client: SYN+ACK
 
 Rules that make pages good:
 - **Answer first.** `tldr` is the conclusion, not the topic. Then 3–8 sections (reviews: up to 10), each answering one question, ordered the way understanding builds (why → shape → mechanism → edge cases → check).
+- **Explainers open with "The short version":** a numbered list of 3–7 plain steps a newcomer can follow, before any diagram or table. Readers rate this the clearest part of a page.
+- **Show, then tell.** Prefer a concrete example (real names, real numbers, real tool output via ```` ```run ````) over abstract description. State what you simplified in one `callout info` line; honest caveats raise trust.
 - **One visual per section** where the information has a shape; prose only for the why. More than ~160 words of prose with no visual is flagged.
 - **Write in plain English (ASD-STE100 style):** one idea per sentence, ≤25 words (≤20 for steps), active voice, steps as commands, common words (use, not utilize). lint warns.
 - **Ground every claim about code:** `[[src/auth.js:42]]` or `[[src/auth.js:40-52]]` inline (hover shows the real lines); ```` ```code src/auth.js:40-60 ```` to show them. lucid fails on a missing file or line — that is the point.
@@ -64,6 +66,7 @@ Rules that make pages good:
 | real code with notes | `code path:10-40` | `12: note`, `14-18: note on a range` |
 | check understanding | `quiz` | `? question`, `- [x] right`, `- [ ] wrong`, `> why`; open: `? q` + `= answer` |
 | things to verify | `checklist` | `- [ ] item [[file:line]]` (ticks persist) |
+| proof: real command output | `run` | `$ command`, `expect: text`, `absent: text`, `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
 | comparison | Markdown table | cells starting `ok` / `no` / `warn` become ✓ ✗ ! |
 
 `flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
@@ -76,7 +79,8 @@ Rules that make pages good:
    - **Intent** — what the change is for and the approach, before any code.
    - ```` ```changemap ```` — the shape: `routes.js -> session.js: calls`. Keep arrow labels to 1–2 words (empty body = file list with sizes).
    - **Walkthrough** — one section per idea, **in the order data flows, not file order**. Each shows ```` ```diff H3 ```` with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says.
-   - ```` ```risks ```` — `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Include behaviour changes for callers (API shape, defaults).
+   - ```` ```risks ```` — `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Under each serious risk add indented lines: `why:` (the mechanism), `trigger:` (a concrete input, e.g. the exploit payload), `fix:`. Include behaviour changes for callers (API shape, defaults).
+   - ```` ```run ```` — **prove the top risks.** Reproduce each critical/high bug with a fast, local, read-only command (a one-line `node -e`, a test, a grep) and an `expect:` line stating the correct behaviour; the page shows ✗ when the bug is real. Render with `--allow-run`. Never run anything destructive or networked.
    - ```` ```checklist ```` — what a human must still verify (tests, rollout, data).
    - Optional ```` ```quiz ```` — only when the risky part is subtle. Keep reviews lean: no glossary, no padding.
 3. **Account for every hunk.** Show it in a `diff` block or cite it inline (`[[H4]] only renames a variable`). The page header shows "N/M changes explained"; render warns about each unexplained hunk, and the "All changes" appendix flags it. Aim for M/M.
@@ -93,6 +97,7 @@ tldr: …
 LUCID
 ```
 
+- Drafts with ```` ```run ```` blocks need `--allow-run`; the CLI reports how many commands ran and which checks failed.
 - `✓ <path>` → done. `--check` renders it in headless Chromium at desktop and phone width, reports cut-off tables, overflow, overlapping labels and groups, and saves both screenshots next to the page. **Look at the desktop screenshot** (read the PNG) before you answer; the check cannot judge everything (cramped diagrams, a confusing order).
 - `✗ L12 [flow] … correct example: …` → fix that line, render again.
 - Warnings (readability, coverage, layout) quote the sentence they mean → fix and re-render, at most 2 rounds; then ship and mention what is left. Diff notes and step captions are checked too.

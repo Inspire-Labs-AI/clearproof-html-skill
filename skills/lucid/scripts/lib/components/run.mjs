@@ -1,0 +1,72 @@
+import { spawnSync } from 'node:child_process';
+import { esc, DraftError } from '../util.mjs';
+import { inline } from '../md.mjs';
+
+// Proof, not prose: lucid runs the command while rendering and embeds the real output.
+// The model never types the output, so it cannot be invented. Needs --allow-run.
+const MAX_LINES = 40;
+
+export function parseRun(text) {
+  const steps = [];
+  let cur = null;
+  text.split('\n').forEach((raw, k) => {
+    const t = raw.trim();
+    if (!t) return;
+    let m;
+    if ((m = t.match(/^\$\s+(.+)$/))) steps.push((cur = { cmd: m[1], expect: [], absent: [], note: '', line: k + 1 }));
+    else if (!cur) throw new DraftError('Start each command with "$ "', { line: k + 1, example: '$ npm test -- auth\nexpect: 3 passing' });
+    else if ((m = t.match(/^expect:\s*(.+)$/i))) cur.expect.push(m[1]);
+    else if ((m = t.match(/^absent:\s*(.+)$/i))) cur.absent.push(m[1]);
+    else if ((m = t.match(/^note:\s*(.+)$/i))) cur.note = m[1];
+    else throw new DraftError(`Cannot read run line: "${t}". Use "$ command", "expect: text", "absent: text" or "note: text"`, { line: k + 1 });
+  });
+  if (!steps.length) throw new DraftError('run needs at least one "$ command" line', { line: 1 });
+  return steps;
+}
+
+function clip(out) {
+  const lines = out.replace(/\s+$/, '').split('\n');
+  if (lines.length <= MAX_LINES) return lines.join('\n');
+  const head = lines.slice(0, 24);
+  const tail = lines.slice(-12);
+  return [...head, `… ${lines.length - 36} lines cut …`, ...tail].join('\n');
+}
+
+export default {
+  name: 'run',
+  summary: 'Proof: run a command at render time and embed its real output, exit code and checks (needs --allow-run).',
+  syntax: `\`\`\`run [timeout=20]
+$ node -e "console.log(require('./src/orders.js').offset(1))"     command, run from the repository root
+expect: 0                    the output must contain this (✓ / ✗ shown on the page)
+absent: Error                the output must not contain this
+note: Page 1 should start at row 0.                 one-line caption
+\`\`\`
+Use it for: reproducing a bug, showing a test failing or passing, real tool output (dig, curl -I, git log).
+Render with --allow-run. Keep commands fast, local and read-only.`,
+  example: '```run\n$ git log --oneline -3\nnote: The last three commits\n```',
+  render(text, ctx) {
+    const steps = parseRun(text);
+    if (!ctx.allowRun) throw new DraftError('This draft has a run block. Render with --allow-run to execute it (commands run from the repository root)', { line: 0, component: 'run' });
+    const timeout = Math.min(120, Number((ctx.args.match(/timeout=(\d+)/) ?? [])[1]) || 20) * 1000;
+    const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/sh';
+    const flag = process.platform === 'win32' ? '/c' : '-c';
+    const blocks = steps.map((s) => {
+      const t0 = Date.now();
+      const r = spawnSync(shell, [flag, s.cmd], { cwd: ctx.repo.root, encoding: 'utf8', timeout, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' } });
+      const ms = Date.now() - t0;
+      const out = `${r.stdout ?? ''}${r.stderr ? (r.stdout ? '\n' : '') + r.stderr : ''}`.replace(/\x1b\[[0-9;]*m/g, '');
+      const timedOut = r.error?.code === 'ETIMEDOUT';
+      const code = timedOut ? 'timeout' : r.status ?? 'signal';
+      const checks = [
+        ...s.expect.map((e) => ({ ok: out.includes(e), text: `contains “${e}”` })),
+        ...s.absent.map((e) => ({ ok: !out.includes(e), text: `does not contain “${e}”` })),
+      ];
+      ctx.runs.push({ cmd: s.cmd, code, checks });
+      const badge = checks.length
+        ? checks.map((c) => `<span class="chk ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</span>`).join('')
+        : '';
+      return `<div class="run-step"><div class="run-head"><code class="cmd">$ ${esc(s.cmd)}</code><span class="exit ${code === 0 ? 'ok' : 'no'}">exit ${esc(code)}</span><span class="ms">${ms} ms</span></div>${s.note ? `<p class="run-note">${inline(s.note, ctx)}</p>` : ''}<pre class="out">${esc(clip(out)) || '<i>(no output)</i>'}</pre>${badge ? `<div class="checks">${badge}</div>` : ''}</div>`;
+    });
+    return `<figure class="run"><figcaption>Ran while this page was made · real output</figcaption>${blocks.join('')}</figure>`;
+  },
+};

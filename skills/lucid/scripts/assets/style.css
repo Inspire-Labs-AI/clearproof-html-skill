@@ -228,8 +228,8 @@ a.ref.hunk { background: var(--ink); color: var(--surface); font-weight: 700; }
 
 /* review */
 .risks { list-style: none; padding: 0; margin: .4em 0; }
-.risks li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
-.risks li:last-child { border-bottom: 0; }
+.risks > li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.risks > li:last-child { border-bottom: 0; }
 .lvl { flex: none; width: 58px; text-align: center; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-radius: 5px; padding: 2px 0; }
 .r-critical .lvl { background: var(--risk); color: var(--surface); }
 .r-high .lvl { background: var(--risk-soft); color: var(--risk); }
@@ -298,3 +298,20 @@ footer { text-align: center; color: var(--ink-3); font-size: 12px; padding: 0 0 
   .panel { break-inside: avoid; box-shadow: none; }
   details { display: block; }
 }
+
+/* run: real command output */
+figure.run { margin: .7em 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+figure.run figcaption { padding: 6px 12px; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ok); background: var(--ok-soft); }
+.run-step + .run-step { border-top: 1px solid var(--line); }
+.run-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px 0; }
+.run-head .cmd { background: none; border: 0; padding: 0; font-weight: 600; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.exit { font: 700 11px var(--mono); padding: 1px 7px; border-radius: 99px; }
+.exit.ok { background: var(--ok-soft); color: var(--ok); } .exit.no { background: var(--warn-soft); color: var(--warn); }
+.ms { font: 11px var(--mono); color: var(--ink-3); }
+.run-note { margin: 4px 12px 0; font-size: 13.5px; color: var(--ink-2); }
+pre.out { margin: 8px 12px 10px; padding: 10px 12px; background: var(--sunk); border-radius: 8px; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.chk { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; }
+.chk.ok { background: var(--ok-soft); color: var(--ok); } .chk.no { background: var(--risk-soft); color: var(--risk); }
+.rdetail { margin: 4px 0 0; padding-left: 1.1em; font-size: 13.5px; color: var(--ink-2); }
+.rdetail li { margin: 2px 0; }
