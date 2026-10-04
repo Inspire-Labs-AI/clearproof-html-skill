@@ -203,7 +203,7 @@ test('lint quotes the sentence and also reads diff notes and step captions', () 
 });
 
 test('sections with wide tables take the full row', () => {
-  const r = renderDraft('## A\n| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |\n\n## B\ntext\n\n## C\ntext', { cwd: ROOT });
+  const r = renderDraft('---\ncols: 2\n---\n## A\n| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |\n\n## B\ntext\n\n## C\ntext', { cwd: ROOT });
   assert.match(r.html, /<section class="panel span-full" id="a"/);
   assert.match(r.html, /<section class="panel span-1" id="b"/);
 });
@@ -275,4 +275,33 @@ test('run shows: is evidence of behaviour, reported separately from expectations
 test('reviews warn about quiz and glossary padding', () => {
   const doc = parseDraft('---\ntitle: R\ntldr: x\nkind: review\n---\n## Q\n```quiz\n? a\n= b\n```');
   assert.ok(lintDraft(doc).some((w) => w.rule === 'review' && /quiz/.test(w.message)));
+});
+
+test('waffle fills cells in proportion and names the exact numbers', () => {
+  const r = renderDraft('## W\n```waffle unit=pages\nScan | 10000 of 10000\nIndex | 4 of 10000 | root to leaf\n```', { cwd: ROOT });
+  const rows = r.html.split('class="wrow"').slice(1);
+  assert.equal((rows[0].match(/class="on"/g) ?? []).length, 200);
+  assert.equal((rows[1].match(/class="on"/g) ?? []).length, 1);
+  assert.match(r.html, /4 pages <small>of 10,000 · 0.04%<\/small>/);
+  assert.throws(() => renderDraft('## W\n```waffle\nBad | 5 of 4\n```', { cwd: ROOT }), /between 0 and the whole/);
+});
+
+test('explain pages default to one reading column', () => {
+  const r = renderDraft('## A\ntext\n## B\ntext', { cwd: ROOT });
+  assert.match(r.html, /class="grid" style="--cols:1"/);
+});
+
+test('record and faded nodes draw real data; chart values must match run output', () => {
+  const r = renderDraft('## A\n```flow\n[g; p] -> *[h; m]: kim\n[g; p] --> ~[a; d]\n```', { cwd: ROOT });
+  assert.match(r.html, /class="node record" data-step="1" data-id="g; p"><rect[^>]*\/><text[^>]*>g<\/text><line class="div"/);
+  assert.match(r.html, /class="node record faded"/);
+  const draft = '## M\n```run\n$ node -e "console.log(\'scan 37.07 ms\')"\n```\n```chart bar unit=ms\nScan | 37.07\nIndex | 999\n```';
+  const w = renderDraft(draft, { cwd: ROOT, allowRun: true }).warnings.filter((x) => x.rule === 'evidence');
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /chart value 999/);
+});
+
+test('log-scale charts reject non-positive values', () => {
+  assert.throws(() => renderDraft('## C\n```chart bar scale=log\nA | 0\n```', { cwd: ROOT }), /above 0/);
+  assert.match(renderDraft('## C\n```chart bar scale=log\nA | 4\nB | 10000\n```', { cwd: ROOT }).html, /Log scale/);
 });

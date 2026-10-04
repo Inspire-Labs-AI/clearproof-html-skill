@@ -34,6 +34,7 @@ export function renderDraft(source, opts = {}) {
     repo,
     covered: new Set(),
     runs: [],
+    chartValues: [],
     claims: {},
     refs: 0,
     allowRun: Boolean(opts.allowRun),
@@ -102,6 +103,14 @@ export function renderDraft(source, opts = {}) {
   }
 
   const warnings = meta.style === 'off' ? [] : lintDraft({ ...doc, meta }, { coverage });
+  // Numbers measured by a run must not be retyped differently into a chart.
+  if (ctx.runs.length && ctx.chartValues.length && meta.style !== 'off') {
+    const outputs = ctx.runs.map((r) => r.out).join('\n').replace(/,/g, '');
+    for (const { v, line } of ctx.chartValues) {
+      const forms = [String(v), v.toFixed(1), v.toFixed(2), v.toFixed(3)];
+      if (!forms.some((f) => outputs.includes(f))) warnings.push({ line, rule: 'evidence', message: `chart value ${v} does not appear in any run output on this page`, suggestion: 'copy the measured number exactly, or say the chart is illustrative and drop the run' });
+    }
+  }
   if (meta.style === 'strict' && warnings.length) {
     const err = new DraftError(`style: strict and ${warnings.length} readability/coverage problems`, { component: 'lint' });
     err.warnings = warnings;
@@ -167,7 +176,8 @@ function narration(p) {
 }
 
 function page({ meta, introHtml, panels, appendix, coverage, review, source, glossary, grounding }) {
-  const cols = Math.max(1, Math.min(Number(meta.cols) || (review ? 1 : 2), 3));
+  // One reading column by default: diagrams get the full width. cols: 2 for dashboard-like overviews.
+  const cols = Math.max(1, Math.min(Number(meta.cols) || 1, 3));
   // Tables with 4+ columns, or long cells, need the full row; authors can still set span themselves.
   const wide = (p) =>
     p.blocks.some((b) => b.type === 'md' && b.text.split('\n').some((l) => /^\s*\|/.test(l) && (l.split('|').length - 2 >= 4 || l.length > 110))) ||

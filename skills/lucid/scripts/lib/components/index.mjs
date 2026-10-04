@@ -14,6 +14,7 @@ import changemap from './changemap.mjs';
 import risks from './risks.mjs';
 import run from './run.mjs';
 import claims from './claims.mjs';
+import waffle from './waffle.mjs';
 
-export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks, run, claims].map((c) => [c.name, c]));
+export const COMPONENTS = new Map([flow, sequence, tree, timeline, chart, callout, kv, code, glossary, quiz, checklist, diff, changemap, risks, run, claims, waffle].map((c) => [c.name, c]));
 export const RAW = new Set(['html', 'svg']);

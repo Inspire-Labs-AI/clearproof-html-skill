@@ -9,17 +9,22 @@ const LINE = 17;
 export function parseNode(raw) {
   let t = raw.trim();
   let hot = false;
-  if (t.startsWith('*')) {
-    hot = true;
-    t = t.slice(1).trim();
+  let faded = false;
+  // * highlights a node; ~ fades it (a part the process skips or never touches).
+  for (;;) {
+    if (t.startsWith('*')) [hot, t] = [true, t.slice(1).trim()];
+    else if (t.startsWith('~')) [faded, t] = [true, t.slice(1).trim()];
+    else break;
   }
   let shape = 'box';
   let m;
   if ((m = t.match(/^\[\((.+)\)\]$/))) [shape, t] = ['db', m[1]];
   else if ((m = t.match(/^\{(.+)\}$/))) [shape, t] = ['decision', m[1]];
   else if ((m = t.match(/^\((.+)\)$/))) [shape, t] = ['round', m[1]];
-  else if ((m = t.match(/^\[(.+)\]$/))) [shape, t] = ['box', m[1]];
-  return { id: t.trim(), label: t.trim(), shape, hot };
+  else if ((m = t.match(/^\[(.+)\]$/))) [shape, t] = [/;\s/.test(m[1]) ? 'record' : 'box', m[1]];
+  // A record node shows real data: [g; p] is one node with two cells.
+  const cells = shape === 'record' ? t.split(/;\s*/).map((c) => c.trim()) : null;
+  return { id: t.trim(), label: t.trim(), shape, hot, faded, cells };
 }
 
 // Index of the ": " that starts an edge label, ignoring colons inside (), [] and {} node names.
@@ -45,8 +50,9 @@ export function parseFlow(text) {
     const old = nodes.get(n.id);
     if (!old) nodes.set(n.id, { ...n, step: Infinity });
     else {
-      if (n.shape !== 'box') old.shape = n.shape;
+      if (n.shape !== 'box') [old.shape, old.cells] = [n.shape, n.cells];
       old.hot ||= n.hot;
+      old.faded ||= n.faded;
     }
     return nodes.get(n.id);
   };
@@ -100,7 +106,12 @@ export function parseFlow(text) {
   return { nodes, edges, groups, steps: step };
 }
 
+const CELL_PAD = 14;
 function measure(n) {
+  if (n.shape === 'record') {
+    const widths = n.cells.map((c) => Math.max(26, textWidth(c, FONT) + CELL_PAD * 2));
+    return { lines: [n.label], widths, w: widths.reduce((a, b) => a + b, 0), h: LINE + 18 };
+  }
   const max = n.shape === 'decision' ? 130 : 170;
   const lines = wrap(n.label, max, FONT);
   const tw = Math.max(...lines.map((l) => textWidth(l, FONT)));
@@ -218,9 +229,22 @@ export function renderGraph({ nodes, edges, groups, steps }, { dir = 'TB', uid, 
   for (const n of nodes.values()) {
     const p = L.nodes.get(n.id);
     const m = measured.get(n.id);
+    if (n.shape === 'record') {
+      const x0 = p.x - p.w / 2;
+      let cx = x0;
+      const cellsSvg = m.widths
+        .map((w, j) => {
+          const piece = `${j ? `<line class="div" x1="${cx}" y1="${p.y - p.h / 2}" x2="${cx}" y2="${p.y + p.h / 2}"/>` : ''}<text x="${cx + w / 2}" y="${p.y + 4.5}">${esc(n.cells[j])}</text>`;
+          cx += w;
+          return piece;
+        })
+        .join('');
+      parts.push(`<g class="node record${n.hot ? ' hot' : ''}${n.faded ? ' faded' : ''}" data-step="${n.step}" data-id="${esc(n.id)}"><rect x="${x0}" y="${p.y - p.h / 2}" width="${p.w}" height="${p.h}" rx="5"/>${cellsSvg}</g>`);
+      continue;
+    }
     const y0 = p.y - ((m.lines.length - 1) * LINE) / 2 + 4.5 + (n.shape === 'db' ? 4 : 0);
     const extra = decorate ? decorate(n, p) : '';
-    parts.push(`<g class="node ${n.shape}${n.hot ? ' hot' : ''}" data-step="${n.step}" data-id="${esc(n.id)}">${shapeSvg(n, p)}<text x="${p.x}" y="${y0}">${m.lines
+    parts.push(`<g class="node ${n.shape}${n.hot ? ' hot' : ''}${n.faded ? ' faded' : ''}" data-step="${n.step}" data-id="${esc(n.id)}">${shapeSvg(n, p)}<text x="${p.x}" y="${y0}">${m.lines
       .map((l, j) => `<tspan x="${p.x}" dy="${j ? LINE : 0}">${esc(l)}</tspan>`)
       .join('')}</text>${extra}</g>`);
   }
@@ -240,6 +264,8 @@ A -> B & C                    fan out
 A -> B -> C: label            chain; the label goes on the last hop
 A -> B: label | step note     text after " | " is the caption shown at this step
 (Start)  {Valid?}  [(Orders DB)]  [Box]  *Hot   node shapes; * highlights
+[g; p]  [kim; 6231]           record node: real data in cells (keys, fields, values)
+~[a; d]                       faded: a part the process skips (show what is NOT touched)
 group Backend: API, Worker    draw a box around nodes
 // comment
 \`\`\`

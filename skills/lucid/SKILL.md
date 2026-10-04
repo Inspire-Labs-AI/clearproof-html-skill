@@ -43,13 +43,15 @@ Server --> Client: SYN+ACK
 Rules that make pages good:
 - **Answer first.** `tldr` is the conclusion, not the topic. Then 3–8 sections (reviews: up to 10), each answering one question, ordered the way understanding builds (why → shape → mechanism → edge cases → check).
 - **Explainers open with "The short version":** a numbered list of 3–7 plain steps a newcomer can follow, before any diagram or table. Readers rate this the clearest part of a page.
+- **Draw the real data, not boxes.** Put actual values in diagrams: `[g; p]` record nodes for keys, fields or memory cells, `~` to fade what the process skips, `*` for the path it takes. A diagram of generic steps ("Row 1 → Row 2 → …") explains nothing — cut it.
+- **Never retype a measured number.** If a `run` block measured it, chart exactly those numbers (lint checks) or show the run output alone.
 - **Write for a named reader.** `for: a backend dev new to databases` in the front matter shows as "Written for: …" and should change what you include, not just the wording.
 - **Show, then tell.** Prefer a concrete example (real names, real numbers, real tool output via ```` ```run ````) over abstract description. State what you simplified in one `callout info` line; honest caveats raise trust.
 - **One visual per section** where the information has a shape; prose only for the why. More than ~160 words of prose with no visual is flagged.
 - **Write in plain English (ASD-STE100 style):** one idea per sentence, ≤25 words (≤20 for steps), active voice, steps as commands, common words (use, not utilize). lint warns.
 - **Ground every claim about code:** `[[src/auth.js:42]]` or `[[src/auth.js:40-52]]` inline (hover shows the real lines); ```` ```code src/auth.js:40-60 ```` to show them. lucid fails on a missing file or line — that is the point.
 - **No invented numbers.** Charts take real values; say "illustrative" otherwise.
-- Layout: explain pages are a 2-column grid of sections (review pages: 1 column). A section alone on its row stretches to fill it; sequences, LR flows, code, and tables with 4+ columns go full width automatically. Give `{span=full}` to wide diagrams, LR flows and tables with long cells. `say="…"` sets what the tour narrates for that section.
+- Layout: one reading column by default (`cols: 2` gives a grid of cards for dashboard-like overviews; then sequences, LR flows, code and wide tables span the full row automatically). Give `{span=full}` to wide diagrams, LR flows and tables with long cells. `say="…"` sets what the tour narrates for that section.
 - Put a `glossary` in its own section near the end: hover definitions work everywhere, and a glossary first delays the overview.
 
 ## 3. Components (pick by the shape of the information)
@@ -70,10 +72,11 @@ Rules that make pages good:
 | things to verify | `checklist` | `- [ ] item [[file:line]]` (ticks persist) |
 | proof: real command output | `run` | `$ command`, `shows: text` (evidence of behaviour), `expect:` / `absent:` (assertions), `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
 | comparison | Markdown table | cells starting `ok` / `no` / `warn` become ✓ ✗ ! |
+| one key ratio, felt | `waffle unit=requests` | `Cache hits \| 997 of 1000 \| note` — a grid of cells per row; put the big whole first |
 
 `flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Names of nodes and actors that you use in the section's prose light up the diagram on hover automatically — so use the same names in both.
 
-**Every number gets a picture** (a `chart`, a table, a timeline) or it gets cut. When several cases differ in one detail, show the same small diagram once per case rather than one diagram with every branch. Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
+**Every number gets a picture** (a `chart`, a `waffle`, a table, a timeline) or it gets cut. **Open with a hero:** right after the short version, one big visual that makes the key number felt — e.g. a `waffle` of "3 of 1,000 requests" or a `chart` of before/after (`scale=log` when values span orders of magnitude). Use `flow LR` for linear chains; tall thin diagrams waste the page. When several cases differ in one detail, show the same small diagram once per case rather than one diagram with every branch. Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
 
 ## 4. Review mode (code understanding)
 

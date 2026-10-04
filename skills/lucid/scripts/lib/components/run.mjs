@@ -66,7 +66,7 @@ Render with --allow-run. Keep commands fast, local and read-only.`,
         ...s.expect.map((e) => ({ ok: out.includes(e), kind: 'expect', text: out.includes(e) ? `as expected: “${e}”` : `expected “${e}” — not in the output` })),
         ...s.absent.map((e) => ({ ok: !out.includes(e), kind: 'absent', text: !out.includes(e) ? `as expected: no “${e}”` : `“${e}” appears in the output` })),
       ];
-      ctx.runs.push({ cmd: s.cmd, code, checks });
+      ctx.runs.push({ cmd: s.cmd, code, checks, out });
       const badge = checks.length
         ? checks.map((c) => `<span class="chk ${c.kind} ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓' : '✗'} ${esc(c.text)}</span>`).join('')
         : '';
