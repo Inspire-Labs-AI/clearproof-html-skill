@@ -55,7 +55,8 @@ cp -R html-skill/skills/clearproof ~/.claude/skills/clearproof   # or your agent
 Requirements: **Node.js 20+**. Nothing to `npm install`. The layout check and video export use Playwright (Chromium)
 and ffmpeg when they are installed.
 
-Then ask in plain words. The skill also starts on its own when an answer needs a page.
+That is the whole setup: no configuration, no API keys. Then ask in plain words. The skill also starts on its own when
+an answer needs a page.
 
 ```text
 > Explain how garbage collection pauses work. Make a page.
@@ -192,7 +193,10 @@ videos were not scored.
 | Layout check in a real browser before delivery | ✅ | ❌ | ❌ | ❌ |
 | Narrated video export | ✅ | ❌ | ❌ | ❌ |
 
-## CLI reference
+## Advanced: CLI and settings (optional)
+
+You do not need this section to use clearproof: install the plugin and ask. The agent runs the CLI for you. Use the
+commands below only to render drafts by hand, script it, or change defaults.
 
 ```bash
 L="node skills/clearproof/scripts/clearproof.mjs"
@@ -205,6 +209,8 @@ $L lint draft.md                      # plain-English and consistency warnings o
 $L list                               # all components
 $L help <component>                   # syntax and an example for one component
 ```
+
+Optional settings:
 
 | Environment variable | Purpose |
 |---|---|
@@ -243,6 +249,10 @@ In blind tests it scored 17.5 of 20 on average against 12.5.
 ASD-STE100 Simplified Technical English is the controlled-English standard for aerospace maintenance manuals: 53
 writing rules and a dictionary of about 900 approved words. Andrej Karpathy suggested it for reading LLM output.
 clearproof's prose lint applies its core ideas. [Read the explainer](docs/examples/ste100.html).
+
+**Do I need to configure anything?**
+No. Install and ask. Optional settings (output folder, editor links, a narration voice) are listed under
+[Advanced](#advanced-cli-and-settings-optional).
 
 **Does it send my code anywhere?**
 No. Pages are built and checked locally. `run` blocks execute only with `--allow-run`. The only network call is the
