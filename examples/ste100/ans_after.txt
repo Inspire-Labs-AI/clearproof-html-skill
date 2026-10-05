@@ -1,0 +1,9 @@
+The error means that another process uses the port. Often this process is an old copy of your server.
+Do these steps:
+Find the process. Run: lsof -i :3000.
+Read the PID in the second column.
+Make sure that the process is not important.
+Stop the process. Run: kill PID.
+Start your server again.
+If you cannot stop the process, use a different port.
+The commands are for Linux and macOS. Windows uses different commands.

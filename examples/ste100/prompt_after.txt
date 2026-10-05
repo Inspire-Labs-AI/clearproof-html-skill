@@ -1,0 +1,4 @@
+Task: Find the cause of a startup error. Give the fix.
+Context: A Node.js server crashes at start. The error says that the port is in use. I cannot say when the error started.
+Rules: Write steps as commands. Use no more than 20 words in each step. Give a maximum of 6 steps.
+Output: First, give the most probable cause in one sentence. Then give the steps.
