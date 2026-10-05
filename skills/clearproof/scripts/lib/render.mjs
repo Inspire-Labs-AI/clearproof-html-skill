@@ -129,7 +129,7 @@ export function renderDraft(source, opts = {}) {
 
 // The first number in a headline is the answer: give it the accent colour ("<b>75×</b> slower").
 export function accentNumber(html) {
-  return html.replace(/(^|[\s(>])((?:≈|~)?\d[\d,.]*\s?(?:%|×|x\b|ms\b|ns\b|µs\b|s\b|KB\b|MB\b|GB\b|cycles\b)?)(?![^<]*>)/, '$1<span class="num-accent">$2</span>');
+  return html.replace(/(^|[\s(>])((?:≈|~)?[₹$€£]?\d[\d,.]*\s?(?:%|×|x\b|ms\b|ns\b|µs\b|s\b|KB\b|MB\b|GB\b|cycles\b|lakh\b|crore\b|million\b|billion\b)?)(?![^<]*>)/, '$1<span class="num-accent">$2</span>');
 }
 
 // What on this page was checked by the machine rather than asserted by the model.

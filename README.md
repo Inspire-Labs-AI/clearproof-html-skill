@@ -8,15 +8,57 @@ Ask a hard question and get a page with diagrams you can step through, not a wal
 and get a review that leads with the verdict, walks the real diff in the order the data flows, and proves it covered
 every hunk. Need it narrated? It exports a video.
 
+## What it makes
+
+Real pages, rendered by clearproof from a short draft the model wrote (open the HTML files in a browser to use the
+steppers and sliders).
+
+| Explain: garbage collection ([page](docs/examples/garbage-collection.html)) | Review: an AI-written password reset |
+|---|---|
+| ![GC explainer: the answer as the headline, then a stepper of marking from the roots](docs/images/explain-gc.png) | ![Review: verdict, 4/4 changes explained, risks first](docs/images/review-verdict.png) |
+| **Live figure:** drag "live data" and switch collector; the pause length redraws. ![GC pause slider](docs/images/explain-gc-live.png) | **Proof, not opinion:** each bug is reproduced by running the real code; output is captured at render time. ![Run blocks](docs/images/review-proof.png) |
+
+### Not only for code
+
+The method works wherever a reader must **understand and trust** an answer: money, science, health, policy, a
+decision. [Home-loan prepayment](docs/examples/home-loan.html) ([draft](examples/home-loan.md)): every number comes
+from a [calculator](examples/home-loan/loan.mjs) that clearproof runs while it builds the page, so the page cannot
+drift from the math.
+
+| ![Loan page: answer as the headline](docs/images/loan.png) | ![Slider: prepayment year and amount](docs/images/loan-live.png) |
+|---|---|
+
+### The method
+
+[docs/methodology.html](docs/methodology.html) ([draft](docs/methodology.md)) — itself a clearproof page:
+
+1. **Plan.** The title is the answer, number first. Pick the *hero* figure: the mechanism for "how does X work?",
+   the number for "how much / which is better?", the verdict for "should we merge?".
+2. **Draw.** 3–6 sections, each one claim plus the figure that proves it, with real values. A process gets a stepper,
+   a setting gets a slider, quantities get a highlighted chart, options get small multiples.
+3. **Prove.** Point at real code (`src/auth.js:40-52`, hunk `H3`) instead of retyping it; run real commands and show
+   the output; cite sources; label models "illustrative"; mark claims verified / inferred / unverified.
+4. **Check.** Plain-English lint (ASD-STE100 style), one number per quantity, layout at desktop and phone width.
+5. **Critique.** Read each figure's close-up, score Clarity · Visuals · Readability · Trust like a blind judge, fix the
+   three weakest.
+
+![Pick the figure by the shape of the information](docs/images/methodology-forms.png)
+
+## How to use it
+
+Install it (below), then just ask in your agent. It triggers on its own for answers with several connected ideas, and
+always on "explain visually", "make a page", "review this", "help me understand this change".
+
 ```
-> Explain how TCP opens and closes a connection
+> Explain how garbage collection pauses work. Make a page.
+> Should I prepay my home loan or invest? ₹50 lakh at 8.5%, 20 years. Show me with real numbers.
 > An agent wrote this branch. Help me understand it — is it safe to merge?
 > Walk me through how auth works in this repo
+> Make a 2-minute narrated video of that page
 ```
 
-| Explain | Review |
-|---|---|
-| ![TCP explainer](docs/images/explain-tcp.png) | ![Review of an AI-written change](docs/images/review-token-refresh.png) |
+The agent plans, writes the draft, renders, reads its own screenshots, fixes what is weak, and gives you the path to
+one offline HTML file (in `~/.clearproof/pages/`).
 
 ## Why
 
@@ -57,6 +99,11 @@ see [PLAN.md](PLAN.md) for the benchmark we still owe.)
 
 **Explain mode**
 
+- `figure`: a bespoke interactive figure (HTML/SVG + a small kit: player, steps, before/after, toggle, slider,
+  readouts) for the mechanism itself. Everything else is generated from a few lines of draft.
+- `run`: execute a command while the page is built and embed its real output, with `shows:` / `expect:` checks.
+  `claims`: a verified / inferred / unverified ledger. `cases`: small multiples. `waffle`: a ratio you can feel.
+- An editorial layout: the answer as the headline, numbered figure captions, claim headings.
 - `flow` diagrams with an automatic layered layout, and `sequence` diagrams — both **play step by step** with a caption
   per step.
 - `tree`, `timeline`, `chart` (bar / line, real numbers only), `kv`, `callout`, tables with ✓ ✗ ! badges.
@@ -116,68 +163,6 @@ real hunks with notes, executed proof of each bug, a claim ledger, an "N/N chang
 climbed from 3rd/4th to joint-first after adopting figure-first pages: bespoke interactive figures with a small kit,
 an editorial layout, small multiples, and a judge-style critique pass over per-figure close-ups.
 
-## Does an agent actually use it well?
-
-We gave SKILL.md, and nothing else, to fresh agents with no context:
-
-- **Explain** ("git merge vs rebase"): 7 sections, 4 diagrams, a glossary and a quiz. One fix round (a passive
-  sentence, overlapping groups), then a clean render.
-- **Review** (the demo branch above): verdict *block*, **4/4 hunks explained**. It found both bugs in the change and
-  one we had not planted: the committed `session.js` imports `refresh.js`, which is untracked, so merging only the
-  commits would break startup.
-
-Their friction reports drove fixes in this version: cut-off tables are now detected, warnings quote the sentence they
-mean, diff notes and step captions are linted, edge labels no longer sit under nodes, and `check --section` gives a
-sharp close-up.
-
-## How does it compare?
-
-Blind, screenshot-judged rounds against [visual-explainer](https://github.com/nicobailon/visual-explainer) (10.2k★),
-[answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in HTML", with the same
-model and new tasks each round ([full results and method](BENCHMARK.md)):
-
-| | clearproof | visual-explainer | plain HTML | answer-me-with-html |
-|---|---|---|---|---|
-| **Reviews of AI-written branches** (3 judgments) | **1st, 1st, 1st** | 3rd, 3rd | 2nd ×3 | 3rd, 4th, 4th |
-| Explainers (rounds 2–3, 4 judgments) | 3rd, 4th, 3rd, 3rd | 1st, 1st, 2nd, 1st | 2nd, 2nd, 1st, 2nd | 4th, 3rd, 4th, 4th |
-| Time per page (explain / review) | 114 s / 87 s | 400 s / 326 s | 124 s / 140 s | 66 s / 77 s |
-
-**For reviewing AI-written code, clearproof is first in every judgment**, with 5/5 on verifiability, completeness and
-trust: real hunks with notes, executed proof of the bugs, a verified/inferred claim ledger, and an "N/N changes
-explained" index. **For explainers, visual-explainer leads** with bespoke hand-drawn figures at about 4× the time and
-2× the tokens; clearproof is a close third and has the highest trust score in every explain round.
-
-## Does an agent actually use it well?
-
-We gave SKILL.md, and nothing else, to fresh agents with no context:
-
-- **Explain** ("git merge vs rebase"): 7 sections, 4 diagrams, a glossary and a quiz. One fix round (a passive
-  sentence, overlapping groups), then a clean render.
-- **Review** (the demo branch above): verdict *block*, **4/4 hunks explained**. It found both bugs in the change and
-  one we had not planted: the committed `session.js` imports `refresh.js`, which is untracked, so merging only the
-  commits would break startup.
-
-Their friction reports drove fixes in this version: cut-off tables are now detected, warnings quote the sentence they
-mean, diff notes and step captions are linted, edge labels no longer sit under nodes, and `check --section` gives a
-sharp close-up.
-
-## How does it compare?
-
-A blind benchmark against [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in
-HTML", with the same model and new tasks ([details](BENCHMARK.md), n = 1 per cell):
-
-| | Direct HTML | answer-me-with-html | clearproof |
-|---|---|---|---|
-| Explain (DNS): judge's ranking | 3rd | 2nd | **1st** (narrowly) |
-| Review: planted bugs on the page | 4/4 | 4/4 | 4/4 |
-| Review: can the judge verify each claim against the code? (1–5) | 3 | 2 | **5** |
-| Review: can the judge tell nothing was skipped? (1–5) | 3 | 1 | **5** |
-| Review: judge's ranking | 2nd | 3rd | **1st** |
-| Wall time, explain / review | 153 s / 112 s | **46 s / 63 s** | 71 s / 69 s |
-
-Bug finding comes from the model, not the skill: every condition found all four bugs. clearproof's advantage is that a
-reviewer can *check* the findings and *prove* the review covered everything.
-
 ## Install
 
 Node.js 20+. Nothing to `npm install`. Video export and `--check` use Playwright and ffmpeg if they are present.
@@ -197,6 +182,7 @@ e.g. `cp -R skills/clearproof ~/.claude/skills/clearproof`.
 ```bash
 L=skills/clearproof/scripts/clearproof.mjs
 node $L render examples/tcp.md --check          # page + layout check + screenshot
+node $L render examples/home-loan.md --check --allow-run   # runs the loan calculator for its numbers
 node $L diff                                    # hunk index of the current change
 node $L render review.md --check                # run inside the repository under review
 node $L video ~/.clearproof/pages/page.html          # narrated MP4 of the page's tour

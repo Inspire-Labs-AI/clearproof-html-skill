@@ -50,7 +50,9 @@ All cases share one layout, so the eye sees only the difference. * marks the par
       for (const n of c.graph.nodes.values()) if (!nodes.has(n.id)) nodes.set(n.id, { ...n, hot: false, faded: false });
       for (const e of c.graph.edges) {
         const key = `${e.from}\u0000${e.to}`;
-        if (!edges.has(key)) edges.set(key, { from: e.from, to: e.to, kind: '->', label: '', labelSize: null });
+        if (!edges.has(key)) edges.set(key, { from: e.from, to: e.to, kind: '->', label: '', labelW: 0 });
+        // Leave room for the longest label any case puts on this arrow.
+        if (e.label) edges.get(key).labelW = Math.max(edges.get(key).labelW, textWidth(e.label, 12) + 12);
       }
     }
     const F = 14; // drawn at roughly 0.8× in a card, so this lands at about 12px
@@ -58,7 +60,7 @@ All cases share one layout, so the eye sees only the difference. * marks the par
     const L = layoutGraph({
       dir: 'LR',
       nodes: [...nodes.values()].map((n) => ({ id: n.id, ...size(n), group: null })),
-      edges: [...edges.values()].map((e) => ({ ...e, labelSize: { w: 72, h: 16 } })),
+      edges: [...edges.values()].map((e) => ({ ...e, labelSize: { w: Math.max(72, e.labelW), h: 16 } })),
       rankGap: 50,
       nodeGap: 16,
     });

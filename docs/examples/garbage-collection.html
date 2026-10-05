@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="clearproof 0.1.0">
+<title>GC pause time grows with what survives, not with the garbage</title>
+<style>
+:root {
+  --bg: #f7f7f4; --surface: #ffffff; --sunk: #f0f0ec; --ink: #1b1d21; --ink-2: #4a4f58; --ink-3: #7a808a;
+  --line: #e2e2dc; --line-2: #c9c9c1; --accent: #2457d6; --accent-soft: #e8eefc; --accent-ink: #1a3fa0;
+  --ok: #1e7a46; --ok-soft: #e4f4ea; --warn: #9a6200; --warn-soft: #fdf3dc; --risk: #b42318; --risk-soft: #fde8e6;
+  --info: #2457d6; --info-soft: #e8eefc;
+  --add: #e6f5ea; --add-ink: #14632f; --del: #fdecea; --del-ink: #9b1c13; --hl: #fff4c2;
+  --s0: #2457d6; --s1: #d9730d; --s2: #1e7a46; --s3: #8a3ffc;
+  --node: #ffffff; --edge: #6b717c; --shadow: 0 1px 2px rgba(20, 20, 30, .05), 0 4px 16px rgba(20, 20, 30, .04);
+  --radius: 12px; --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --surface: #181b20; --sunk: #1e2228; --ink: #e8eaee; --ink-2: #b4bac4; --ink-3: #828a96;
+    --line: #2a2f37; --line-2: #3a414b; --accent: #7aa2ff; --accent-soft: #1d2a48; --accent-ink: #a9c1ff;
+    --ok: #5cc98a; --ok-soft: #15301f; --warn: #f0b44c; --warn-soft: #33270f; --risk: #ff7b6e; --risk-soft: #3a1714;
+    --info: #7aa2ff; --info-soft: #1d2a48;
+    --add: #132c1c; --add-ink: #8fe0aa; --del: #34171a; --del-ink: #ffaaa1; --hl: #3a3415;
+    --s0: #7aa2ff; --s1: #f2a65a; --s2: #5cc98a; --s3: #b794ff;
+    --node: #1e2228; --edge: #8b93a0; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --surface: #181b20; --sunk: #1e2228; --ink: #e8eaee; --ink-2: #b4bac4; --ink-3: #828a96;
+  --line: #2a2f37; --line-2: #3a414b; --accent: #7aa2ff; --accent-soft: #1d2a48; --accent-ink: #a9c1ff;
+  --ok: #5cc98a; --ok-soft: #15301f; --warn: #f0b44c; --warn-soft: #33270f; --risk: #ff7b6e; --risk-soft: #3a1714;
+  --info: #7aa2ff; --info-soft: #1d2a48;
+  --add: #132c1c; --add-ink: #8fe0aa; --del: #34171a; --del-ink: #ffaaa1; --hl: #3a3415;
+  --s0: #7aa2ff; --s1: #f2a65a; --s2: #5cc98a; --s3: #b794ff;
+  --node: #1e2228; --edge: #8b93a0; --shadow: none; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font: .88em var(--mono); background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: .05em .35em; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 8px 20px; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; letter-spacing: .02em; color: var(--accent); }
+.tb-title { flex: 1; min-width: 0; color: var(--ink-3); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .2s; }
+body.scrolled .tb-title { opacity: 1; }
+.tb-actions { display: flex; gap: 6px; }
+.tb-actions button, .player button, .tourbar button, .quiz button.reveal { border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+.tb-actions button:hover, .player button:hover, .tourbar button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* hero */
+.hero { max-width: 1180px; margin: 0 auto; padding: 36px 24px 8px; }
+.hero h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { margin: 0 0 14px; color: var(--ink-2); font-size: 17px; }
+.tldr { display: flex; gap: 14px; align-items: baseline; margin: 18px 0 10px; padding: 16px 20px; max-width: 980px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; }
+.tldr span { flex: none; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); }
+.tldr p { margin: 0; font-size: clamp(18px, 2vw, 22px); line-height: 1.4; font-weight: 650; color: var(--ink); letter-spacing: -.005em; }
+.intro { color: var(--ink-2); max-width: 78ch; }
+.chips, .review-head { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; align-items: center; }
+.chip { font-size: 12.5px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
+.chip b { color: var(--ink); font-weight: 600; }
+.chip code { border: 0; background: none; padding: 0; }
+.verdict { font-weight: 700; font-size: 13px; padding: 3px 12px; border-radius: 99px; }
+.v-ok { background: var(--ok-soft); color: var(--ok); } .v-warn { background: var(--warn-soft); color: var(--warn); }
+.v-info { background: var(--info-soft); color: var(--info); } .v-risk { background: var(--risk-soft); color: var(--risk); }
+.coverage { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ok); font-weight: 600; }
+.coverage.partial { color: var(--warn); }
+.meter { width: 70px; height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; background: currentColor; }
+b.a { color: var(--add-ink); } b.d { color: var(--del-ink); }
+
+/* layout */
+.layout { max-width: 1180px; margin: 0 auto; padding: 12px 24px 40px; }
+.layout.has-toc { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 28px; }
+.toc { position: sticky; top: 64px; align-self: start; font-size: 13px; padding-top: 6px; }
+.toc p { margin: 0 0 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: t; }
+.toc li { counter-increment: t; margin: 2px 0; }
+.toc li a { display: block; color: var(--ink-2); padding: 4px 8px; border-radius: 6px; border-left: 2px solid transparent; }
+.toc li a::before { content: counter(t) "  "; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.toc li.all a::before { content: "∑  "; }
+.toc li a.on { color: var(--accent); background: var(--accent-soft); border-left-color: var(--accent); text-decoration: none; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px 20px; box-shadow: var(--shadow); min-width: 0; transition: box-shadow .3s, border-color .3s; }
+.span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-full { grid-column: 1 / -1; }
+.panel.touring { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.panel h2 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font-size: 18px; line-height: 1.3; }
+.panel h2 small { margin-left: auto; font: 500 11.5px var(--mono); color: var(--ink-3); }
+.num { flex: none; display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 7px; background: var(--ink); color: var(--surface); font-size: 12.5px; font-weight: 700; transform: translateY(-2px); }
+.prose p { margin: .5em 0; }
+.prose > :first-child { margin-top: 0; }
+.prose ul, .prose ol { padding-left: 1.3em; margin: .5em 0; }
+.prose li { margin: .25em 0; }
+.prose h3, .prose h4 { margin: 1em 0 .3em; font-size: 15px; }
+.prose blockquote { margin: .6em 0; padding: 2px 14px; border-left: 3px solid var(--line-2); color: var(--ink-2); }
+pre.block { margin: .7em 0; padding: 12px 14px; background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; overflow: auto; font: 13px/1.5 var(--mono); }
+pre.block code { border: 0; background: none; padding: 0; font-size: inherit; }
+
+/* tables */
+.tbl { overflow-x: auto; margin: .6em 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tbl th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line-2); padding: 6px 10px; }
+.tbl td { border-bottom: 1px solid var(--line); padding: 8px 10px; vertical-align: top; overflow-wrap: anywhere; }
+.tbl tr:last-child td { border-bottom: 0; }
+.st { white-space: nowrap; font-weight: 550; }
+.st b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; margin-right: 2px; }
+.st-ok { color: var(--ok); } .st-ok b { background: var(--ok-soft); }
+.st-no { color: var(--risk); } .st-no b { background: var(--risk-soft); }
+.st-warn { color: var(--warn); } .st-warn b { background: var(--warn-soft); }
+
+/* callouts */
+.callout { display: flex; gap: 12px; margin: .8em 0; padding: 12px 16px; border-radius: 10px; background: var(--info-soft); }
+.callout .ci { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; background: var(--info); color: var(--surface); margin-top: 2px; }
+.callout strong { display: block; margin-bottom: 2px; }
+.callout p { margin: .2em 0; }
+.c-ok { background: var(--ok-soft); } .c-ok .ci { background: var(--ok); }
+.c-warn { background: var(--warn-soft); } .c-warn .ci { background: var(--warn); }
+.c-risk { background: var(--risk-soft); } .c-risk .ci { background: var(--risk); }
+.c-key { background: var(--accent-soft); border-left: 4px solid var(--accent); } .c-key .ci { background: var(--accent); }
+.c-tip { background: var(--sunk); } .c-tip .ci { background: var(--ink-2); }
+
+/* diagrams */
+.diagram, .chart, figure.code { margin: .6em 0; }
+.diagram svg, .chart svg { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+svg text { font-family: var(--sans); fill: var(--ink); }
+.node rect, .node polygon, .node path { fill: var(--node); stroke: var(--line-2); stroke-width: 1.3; }
+.node text { font-size: 13px; text-anchor: middle; }
+.node.decision polygon { fill: var(--warn-soft); stroke: var(--warn); }
+.node.round rect { fill: var(--sunk); }
+.node.db path { fill: var(--sunk); }
+.node.hot rect, .node.hot polygon, .node.hot path { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+.node.hot text { fill: var(--accent-ink); font-weight: 600; }
+.edge path, .msg line, .msg path { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+.edge.dashed path, .msg.dashed line, .msg.dashed path { stroke-dasharray: 5 4; }
+.edge.thick path { stroke-width: 2.6; stroke: var(--accent); }
+.msg.lost line { stroke: var(--risk); stroke-dasharray: 2 3; }
+.arrowhead { fill: var(--edge); }
+.elabel, .msg text { font-size: 12px; text-anchor: middle; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 7px; stroke-linejoin: round; }
+.msg text.num { font-size: 10px; fill: var(--ink-3); text-anchor: start; }
+.grp rect { fill: none; stroke: var(--line-2); stroke-dasharray: 4 4; }
+.grp text { font-size: 11px; font-weight: 700; fill: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.actor rect { fill: var(--node); stroke: var(--line-2); }
+.actor text { font-size: 13px; font-weight: 600; text-anchor: middle; }
+.actor line { stroke: var(--line-2); stroke-dasharray: 4 4; }
+.note rect { fill: var(--warn-soft); stroke: color-mix(in srgb, var(--warn) 40%, transparent); }
+.note text { font-size: 12px; text-anchor: middle; }
+.phase line { stroke: var(--line-2); }
+.phase text { font-size: 11px; font-weight: 700; text-anchor: middle; fill: var(--ink-3); paint-order: stroke; stroke: var(--surface); stroke-width: 8px; text-transform: uppercase; letter-spacing: .06em; }
+[data-step] { transition: opacity .35s ease; }
+.stepping [data-step].future { opacity: .1; }
+.stepping [data-step].now path, .stepping [data-step].now line { stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 7 5; animation: flow 1s linear infinite; }
+.stepping [data-step].now text { fill: var(--accent-ink); font-weight: 600; }
+.stepping .node.now rect, .stepping .node.now polygon, .stepping .node.now path { stroke: var(--accent); stroke-width: 2.2; }
+@keyframes flow { to { stroke-dashoffset: -24; } }
+@media (prefers-reduced-motion: reduce) { .stepping [data-step].now path, .stepping [data-step].now line { animation: none; } * { scroll-behavior: auto !important; } }
+.player { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; }
+.player .count { color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 60px; }
+.player .caption { flex: 1 1 200px; color: var(--ink-2); }
+
+/* charts */
+.chart figcaption { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.chart-note { margin: 4px 0 0; font-size: 12px; color: var(--ink-3); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.chart .lab { font-size: 13px; text-anchor: end; fill: var(--ink-2); }
+.chart .val, .chart .tick, .chart .xt { font-size: 12px; fill: var(--ink-3); }
+.chart svg { max-width: 560px; }
+.chart .tick { text-anchor: end; } .chart .xt { text-anchor: middle; }
+.chart .axis, .chart .grid { stroke: var(--line); }
+.chart .ln { fill: none; stroke-width: 2.2; }
+rect.s0, circle.s0, .sw.s0 { fill: var(--s0); background: var(--s0); } path.ln.s0 { stroke: var(--s0); }
+rect.s1, circle.s1, .sw.s1 { fill: var(--s1); background: var(--s1); } path.ln.s1 { stroke: var(--s1); }
+rect.s2, circle.s2, .sw.s2 { fill: var(--s2); background: var(--s2); } path.ln.s2 { stroke: var(--s2); }
+rect.s3, circle.s3, .sw.s3 { fill: var(--s3); background: var(--s3); } path.ln.s3 { stroke: var(--s3); }
+
+/* tree, timeline, kv, glossary */
+.tree ul { list-style: none; margin: 0; padding-left: 18px; position: relative; }
+.tree > ul { padding-left: 0; }
+.tree li { position: relative; padding: 2px 0 2px 14px; }
+.tree ul ul li::before { content: ""; position: absolute; left: -4px; top: 0; bottom: 0; border-left: 1px solid var(--line-2); }
+.tree ul ul li:last-child::before { bottom: auto; height: 15px; }
+.tree ul ul li::after { content: ""; position: absolute; left: -4px; top: 15px; width: 12px; border-top: 1px solid var(--line-2); }
+.tn { font: 13.5px var(--mono); }
+.tn.hot { color: var(--accent); font-weight: 700; background: var(--accent-soft); border-radius: 4px; padding: 0 4px; }
+.tree em { color: var(--ink-3); font-style: normal; font-size: 13px; margin-left: 6px; }
+.timeline { list-style: none; margin: .4em 0; padding: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 86px; top: 8px; bottom: 8px; border-left: 2px solid var(--line); }
+.timeline li { display: grid; grid-template-columns: 74px 1fr; gap: 26px; padding: 6px 0; position: relative; }
+.timeline li::before { content: ""; position: absolute; left: 81px; top: 13px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line-2); }
+.timeline li.hot::before { background: var(--accent); border-color: var(--accent); }
+.timeline time { text-align: right; font: 600 13px var(--mono); color: var(--ink-3); padding-top: 2px; }
+.timeline li.hot time { color: var(--accent); }
+.timeline p { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
+.kv, .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: .6em 0; background: var(--surface); }
+.kv div, .glossary div { padding: 8px 12px; box-shadow: 0 0 0 .5px var(--line); }
+.kv dt, .glossary dt { font-size: 11.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.glossary dt { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); }
+.kv dd, .glossary dd { margin: 2px 0 0; font-size: 14px; }
+.glossary { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+abbr.term { text-decoration: underline dotted var(--ink-3); text-underline-offset: 3px; cursor: help; }
+
+/* code and diffs */
+figure.code { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+figure.code figcaption { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 7px 12px; background: var(--sunk); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); }
+figure.code figcaption .ref { font: 600 12.5px var(--mono); }
+figure.code figcaption code { font-size: 11.5px; }
+.scroll { overflow-x: auto; }
+figure.code table { font: 12.5px/1.55 var(--mono); width: 100%; }
+figure.code td { padding: 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
+figure.code td.src { padding-left: 2.1em; text-indent: -1.2em; } /* wrapped lines hang under the code, not the +/- sign */
+figure.code td.ln { width: 1%; text-align: right; color: var(--ink-3); user-select: none; padding: 0 6px; white-space: nowrap; overflow-wrap: normal; text-indent: 0; }
+figure.code tr.add td { background: var(--add); } figure.code tr.add td.src { color: var(--add-ink); }
+figure.code tr.del td { background: var(--del); } figure.code tr.del td.src { color: var(--del-ink); }
+figure.code tr.hl td.src { box-shadow: inset 3px 0 var(--warn); }
+figure.code tr.hl:not(.add):not(.del) td { background: var(--hl); }
+.sg { display: inline-block; width: 1.2em; color: var(--ink-3); user-select: none; }
+tr.fold td { text-align: center; color: var(--ink-3); background: var(--sunk); font-size: 11.5px; padding: 2px; }
+tr.note-row td { white-space: normal; padding: 4px 10px 6px; }
+.cnote { font: 13.5px/1.5 var(--sans); background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 6px 10px; border-radius: 0 6px 6px 0; max-width: 72ch; }
+.hid { font: 700 11px var(--mono); background: var(--ink); color: var(--surface); border-radius: 5px; padding: 1px 6px; }
+.tag { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); } .tag.no { background: var(--risk-soft); color: var(--risk); }
+a.ref { font: .86em var(--mono); background: var(--accent-soft); color: var(--accent-ink); border-radius: 5px; padding: .05em .4em; white-space: nowrap; }
+a.ref.hunk { background: var(--ink); color: var(--surface); font-weight: 700; }
+.snip { position: fixed; z-index: 50; max-width: min(640px, 92vw); margin: 0; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; box-shadow: 0 8px 30px rgba(0, 0, 0, .18); font: 12px/1.5 var(--mono); white-space: pre; overflow: hidden; pointer-events: none; color: var(--ink-2); }
+.snip.term { white-space: normal; font: 13.5px/1.5 var(--sans); max-width: 340px; color: var(--ink); }
+
+/* review */
+.risks { list-style: none; padding: 0; margin: .4em 0; }
+.risks > li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.risks > li:last-child { border-bottom: 0; }
+.lvl { flex: none; width: 58px; text-align: center; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-radius: 5px; padding: 2px 0; }
+.r-critical .lvl { background: var(--risk); color: var(--surface); }
+.r-high .lvl { background: var(--risk-soft); color: var(--risk); }
+.r-med .lvl { background: var(--warn-soft); color: var(--warn); }
+.r-low .lvl { background: var(--sunk); color: var(--ink-3); }
+.where { margin-left: 4px; }
+.changemap { display: grid; gap: 12px; }
+.cm-dir h4 { margin: 0 0 4px; font: 600 12px var(--mono); color: var(--ink-3); }
+.cm-file { display: grid; grid-template-columns: 22px minmax(0, 1fr) 120px 80px; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; }
+.cm-file code { background: none; border: 0; padding: 0; overflow: hidden; text-overflow: ellipsis; }
+.cm-file > span:first-child { font: 700 11px var(--mono); color: var(--ink-3); }
+.cm-file .st-A { color: var(--ok); } .cm-file .st-D { color: var(--risk); }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--sunk); }
+.bar .a { background: var(--ok); } .bar .d { background: var(--risk); }
+.cm-file .stat { font: 12px var(--mono); text-align: right; }
+.appendix h2 small { font-family: var(--sans); }
+.afile { font-size: 14px; margin: 16px 0 6px; display: flex; gap: 10px; align-items: center; }
+.appendix details { border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; }
+.appendix summary { cursor: pointer; padding: 6px 10px; font-size: 13px; display: flex; gap: 8px; align-items: center; color: var(--ink-2); }
+.appendix details.uncovered { border-color: color-mix(in srgb, var(--risk) 40%, var(--line)); }
+.appendix details figure { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+
+/* quiz and checklist */
+.quiz .q { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.quiz .q:last-of-type { border-bottom: 0; }
+.qq { margin: 0 0 8px; font-weight: 550; }
+.qq small { color: var(--ink-3); font-weight: 400; }
+.opts { display: grid; gap: 6px; }
+.opt { text-align: left; border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 7px 12px; font-size: 14px; transition: background .2s, border-color .2s; }
+.opt:hover { border-color: var(--accent); }
+.opt.right { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.opt.wrong { background: var(--risk-soft); border-color: var(--risk); color: var(--risk); }
+.why, .ans { margin-top: 8px; padding: 8px 12px; background: var(--sunk); border-radius: 8px; font-size: 14px; }
+.why p, .ans p { margin: .2em 0; }
+.score { margin: 8px 0 0; font-size: 13px; color: var(--ink-3); }
+.checklist ul { list-style: none; padding: 0; margin: .4em 0; }
+.checklist li { padding: 5px 0; }
+.checklist label { display: flex; gap: 10px; align-items: baseline; cursor: pointer; }
+.checklist input { accent-color: var(--ok); transform: translateY(2px); }
+.checklist input:checked + span { color: var(--ink-3); text-decoration: line-through; }
+.progress { margin: 0 0 4px; font-size: 12.5px; color: var(--ink-3); }
+
+/* tour */
+.tourbar { position: fixed; z-index: 40; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(760px, calc(100vw - 24px)); display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--ink); color: var(--surface); border-radius: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, .3); }
+.tourbar button { background: transparent; color: var(--surface); border-color: color-mix(in srgb, var(--surface) 30%, transparent); }
+.tcap { flex: 1; margin: 0 6px; font-size: 15px; line-height: 1.45; }
+body.video .topbar, body.video .toc { visibility: hidden; }
+body.video .tourbar button { display: none; }
+body.video .tcap { font-size: 18px; text-align: center; }
+
+footer { text-align: center; color: var(--ink-3); font-size: 12px; padding: 0 0 40px; }
+
+@media (max-width: 900px) {
+  .layout.has-toc { display: block; }
+  .toc { display: none; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .span-2, .span-3 { grid-column: auto; }
+  .hero, .layout { padding-left: 16px; padding-right: 16px; }
+  .panel { padding: 16px; }
+  .cm-file { grid-template-columns: 22px minmax(0, 1fr) 70px; }
+  .cm-file .bar { display: none; }
+}
+@media print {
+  .topbar, .tourbar, .player, .toc { display: none !important; }
+  .layout.has-toc { display: block; }
+  .panel { break-inside: avoid; box-shadow: none; }
+  details { display: block; }
+}
+
+/* run: real command output */
+figure.run { margin: .7em 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+figure.run figcaption { padding: 6px 12px; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ok); background: var(--ok-soft); }
+.run-step + .run-step { border-top: 1px solid var(--line); }
+.run-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px 0; }
+.run-head .cmd { background: none; border: 0; padding: 0; font-weight: 600; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.exit { font: 700 11px var(--mono); padding: 1px 7px; border-radius: 99px; }
+.exit.ok { background: var(--ok-soft); color: var(--ok); } .exit.no { background: var(--warn-soft); color: var(--warn); }
+.ms { font: 11px var(--mono); color: var(--ink-3); }
+.run-note { margin: 4px 12px 0; font-size: 13.5px; color: var(--ink-2); }
+pre.out { margin: 8px 12px 10px; padding: 10px 12px; background: var(--sunk); border-radius: 8px; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.chk { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; }
+.chk.ok { background: var(--ok-soft); color: var(--ok); } .chk.no { background: var(--risk-soft); color: var(--risk); }
+.chk.shows.ok { background: var(--accent-soft); color: var(--accent-ink); } .chk.shows.no { background: var(--sunk); color: var(--ink-3); }
+.rdetail { margin: 4px 0 0; padding-left: 1.1em; font-size: 13.5px; color: var(--ink-2); }
+.rdetail li { margin: 2px 0; }
+
+/* grounding strip, audience line, claims */
+.for { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-3); }
+.grounding { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 8px 0 4px; font-size: 12.5px; color: var(--ink-2); }
+.grounding i { font-style: normal; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--ok); background: var(--ok-soft); border-radius: 99px; padding: 1px 9px; }
+.grounding b { color: var(--ink); }
+.claims { display: grid; gap: 8px; margin: .6em 0; }
+.claim { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.claim p { margin: 0; }
+.claim .ev { margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+.cs { font-size: 11.5px; font-weight: 700; border-radius: 99px; padding: 2px 9px; text-align: center; }
+.c-verified .cs { background: var(--ok-soft); color: var(--ok); }
+.c-inferred .cs { background: var(--warn-soft); color: var(--warn); }
+.c-unverified .cs { background: var(--sunk); color: var(--ink-3); }
+@media (max-width: 560px) { .claim { grid-template-columns: 1fr; gap: 4px; } .cs { justify-self: start; } }
+
+/* linked highlighting */
+.xref { border-bottom: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: default; }
+.xref:hover, .xref:focus { background: var(--accent-soft); outline: none; }
+.linking [data-id]:not(.lit), .linking [data-from]:not(.lit) { opacity: .18; }
+.linking .lit rect, .linking .lit polygon, .linking .node.lit path { stroke: var(--accent); stroke-width: 2.4; }
+.linking .lit > path, .linking .lit > line { stroke: var(--accent); }
+.linking .lit text { fill: var(--accent-ink); }
+
+/* side-by-side code, quiz option explanations */
+figure.sbs td.side { width: 32%; white-space: normal; text-indent: 0; padding: 2px 10px; vertical-align: top; border-left: 1px solid var(--line); background: var(--surface); }
+figure.sbs td.side .cnote { max-width: none; }
+figure.sbs td.src { padding-left: 10px; text-indent: 0; }
+.owhy { display: block; margin-top: 4px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.opt.right .owhy, .opt.wrong .owhy { color: var(--ink-2); }
+@media (max-width: 700px) { figure.sbs td.side { width: 45%; } }
+
+/* single reading column: comfortable measure, full-width figures */
+.grid[style*="--cols:1"] { max-width: 920px; }
+.grid[style*="--cols:1"] .panel { padding: 22px 28px 24px; }
+.grid[style*="--cols:1"] .panel h2 { font-size: 21px; }
+.grid[style*="--cols:1"] .prose { font-size: 16px; max-width: 72ch; }
+
+/* waffle */
+figure.waffle { margin: .8em 0; display: grid; gap: 14px; }
+.wrow { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 16px; align-items: center; }
+.wlab { display: grid; gap: 2px; }
+.wnum { font: 700 20px var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.wnum small { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.wnote { font-size: 13px; color: var(--ink-3); }
+.wgrid { display: grid; grid-template-columns: repeat(40, 1fr); gap: 2px; }
+.wgrid i { aspect-ratio: 1; border-radius: 2px; background: var(--line); }
+.wgrid i.on { background: var(--accent); }
+.wrow:first-child .wgrid i.on { background: var(--ink-2); }
+figure.waffle figcaption { font-size: 12px; color: var(--ink-3); }
+@media (max-width: 640px) { .wrow { grid-template-columns: 1fr; gap: 6px; } }
+
+/* record nodes (real data in cells) and faded (skipped) nodes */
+.node.record rect { fill: var(--node); stroke: var(--line-2); stroke-width: 1.3; }
+.node.record text { font: 13px var(--mono); text-anchor: middle; }
+.node.record line.div { stroke: var(--line-2); }
+.node.record.hot rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+.node.record.hot text { fill: var(--accent-ink); font-weight: 700; }
+.node.faded { opacity: .38; }
+.node.faded rect, .node.faded polygon, .node.faded path { stroke-dasharray: 4 3; }
+
+/* bespoke figures and captions */
+.figwrap { margin: 1.1em 0; }
+.figcap { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-2); max-width: 70ch; }
+.figcap b { font: 700 11.5px var(--mono); color: var(--ink); margin-right: 6px; }
+.custom-fig { position: relative; margin: .4em 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.custom-fig svg { max-width: 100%; height: auto; display: block; }
+.custom-fig svg text { font-family: var(--sans); fill: var(--ink); }
+.fig-controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; }
+.fig-controls .player { margin: 0; padding: 0; border: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 12px; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.readout { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ink); font-size: 15px; }
+.slider { display: inline-flex; gap: 8px; align-items: center; color: var(--ink-2); }
+.slider input { accent-color: var(--accent); }
+.slider output { font: 600 13px var(--mono); color: var(--ink); min-width: 4ch; }
+.fig-error { color: var(--risk); font-weight: 600; }
+.custom-fig .cell { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 4px; margin: 2px; border-radius: 5px; background: var(--sunk); border: 1px solid var(--line); font: 12px var(--mono); color: var(--ink-2); transition: background .25s, border-color .25s; }
+.custom-fig .cell.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.custom-fig .cell.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.custom-fig .cell.miss { background: var(--risk-soft); border-color: var(--risk); color: var(--risk); }
+.custom-fig .cell.dim { opacity: .35; }
+.custom-fig .tag { display: inline-block; font: 600 11px var(--mono); padding: 1px 7px; border-radius: 99px; background: var(--sunk); color: var(--ink-2); }
+.custom-fig .mono { font-family: var(--mono); }
+.custom-fig .muted { color: var(--ink-3); }
+rect.muted { fill: var(--line-2); }
+.chart .val.hot { fill: var(--ink); font-weight: 700; }
+.chart .anno { fill: var(--accent-ink); font-weight: 600; }
+
+/* ---------- editorial explainer ---------- */
+.editorial { --serif: "Iowan Old Style", "Charter", "Bitstream Charter", "Source Serif Pro", "Sitka Text", Cambria, Georgia, serif; font-size: 16.5px; }
+.editorial .hero { padding-top: 48px; }
+.editorial .eyebrow { margin: 0 0 14px; font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+.editorial .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+.editorial .hero h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(34px, 5.2vw, 56px); line-height: 1.06; letter-spacing: -.02em; max-width: 19ch; text-wrap: balance; margin-bottom: 14px; }
+.num-accent { color: var(--accent); font-variant-numeric: tabular-nums; }
+.editorial .lead { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.5; color: var(--ink-2); max-width: 46ch; margin: 0 0 12px; }
+.editorial .lead strong { color: var(--ink); }
+.editorial .grid[style*="--cols:1"] { max-width: 960px; gap: 0; }
+.editorial .grid .panel { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 30px 0 34px; border-top: 1px solid var(--line); }
+.editorial .grid .panel.touring { box-shadow: none; border-top-color: var(--accent); }
+.editorial .grid .panel:first-child { border-top: 0; }
+.editorial .kick { font: 600 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.editorial .kick span { color: var(--accent); margin-right: 4px; }
+.editorial .grid .panel h2 { display: block; font-family: var(--serif); font-weight: 600; font-size: clamp(24px, 3vw, 33px); line-height: 1.15; letter-spacing: -.012em; max-width: 26ch; text-wrap: balance; margin: 0 0 14px; }
+.editorial .prose { font-size: 17px; line-height: 1.65; max-width: 65ch; }
+.editorial .prose p { margin: .55em 0; }
+.editorial .hero-fig { padding-top: 6px; border-top: 0 !important; }
+.editorial .figcap { font-size: 14px; }
+.editorial .callout { max-width: 70ch; }
+.editorial .toc { padding-top: 40px; }
+
+/* small multiples */
+.cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 12px; margin: .8em 0; }
+.case { --st: var(--ink-2); --st-soft: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px; background: var(--surface); }
+.case.st-ok { --st: var(--ok); --st-soft: var(--ok-soft); } .case.st-warn { --st: var(--warn); --st-soft: var(--warn-soft); }
+.case.st-risk { --st: var(--risk); --st-soft: var(--risk-soft); } .case.st-info { --st: var(--info); --st-soft: var(--info-soft); }
+.case.st-off { --st: var(--ink-3); --st-soft: var(--sunk); }
+.case-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 14px; }
+.case-chip { font: 700 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; background: var(--st-soft); color: var(--st); }
+.case svg { display: block; width: 100%; height: auto; }
+.case .cn rect { fill: var(--node); stroke: var(--line-2); stroke-width: 1.2; }
+.case .cn text { font: 14px var(--sans); text-anchor: middle; fill: var(--ink); }
+.case .cn.faded { opacity: .28; }
+.case .cn.is-off rect { stroke-dasharray: 4 3; opacity: .45; }
+.case .cn.is-off text { fill: var(--ink-3); text-decoration: line-through; }
+.case .cn.is-st rect { fill: var(--st-soft); stroke: var(--st); stroke-width: 2; }
+.case .cn.is-st text { fill: var(--st); font-weight: 700; }
+.case .ce { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+.case .ce.dashed { stroke-dasharray: 5 4; }
+.case .ce.is-st { stroke: var(--st); stroke-width: 2.4; }
+.case .cl { font: 13px var(--mono); text-anchor: middle; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.case-note { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+.custom-fig [data-s] { transition: opacity .35s ease; }
+.custom-fig [data-s].future { opacity: .15; }
+.custom-fig [data-s].future text, .custom-fig text[data-s].future { opacity: 0; }
+.custom-fig [data-s].now > rect, .custom-fig [data-s].now > path, .custom-fig [data-s].now > circle { stroke: var(--accent); stroke-width: 2.2; }
+.custom-fig [data-s].now.cell { border-color: var(--accent); }
+.custom-fig[data-view="before"] .only-after, .custom-fig[data-view="after"] .only-before { display: none; }
+.custom-fig .only-after.added, .custom-fig .added { stroke: var(--ok); color: var(--ok); }
+.custom-fig .removed { stroke: var(--risk); stroke-dasharray: 5 4; color: var(--risk); }
+
+</style>
+</head>
+<body class="kind-explain editorial">
+<div class="topbar"><span class="brand">clearproof</span><span class="tb-title">GC pause time grows with what survives, not with the garbage</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
+<header class="hero">
+<p class="eyebrow">Garbage collection in Java and JavaScript</p>
+<h1>GC pause time grows with what survives, not with the garbage</h1>
+
+
+<p class="lead">The collector keeps what your program can <strong>reach from its roots</strong> and frees the rest. Pauses last about 1 ms for young objects, but seconds for a full stop-the-world collection.</p>
+<p class="for">Written for: a programmer who uses Java or JavaScript and has seen a &quot;GC pause&quot; in a profile</p>
+
+
+
+
+</header>
+<div class="layout has-toc">
+<nav class="toc" aria-label="Contents"><p>Contents</p><ol><li><a href="#the-hero">The hero</a></li><li><a href="#four-parts-do-the-work">Four parts do the work</a></li><li><a href="#most-objects-die-young-so-the-young-generation-i">Most objects die young, so the young generation is collected by copying the few survivors</a></li><li><a href="#pauses-happen-when-the-collector-needs-a-heap-th">Pauses happen when the collector needs a heap that cannot change</a></li><li><a href="#a-200-ms-pause-misses-12-frames-of-a-60-fps-page">A 200 ms pause misses 12 frames of a 60 fps page</a></li><li><a href="#long-pauses-come-from-a-few-known-triggers">Long pauses come from a few known triggers</a></li><li><a href="#what-to-remember">What to remember</a></li><li><a href="#glossary">Glossary</a></li><li><a href="#sources">Sources</a></li></ol></nav>
+<main class="grid" style="--cols:1">
+<section class="panel span-full hero-fig" id="the-hero" data-say="The hero"><div class="figwrap"><div class="custom-fig wide" id="l1" data-fig><div class="g"></div><script type="text/plain" class="fig-src">
+const W = 760, H = 285, BW = 150, BH = 36;
+const s = L.svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', style: 'font-size:13px' });
+const N = {
+  s: { x: 10, y: 50, t: 'stack: cart', root: 1 }, g: { x: 10, y: 205, t: 'static: config', root: 1 },
+  c: { x: 205, y: 50, t: 'Cart #41', live: 1 }, p: { x: 400, y: 15, t: 'Item "pen"', live: 1 },
+  i: { x: 400, y: 95, t: 'Item "ink"', live: 1 }, f: { x: 205, y: 205, t: 'Config', live: 1 },
+  m: { x: 400, y: 205, t: 'Map (cache)', live: 1 }, o: { x: 600, y: 15, t: 'Cart #40 (old)' },
+  k: { x: 600, y: 95, t: 'Item "cap"' }, a: { x: 600, y: 175, t: 'Node A' }, b: { x: 600, y: 240, t: 'Node B' },
+};
+const E = [['s','c'],['c','p'],['c','i'],['g','f'],['f','m'],['o','k'],['o','i'],['a','b'],['b','a']];
+const defs = L.svg('defs', {}, L.svg('marker', { id: 'ah', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' },
+  L.svg('path', { d: 'M0,0 L10,5 L0,10 z', fill: L.color('ink-3') })));
+s.append(defs);
+for (const [u, v] of E) {
+  const A = N[u], B = N[v]; let d;
+  if (A.x === B.x) { const dx = A.y < B.y ? 50 : 100; d = `M${A.x+dx},${A.y < B.y ? A.y+BH : A.y} L${B.x+dx},${A.y < B.y ? B.y : B.y+BH}`; }
+  else if (B.x < A.x) d = `M${A.x},${A.y+BH/2} L${B.x+BW},${B.y+BH/2}`;
+  else d = `M${A.x+BW},${A.y+BH/2} L${B.x},${B.y+BH/2}`;
+  s.append(L.svg('path', { d, stroke: L.color('ink-3'), 'stroke-width': 1.5, fill: 'none', 'marker-end': 'url(#ah)' }));
+}
+const g1 = L.svg('g', { 'data-s': 1 }), g2 = L.svg('g', { 'data-s': 2 }), g3 = L.svg('g', { 'data-s': 3 });
+for (const n of Object.values(N)) {
+  s.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: L.color('node'), stroke: L.color('line') }));
+  s.append(L.svg('text', { x: n.x + 10, y: n.y + 23, fill: L.color('ink') }, n.t));
+  if (n.root) g1.append(L.svg('rect', { x: n.x-3, y: n.y-3, width: BW+6, height: BH+6, rx: 8, fill: 'none', stroke: L.color('accent'), 'stroke-width': 3 }));
+  if (n.live) g2.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: L.color('accent'), opacity: 0.18 }),
+    L.svg('text', { x: n.x + BW - 22, y: n.y + 23, fill: L.color('accent'), 'font-weight': 700 }, '✓'));
+  if (!n.root && !n.live) g3.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: 'none', stroke: L.color('risk'), 'stroke-width': 2, 'stroke-dasharray': '5 4' }),
+    L.svg('text', { x: n.x + BW - 44, y: n.y + 23, fill: L.color('risk'), 'font-weight': 700 }, 'freed'));
+}
+g1.append(L.svg('text', { x: 12, y: 30, fill: L.color('accent'), 'font-weight': 700 }, 'GC roots'));
+g2.append(L.svg('text', { x: 205, y: 160, fill: L.color('accent'), 'font-weight': 700 }, '✓ = reached, so kept'));
+g3.append(L.svg('text', { x: 600, y: 160, fill: L.color('risk'), 'font-weight': 700 }, 'no path from a root'));
+s.append(g1, g2, g3);
+fig.querySelector('.g').append(s);
+L.steps(fig, [
+  'The heap: 9 objects with references between them. The collector cannot ask the program which ones it still needs.',
+  'Roots are the starting points: local variables on each thread stack, static fields (Java) or globals (JS), and registers.',
+  'Mark: follow every reference from the roots. Cart #41, both items, Config and the Map get a mark.',
+  'Sweep: the 4 unmarked objects are freed. Cart #40 points at "ink", but nothing points at Cart #40, so it dies.',
+]);
+</script></div><p class="figcap"><b>Fig. 1</b> Tracing starts at the roots. Everything it cannot reach is garbage — even the cycle A ↔ B.</p></div></section>
+<section class="panel span-full" id="four-parts-do-the-work" data-say="Roots — stack variables, static fields or globals, and CPU registers. Mark — follow references from the roots and flag every object reached."><div class="kick"><span>02</span> Names first</div><h2>Four parts do the work</h2><div class="prose"><ul><li><strong>Roots</strong> — stack variables, static fields or globals, and CPU registers.</li><li><strong>Mark</strong> — follow references from the roots and flag every object reached.</li><li><strong>Sweep or copy</strong> — reclaim unflagged memory, or copy flagged objects to a fresh area.</li><li><strong>Safepoint</strong> — a point where every app thread has stopped, so references cannot change during a step that needs a frozen heap.</li></ul>
+<p>Reference counting alone cannot free the cycle A ↔ B: each node still has a count of 1. Java and JavaScript engines use tracing, so the cycle goes.</p></div></section>
+<section class="panel span-full" id="most-objects-die-young-so-the-young-generation-i" data-say="Both HotSpot (Java) and V8 (JavaScript) split the heap. New objects go to a small young generation."><div class="kick"><span>03</span> Mechanism</div><h2>Most objects die young, so the young generation is collected by copying the few survivors</h2><div class="prose"><p>Both HotSpot (Java) and V8 (JavaScript) split the heap. New objects go to a small <strong>young generation</strong>. Objects that survive a few collections move to the <strong>old generation</strong>.</p></div>
+<div class="quiz"><div class="q" data-multi="false"><p class="qq"><b>Q1.</b> Eden is full: 10 objects, of which 8 are already garbage. Where does the minor collection spend its time?</p><div class="opts"><button type="button" class="opt" data-ok="false">Freeing the 8 dead objects one by one<span class="owhy" hidden>A copying collector never visits dead objects. It abandons the whole area at once.</span></button><button type="button" class="opt" data-ok="true">Copying the 2 live objects<span class="owhy" hidden>Correct. Work is proportional to survivors, so a young collection with few survivors is short.</span></button><button type="button" class="opt" data-ok="false">Scanning the whole old generation<span class="owhy" hidden>A &quot;remembered set&quot; records old→young references, so the old generation is not traced.</span></button></div></div><p class="score" aria-live="polite"></p></div>
+<div class="figwrap"><div class="custom-fig wide" id="l2" data-fig><div class="rows" style="display:grid;gap:10px"></div><script type="text/plain" class="fig-src">
+const rows = fig.querySelector('.rows');
+const names = ['req','json','str','buf','tmp','user','str','arr','tmp','sess'];
+const live = new Set([5, 9]);
+const mk = (label) => { const cells = L.el('div', { style: 'display:flex;gap:4px;flex-wrap:wrap' });
+  rows.append(L.el('div', { style: 'display:grid;grid-template-columns:200px 1fr;align-items:center;gap:8px' },
+    L.el('span', { class: 'mono' }, label), cells)); return cells; };
+const eden = mk('Eden (young)'), surv = mk('Survivor (young)'), old = mk('Old generation');
+const app = L.readout(fig, 'App threads'), cp = L.readout(fig, 'Objects copied');
+const cell = (t, cls = '') => L.el('span', { class: 'cell ' + cls, style: 'min-width:52px;text-align:center' }, t);
+const fill = (row, items, size) => { row.replaceChildren(...items, ...Array.from({ length: size - items.length }, () => cell('·', 'dim'))); };
+const render = (st) => {
+  const e = st === 0 ? names.slice(0, 4) : st <= 2 ? names : [];
+  fill(eden, e.map((n, i) => cell(n, st === 2 ? (live.has(i) ? 'hit' : 'dim') : st === 1 ? 'on' : '')), 10);
+  const sv = st === 3 ? [cell('user ·1', 'hit'), cell('sess ·1', 'hit')] : st === 4 ? [cell('cart ·1', 'hit')] : [];
+  fill(surv, sv, 4);
+  const o = [cell('Config'), cell('Map')]; if (st === 4) o.push(cell('user ·2', 'hit'));
+  fill(old, o, 6);
+  app.set(st === 1 || st === 2 ? 'PAUSED (stop-the-world)' : 'running');
+  cp.set(st === 3 ? '2 of 10' : st === 4 ? '2 (1 promoted)' : '0');
+};
+const p = L.player(fig, { steps: 5, onStep: render, interval: 1400, labels: [
+  'Allocate: each request creates short-lived objects in eden (4 of 10 slots used).',
+  'Eden is full (10 of 10). Allocation fails, so the JVM or V8 pauses the app threads at a safepoint.',
+  'Trace from roots plus the remembered set: only "user" and "sess" are reachable. 8 of 10 are garbage.',
+  'Copy the 2 survivors to the survivor space (age 1) and reset eden as empty. The pause ends.',
+  'Next minor GC: "user" survives again and is promoted to the old generation; "sess" died.',
+] });
+p.go(3);
+</script></div><p class="figcap"><b>Fig. 2</b> A minor GC copies 2 survivors and wipes eden. The 8 dead objects cost nothing. Illustrative sizes.</p></div>
+<aside class="callout c-info"><b class="ci" aria-hidden="true">ℹ</b><div><strong>What we simplified</strong><p>Real eden sizes are megabytes to gigabytes, not 10 slots. V8 calls this the Scavenger and uses two semi-spaces; HotSpot uses eden plus two survivor spaces. The promotion age here (2) is illustrative.</p></div></aside></section>
+<section class="panel span-full" id="pauses-happen-when-the-collector-needs-a-heap-th" data-say="Marking while the app runs is unsafe: the app could move the only reference to an object into an already-scanned object. Collectors handle this in one of three ways."><div class="kick"><span>04</span> When it pauses</div><h2>Pauses happen when the collector needs a heap that cannot change</h2><div class="prose"><p>Marking while the app runs is unsafe: the app could move the only reference to an object into an already-scanned object. Collectors handle this in one of three ways. The choice decides how long your longest pause is.</p></div>
+<div class="figwrap"><div class="custom-fig wide" id="l3" data-fig><div class="tl"></div><script type="text/plain" class="fig-src">
+const W = 760, X0 = 110, SC = 64; // 10 s window, 64 px per second
+const box = fig.querySelector('.tl');
+const longest = L.readout(fig, 'Longest pause'), total = L.readout(fig, 'Time paused in 10 s');
+let mode = 0, live = 8;
+const fmt = (s) => s >= 1 ? s.toFixed(1) + ' s' : s >= 0.01 ? Math.round(s * 1000) + ' ms' : (s * 1000).toFixed(1) + ' ms';
+function model(mode, gb) {
+  if (mode === 0) { const d = gb / 4; return { pauses: [[0.5, 0.02], [1, d]].filter(([t]) => t < 10), conc: [] }; }
+  if (mode === 1) { const m = Math.min(gb * 0.4, 7);
+    return { pauses: [[1, 0.02], [3, 0.02], [5, 0.02], [7, 0.02], [9, 0.02], [1.5 + m, 0.005 + gb * 0.001]], conc: [[1.5, m]] }; }
+  const m = Math.min(gb * 0.5, 8);
+  return { pauses: [[1, 0.0005], [1 + m / 2, 0.0005], [1 + m, 0.0005]], conc: [[1, m]] };
+}
+function draw() {
+  const { pauses, conc } = model(mode, live);
+  const s = L.svg('svg', { viewBox: `0 0 ${W} 150`, width: '100%', style: 'font-size:13px' });
+  const lane = (y, label) => { s.append(L.svg('text', { x: 0, y: y + 18, fill: L.color('ink') }, label),
+    L.svg('rect', { x: X0, y, width: 10 * SC, height: 26, fill: L.color('node'), stroke: L.color('line') })); };
+  lane(20, 'App threads'); lane(70, 'GC threads');
+  s.append(L.svg('rect', { x: X0, y: 20, width: 10 * SC, height: 26, fill: L.color('ok'), opacity: 0.25 }));
+  for (const [t, d] of conc) s.append(L.svg('rect', { x: X0 + t * SC, y: 70, width: d * SC, height: 26, fill: L.color('accent'), opacity: 0.45 }),
+    L.svg('text', { x: X0 + t * SC + 6, y: 88, fill: L.color('ink') }, 'concurrent mark' + (mode === 2 ? ' + relocate' : '')));
+  let mx = 0, sum = 0;
+  for (const [t, d] of pauses) { mx = Math.max(mx, d); sum += Math.min(d, 10 - t);
+    const w = Math.max(3, Math.min(d, 10 - t) * SC);
+    s.append(L.svg('rect', { x: X0 + t * SC, y: 20, width: w, height: 26, fill: L.color('risk') }),
+      L.svg('rect', { x: X0 + t * SC, y: 70, width: w, height: 26, fill: L.color('risk'), opacity: 0.7 })); }
+  const [lt] = pauses.find(([, d]) => d === mx);
+  s.append(L.svg('text', { x: Math.min(X0 + lt * SC, W - 150), y: 14, fill: L.color('risk'), 'font-weight': 700 }, '▼ ' + fmt(mx) + ' pause'));
+  for (let i = 0; i <= 10; i += 2) s.append(L.svg('text', { x: X0 + i * SC, 'text-anchor': i === 10 ? 'end' : i ? 'middle' : 'start', y: 120, fill: L.color('ink-3') }, i + ' s'));
+  box.replaceChildren(s); longest.set(fmt(mx)); total.set(fmt(sum));
+}
+L.toggle(fig, ['Stop-the-world full GC (Serial, Parallel)', 'Mostly concurrent (G1, V8 old gen)', 'Concurrent compacting (ZGC, Shenandoah)'], (i) => { mode = i; draw(); });
+L.slider(fig, { label: 'Live data in old gen', min: 1, max: 32, step: 1, value: 8, format: (v) => v + ' GB' }, (v) => { live = v; draw(); });
+draw();
+</script></div><p class="figcap"><b>Fig. 3</b> Same heap, three collector designs. Red = app threads stopped. Pause length tracks live data only for stop-the-world full GC. Illustrative model.</p></div>
+<div class="prose"><ul><li><strong>Stop-the-world:</strong> mark and compact the whole heap while every app thread waits. In this model, 8 GB of live data at 4 GB/s gives a 2 s pause.</li><li><strong>Mostly concurrent:</strong> mark while the app runs. A <strong>write barrier</strong> logs reference changes, and a short final pause fixes up the rest.</li><li><strong>Concurrent compacting:</strong> also move objects while the app runs, using load barriers. Pauses stay under 1 ms, but GC threads take CPU time.</li></ul></div></section>
+<section class="panel span-full" id="a-200-ms-pause-misses-12-frames-of-a-60-fps-page" data-say="JavaScript runs your code on one main thread. Any GC work on that thread delays input and rendering."><div class="kick"><span>05</span> Numbers</div><h2>A <span class="num-accent">200 ms</span> pause misses 12 frames of a 60 fps page</h2><div class="figwrap"><figure class="chart"><svg viewBox="0 0 635.4000000000001 136" role="img" aria-label="Bar chart"><line class="axis" x1="160" x2="160" y1="0" y2="136"/><g data-step="1"><text class="lab" x="152" y="19.5">ZGC pause goal</text><rect class="muted" x="160.0" y="6" width="1.0" height="18" rx="3"/><text class="val" x="167.0" y="19">1 m<tspan class="anno" dx="10">under 1 ms (JEP 439)</tspan></text></g><g data-step="2"><text class="lab" x="152" y="52.5">Browser frame at 60 fps</text><rect class="muted" x="160.0" y="39" width="61.1" height="18" rx="3"/><text class="val" x="227.1" y="52">16.7 ms</text></g><g data-step="3"><text class="lab" x="152" y="85.5">G1 default pause goal</text><rect class="s0" x="160.0" y="72" width="115.1" height="18" rx="3"/><text class="val hot" x="281.1" y="85">200 ms<tspan class="anno" dx="10">-XX:MaxGCPauseMillis default</tspan></text></g><g data-step="4"><text class="lab" x="152" y="118.5">Full GC, 8 GB live (illustrative)</text><rect class="muted" x="160.0" y="105" width="165.1" height="18" rx="3"/><text class="val" x="331.1" y="118">2,000 ms<tspan class="anno" dx="10">at 4 GB/s</tspan></text></g></svg><p class="chart-note">Log scale: each step to the right is ×10.</p></figure><p class="figcap"><b>Fig. 4</b> Pause sizes span four orders of magnitude. Compare each one with the 16.7 ms frame budget.</p></div>
+<div class="prose"><p>JavaScript runs your code on one main thread. Any GC work on that thread delays input and rendering. V8 hides most of it with parallel scavenges, concurrent marking and GC work scheduled in idle time between frames.</p></div></section>
+<section class="panel span-full" id="long-pauses-come-from-a-few-known-triggers" data-say="Long pauses come from a few known triggers"><div class="kick"><span>06</span> Where it breaks</div><h2>Long pauses come from a few known triggers</h2><div class="figwrap"><div class="custom-fig wide" id="l4" data-fig><div class="cs" style="display:grid;gap:12px"></div><script type="text/plain" class="fig-src">
+const C = [
+  ['ok', 'Minor GC, few survivors', '~1–10 ms each, often', [[1, .01], [3, .01], [5, .01], [7, .01], [9, .01]]],
+  ['warn', 'Old gen fills before concurrent mark ends', 'falls back to a full GC', [[1, .01], [3, .01], [4, 1.2]]],
+  ['warn', 'Allocation outruns the collector', 'threads stall waiting for memory', [[2, .15], [2.6, .2], [3.4, .3], [6, .25]]],
+  ['risk', 'Huge live set, stop-the-world collector', '16 GB live ≈ 4 s', [[1, 4]]],
+];
+const box = fig.querySelector('.cs');
+for (const [st, title, note, ps] of C) {
+  const s = L.svg('svg', { viewBox: '0 0 400 26', width: '100%', preserveAspectRatio: 'none', style: 'height:22px' });
+  s.append(L.svg('rect', { x: 0, y: 0, width: 400, height: 26, fill: L.color('ok'), opacity: 0.25 }));
+  for (const [t, d] of ps) s.append(L.svg('rect', { x: t * 40, y: 0, width: Math.max(3, d * 40), height: 26, fill: L.color('risk') }));
+  box.append(L.el('div', { style: 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center' },
+    L.el('div', { style: 'text-align:left' }, L.el('span', { class: 'tag' }, st.toUpperCase()), ' ', L.el('b', {}, title), L.el('div', { class: 'muted', style: 'text-align:left' }, note)), s));
+}
+</script></div><p class="figcap"><b>Fig. 5</b> The same 10 s of app time under four triggers. Red = app stopped. Only the first is routine. Illustrative.</p></div>
+<div class="prose"><div class="tbl"><table><thead><tr><th>Symptom</th><th>Cause</th><th>Try</th></tr></thead><tbody><tr><td>Short regular pauses</td><td>minor GC</td><td><span class="st st-ok"><b aria-hidden="true">✓</b> Usually fine</span></td></tr><tr><td>Rare multi-second pause</td><td>full GC</td><td><span class="st st-no"><b aria-hidden="true">✗</b> G1 or ZGC; find leaks</span></td></tr><tr><td>Janky JS animation</td><td>GC in a frame</td><td><span class="st st-warn"><b aria-hidden="true">!</b> Reuse objects</span></td></tr><tr><td>Memory grows forever</td><td>reachable leak</td><td><span class="st st-no"><b aria-hidden="true">✗</b> Find the root</span></td></tr></tbody></table></div></div></section>
+<section class="panel span-full" id="what-to-remember" data-say="What to remember"><div class="kick"><span>07</span> Summary</div><h2>What to remember</h2><aside class="callout c-key"><b class="ci" aria-hidden="true">→</b><div><strong>Four rules</strong><ol><li>GC frees only unreachable objects. A forgotten cache entry or listener is a leak the GC cannot fix.</li><li>Young collections are cheap because their cost is the survivors, not the garbage.</li><li>Long pauses come from stop-the-world work on the old generation. Concurrent collectors shrink them by doing that work while your code runs.</li><li>Lower pauses cost CPU and memory: barriers slow each write or read, and GC threads compete with your threads.</li></ol></div></aside>
+<div class="quiz"><div class="q" data-multi="false"><p class="qq"><b>Q1.</b> A Java service on the Parallel collector has 16 GB of live data and pauses for 4 s. You double the heap to 64 GB. What happens to the full-GC pause?</p><div class="opts"><button type="button" class="opt" data-ok="false">It halves<span class="owhy" hidden>A bigger heap makes full GCs less frequent, but each one still traces all 16 GB of live data.</span></button><button type="button" class="opt" data-ok="true">Full GCs come less often, but each one is still about as long<span class="owhy" hidden>Correct. Stop-the-world pause tracks live data, so switch to G1 or ZGC to shorten it.</span></button><button type="button" class="opt" data-ok="false">It disappears<span class="owhy" hidden>The old generation still fills eventually, and the Parallel collector compacts it with the app stopped.</span></button></div></div><div class="q" data-multi="false"><p class="qq"><b>Q2.</b> A web game creates a new {x, y} object for every particle on every frame. What is the risk?</p><div class="opts"><button type="button" class="opt" data-ok="true">Frequent young-gen collections on the main thread, which can push frames past 16.7 ms<span class="owhy" hidden>Correct. Reusing objects removes the allocation that triggers them.</span></button><button type="button" class="opt" data-ok="false">A memory leak<span class="owhy" hidden>The objects become unreachable after the frame, so they are collected. The cost is time, not memory.</span></button><button type="button" class="opt" data-ok="false">Nothing, because JavaScript has no GC pauses<span class="owhy" hidden>V8 does pause the main thread, though it keeps most pauses short.</span></button></div></div><div class="q" data-multi="false"><p class="qq"><b>Q3.</b> You remove an item from a list but keep it in a Map used as a cache. Will the GC free it?</p><div class="opts"><button type="button" class="opt" data-ok="false">Yes, it is no longer in the list<span class="owhy" hidden>The Map still holds a reference, and the Map is reachable from a root.</span></button><button type="button" class="opt" data-ok="true">No — it is still reachable through the Map<span class="owhy" hidden>Correct. Use a WeakMap (JS) or WeakReference/WeakHashMap (Java) if the cache should not keep it alive.</span></button></div></div><p class="score" aria-live="polite"></p></div></section>
+<section class="panel span-full" id="glossary" data-say="Glossary"><div class="kick"><span>08</span></div><h2>Glossary</h2><dl class="glossary"><div><dt>Root</dt><dd>A reference the program holds directly: a stack variable, a static field, a global, or a register.</dd></div><div><dt>Stop-the-world (STW)</dt><dd>A GC phase that runs while every application thread is paused.</dd></div><div><dt>Safepoint</dt><dd>A place in the code where a thread can stop so the collector sees a consistent heap.</dd></div><div><dt>Write barrier</dt><dd>Code the runtime adds to each reference store, so a concurrent collector learns about changes.</dd></div><div><dt>Promotion</dt><dd>Moving an object that survived several young collections into the old generation.</dd></div><div><dt>Remembered set</dt><dd>A record of old→young references, so a minor GC does not need to scan the old generation.</dd></div></dl></section>
+<section class="panel span-full" id="sources" data-say="Oracle, HotSpot Virtual Machine Garbage Collection Tuning Guide (JDK 21) — generations, G1 pause goal (MaxGCPauseMillis = 200 ms), Parallel and Serial collectors. OpenJDK, JEP 439: Generational ZGC and ZGC wiki — sub-millisecond pause goal."><div class="kick"><span>09</span></div><h2>Sources</h2><div class="prose"><ul><li>Oracle, <a href="https://docs.oracle.com/en/java/javase/21/gctuning/">HotSpot Virtual Machine Garbage Collection Tuning Guide (JDK 21)</a> — generations, G1 pause goal (<code>MaxGCPauseMillis</code> = 200 ms), Parallel and Serial collectors.</li><li>OpenJDK, <a href="https://openjdk.org/jeps/439">JEP 439: Generational ZGC</a> and <a href="https://wiki.openjdk.org/display/zgc">ZGC wiki</a> — sub-millisecond pause goal.</li><li>V8 blog, <a href="https://v8.dev/blog/trash-talk">Trash talk: the Orinoco garbage collector</a> — Scavenger, concurrent marking, parallel compaction.</li><li>V8 blog, <a href="https://v8.dev/blog/free-garbage-collection">Free garbage collection</a> — GC scheduled in idle time between frames.</li><li>MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management">Memory management in JavaScript</a> — reachability, mark-and-sweep, cycles.</li></ul></div></section>
+
+</main>
+</div>
+<div class="tourbar" hidden><button type="button" data-act="tprev" aria-label="Previous">‹</button><button type="button" data-act="tpause" aria-label="Pause">❚❚</button><button type="button" data-act="tnext" aria-label="Next">›</button><p class="tcap" aria-live="polite"></p><button type="button" data-act="tstop" aria-label="Close tour">✕</button></div>
+<div class="snip" role="tooltip" hidden></div>
+<footer>Made with clearproof 0.1.0 · 2026-10-05 04:30</footer>
+<script type="application/json" id="clearproof-glossary">{"Root":"A reference the program holds directly: a stack variable, a static field, a global, or a register.","Stop-the-world (STW)":"A GC phase that runs while every application thread is paused.","Safepoint":"A place in the code where a thread can stop so the collector sees a consistent heap.","Write barrier":"Code the runtime adds to each reference store, so a concurrent collector learns about changes.","Promotion":"Moving an object that survived several young collections into the old generation.","Remembered set":"A record of old→young references, so a minor GC does not need to scan the old generation."}</script>
+<script type="text/plain" id="clearproof-source">---
+kicker: Garbage collection in Java and JavaScript
+title: GC pause time grows with what survives, not with the garbage
+tldr: The collector keeps what your program can **reach from its roots** and frees the rest. Pauses last about 1 ms for young objects, but seconds for a full stop-the-world collection.
+for: a programmer who uses Java or JavaScript and has seen a &quot;GC pause&quot; in a profile
+cols: 1
+---
+## The hero {hero}
+```figure caption=&quot;Tracing starts at the roots. Everything it cannot reach is garbage — even the cycle A ↔ B.&quot; wide
+&lt;div class=&quot;g&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const W = 760, H = 285, BW = 150, BH = 36;
+const s = L.svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', style: 'font-size:13px' });
+const N = {
+  s: { x: 10, y: 50, t: 'stack: cart', root: 1 }, g: { x: 10, y: 205, t: 'static: config', root: 1 },
+  c: { x: 205, y: 50, t: 'Cart #41', live: 1 }, p: { x: 400, y: 15, t: 'Item &quot;pen&quot;', live: 1 },
+  i: { x: 400, y: 95, t: 'Item &quot;ink&quot;', live: 1 }, f: { x: 205, y: 205, t: 'Config', live: 1 },
+  m: { x: 400, y: 205, t: 'Map (cache)', live: 1 }, o: { x: 600, y: 15, t: 'Cart #40 (old)' },
+  k: { x: 600, y: 95, t: 'Item &quot;cap&quot;' }, a: { x: 600, y: 175, t: 'Node A' }, b: { x: 600, y: 240, t: 'Node B' },
+};
+const E = [['s','c'],['c','p'],['c','i'],['g','f'],['f','m'],['o','k'],['o','i'],['a','b'],['b','a']];
+const defs = L.svg('defs', {}, L.svg('marker', { id: 'ah', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' },
+  L.svg('path', { d: 'M0,0 L10,5 L0,10 z', fill: L.color('ink-3') })));
+s.append(defs);
+for (const [u, v] of E) {
+  const A = N[u], B = N[v]; let d;
+  if (A.x === B.x) { const dx = A.y &lt; B.y ? 50 : 100; d = `M${A.x+dx},${A.y &lt; B.y ? A.y+BH : A.y} L${B.x+dx},${A.y &lt; B.y ? B.y : B.y+BH}`; }
+  else if (B.x &lt; A.x) d = `M${A.x},${A.y+BH/2} L${B.x+BW},${B.y+BH/2}`;
+  else d = `M${A.x+BW},${A.y+BH/2} L${B.x},${B.y+BH/2}`;
+  s.append(L.svg('path', { d, stroke: L.color('ink-3'), 'stroke-width': 1.5, fill: 'none', 'marker-end': 'url(#ah)' }));
+}
+const g1 = L.svg('g', { 'data-s': 1 }), g2 = L.svg('g', { 'data-s': 2 }), g3 = L.svg('g', { 'data-s': 3 });
+for (const n of Object.values(N)) {
+  s.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: L.color('node'), stroke: L.color('line') }));
+  s.append(L.svg('text', { x: n.x + 10, y: n.y + 23, fill: L.color('ink') }, n.t));
+  if (n.root) g1.append(L.svg('rect', { x: n.x-3, y: n.y-3, width: BW+6, height: BH+6, rx: 8, fill: 'none', stroke: L.color('accent'), 'stroke-width': 3 }));
+  if (n.live) g2.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: L.color('accent'), opacity: 0.18 }),
+    L.svg('text', { x: n.x + BW - 22, y: n.y + 23, fill: L.color('accent'), 'font-weight': 700 }, '✓'));
+  if (!n.root &amp;&amp; !n.live) g3.append(L.svg('rect', { x: n.x, y: n.y, width: BW, height: BH, rx: 6, fill: 'none', stroke: L.color('risk'), 'stroke-width': 2, 'stroke-dasharray': '5 4' }),
+    L.svg('text', { x: n.x + BW - 44, y: n.y + 23, fill: L.color('risk'), 'font-weight': 700 }, 'freed'));
+}
+g1.append(L.svg('text', { x: 12, y: 30, fill: L.color('accent'), 'font-weight': 700 }, 'GC roots'));
+g2.append(L.svg('text', { x: 205, y: 160, fill: L.color('accent'), 'font-weight': 700 }, '✓ = reached, so kept'));
+g3.append(L.svg('text', { x: 600, y: 160, fill: L.color('risk'), 'font-weight': 700 }, 'no path from a root'));
+s.append(g1, g2, g3);
+fig.querySelector('.g').append(s);
+L.steps(fig, [
+  'The heap: 9 objects with references between them. The collector cannot ask the program which ones it still needs.',
+  'Roots are the starting points: local variables on each thread stack, static fields (Java) or globals (JS), and registers.',
+  'Mark: follow every reference from the roots. Cart #41, both items, Config and the Map get a mark.',
+  'Sweep: the 4 unmarked objects are freed. Cart #40 points at &quot;ink&quot;, but nothing points at Cart #40, so it dies.',
+]);
+&lt;/script&gt;
+```
+
+## Four parts do the work {kicker=&quot;Names first&quot;}
+- **Roots** — stack variables, static fields or globals, and CPU registers.
+- **Mark** — follow references from the roots and flag every object reached.
+- **Sweep or copy** — reclaim unflagged memory, or copy flagged objects to a fresh area.
+- **Safepoint** — a point where every app thread has stopped, so references cannot change during a step that needs a frozen heap.
+
+Reference counting alone cannot free the cycle A ↔ B: each node still has a count of 1. Java and JavaScript engines use tracing, so the cycle goes.
+
+## Most objects die young, so the young generation is collected by copying the few survivors {kicker=&quot;Mechanism&quot; span=full}
+Both HotSpot (Java) and V8 (JavaScript) split the heap. New objects go to a small **young generation**. Objects that survive a few collections move to the **old generation**.
+
+```quiz
+? Eden is full: 10 objects, of which 8 are already garbage. Where does the minor collection spend its time?
+- [ ] Freeing the 8 dead objects one by one :: A copying collector never visits dead objects. It abandons the whole area at once.
+- [x] Copying the 2 live objects :: Correct. Work is proportional to survivors, so a young collection with few survivors is short.
+- [ ] Scanning the whole old generation :: A &quot;remembered set&quot; records old→young references, so the old generation is not traced.
+```
+
+```figure caption=&quot;A minor GC copies 2 survivors and wipes eden. The 8 dead objects cost nothing. Illustrative sizes.&quot; wide
+&lt;div class=&quot;rows&quot; style=&quot;display:grid;gap:10px&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const rows = fig.querySelector('.rows');
+const names = ['req','json','str','buf','tmp','user','str','arr','tmp','sess'];
+const live = new Set([5, 9]);
+const mk = (label) =&gt; { const cells = L.el('div', { style: 'display:flex;gap:4px;flex-wrap:wrap' });
+  rows.append(L.el('div', { style: 'display:grid;grid-template-columns:200px 1fr;align-items:center;gap:8px' },
+    L.el('span', { class: 'mono' }, label), cells)); return cells; };
+const eden = mk('Eden (young)'), surv = mk('Survivor (young)'), old = mk('Old generation');
+const app = L.readout(fig, 'App threads'), cp = L.readout(fig, 'Objects copied');
+const cell = (t, cls = '') =&gt; L.el('span', { class: 'cell ' + cls, style: 'min-width:52px;text-align:center' }, t);
+const fill = (row, items, size) =&gt; { row.replaceChildren(...items, ...Array.from({ length: size - items.length }, () =&gt; cell('·', 'dim'))); };
+const render = (st) =&gt; {
+  const e = st === 0 ? names.slice(0, 4) : st &lt;= 2 ? names : [];
+  fill(eden, e.map((n, i) =&gt; cell(n, st === 2 ? (live.has(i) ? 'hit' : 'dim') : st === 1 ? 'on' : '')), 10);
+  const sv = st === 3 ? [cell('user ·1', 'hit'), cell('sess ·1', 'hit')] : st === 4 ? [cell('cart ·1', 'hit')] : [];
+  fill(surv, sv, 4);
+  const o = [cell('Config'), cell('Map')]; if (st === 4) o.push(cell('user ·2', 'hit'));
+  fill(old, o, 6);
+  app.set(st === 1 || st === 2 ? 'PAUSED (stop-the-world)' : 'running');
+  cp.set(st === 3 ? '2 of 10' : st === 4 ? '2 (1 promoted)' : '0');
+};
+const p = L.player(fig, { steps: 5, onStep: render, interval: 1400, labels: [
+  'Allocate: each request creates short-lived objects in eden (4 of 10 slots used).',
+  'Eden is full (10 of 10). Allocation fails, so the JVM or V8 pauses the app threads at a safepoint.',
+  'Trace from roots plus the remembered set: only &quot;user&quot; and &quot;sess&quot; are reachable. 8 of 10 are garbage.',
+  'Copy the 2 survivors to the survivor space (age 1) and reset eden as empty. The pause ends.',
+  'Next minor GC: &quot;user&quot; survives again and is promoted to the old generation; &quot;sess&quot; died.',
+] });
+p.go(3);
+&lt;/script&gt;
+```
+
+```callout info What we simplified
+Real eden sizes are megabytes to gigabytes, not 10 slots. V8 calls this the Scavenger and uses two semi-spaces; HotSpot uses eden plus two survivor spaces. The promotion age here (2) is illustrative.
+```
+
+## Pauses happen when the collector needs a heap that cannot change {kicker=&quot;When it pauses&quot; span=full}
+Marking while the app runs is unsafe: the app could move the only reference to an object into an already-scanned object. Collectors handle this in one of three ways. The choice decides how long your longest pause is.
+
+```figure caption=&quot;Same heap, three collector designs. Red = app threads stopped. Pause length tracks live data only for stop-the-world full GC. Illustrative model.&quot; wide
+&lt;div class=&quot;tl&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const W = 760, X0 = 110, SC = 64; // 10 s window, 64 px per second
+const box = fig.querySelector('.tl');
+const longest = L.readout(fig, 'Longest pause'), total = L.readout(fig, 'Time paused in 10 s');
+let mode = 0, live = 8;
+const fmt = (s) =&gt; s &gt;= 1 ? s.toFixed(1) + ' s' : s &gt;= 0.01 ? Math.round(s * 1000) + ' ms' : (s * 1000).toFixed(1) + ' ms';
+function model(mode, gb) {
+  if (mode === 0) { const d = gb / 4; return { pauses: [[0.5, 0.02], [1, d]].filter(([t]) =&gt; t &lt; 10), conc: [] }; }
+  if (mode === 1) { const m = Math.min(gb * 0.4, 7);
+    return { pauses: [[1, 0.02], [3, 0.02], [5, 0.02], [7, 0.02], [9, 0.02], [1.5 + m, 0.005 + gb * 0.001]], conc: [[1.5, m]] }; }
+  const m = Math.min(gb * 0.5, 8);
+  return { pauses: [[1, 0.0005], [1 + m / 2, 0.0005], [1 + m, 0.0005]], conc: [[1, m]] };
+}
+function draw() {
+  const { pauses, conc } = model(mode, live);
+  const s = L.svg('svg', { viewBox: `0 0 ${W} 150`, width: '100%', style: 'font-size:13px' });
+  const lane = (y, label) =&gt; { s.append(L.svg('text', { x: 0, y: y + 18, fill: L.color('ink') }, label),
+    L.svg('rect', { x: X0, y, width: 10 * SC, height: 26, fill: L.color('node'), stroke: L.color('line') })); };
+  lane(20, 'App threads'); lane(70, 'GC threads');
+  s.append(L.svg('rect', { x: X0, y: 20, width: 10 * SC, height: 26, fill: L.color('ok'), opacity: 0.25 }));
+  for (const [t, d] of conc) s.append(L.svg('rect', { x: X0 + t * SC, y: 70, width: d * SC, height: 26, fill: L.color('accent'), opacity: 0.45 }),
+    L.svg('text', { x: X0 + t * SC + 6, y: 88, fill: L.color('ink') }, 'concurrent mark' + (mode === 2 ? ' + relocate' : '')));
+  let mx = 0, sum = 0;
+  for (const [t, d] of pauses) { mx = Math.max(mx, d); sum += Math.min(d, 10 - t);
+    const w = Math.max(3, Math.min(d, 10 - t) * SC);
+    s.append(L.svg('rect', { x: X0 + t * SC, y: 20, width: w, height: 26, fill: L.color('risk') }),
+      L.svg('rect', { x: X0 + t * SC, y: 70, width: w, height: 26, fill: L.color('risk'), opacity: 0.7 })); }
+  const [lt] = pauses.find(([, d]) =&gt; d === mx);
+  s.append(L.svg('text', { x: Math.min(X0 + lt * SC, W - 150), y: 14, fill: L.color('risk'), 'font-weight': 700 }, '▼ ' + fmt(mx) + ' pause'));
+  for (let i = 0; i &lt;= 10; i += 2) s.append(L.svg('text', { x: X0 + i * SC, 'text-anchor': i === 10 ? 'end' : i ? 'middle' : 'start', y: 120, fill: L.color('ink-3') }, i + ' s'));
+  box.replaceChildren(s); longest.set(fmt(mx)); total.set(fmt(sum));
+}
+L.toggle(fig, ['Stop-the-world full GC (Serial, Parallel)', 'Mostly concurrent (G1, V8 old gen)', 'Concurrent compacting (ZGC, Shenandoah)'], (i) =&gt; { mode = i; draw(); });
+L.slider(fig, { label: 'Live data in old gen', min: 1, max: 32, step: 1, value: 8, format: (v) =&gt; v + ' GB' }, (v) =&gt; { live = v; draw(); });
+draw();
+&lt;/script&gt;
+```
+
+- **Stop-the-world:** mark and compact the whole heap while every app thread waits. In this model, 8 GB of live data at 4 GB/s gives a 2 s pause.
+- **Mostly concurrent:** mark while the app runs. A **write barrier** logs reference changes, and a short final pause fixes up the rest.
+- **Concurrent compacting:** also move objects while the app runs, using load barriers. Pauses stay under 1 ms, but GC threads take CPU time.
+
+## A 200 ms pause misses 12 frames of a 60 fps page {kicker=&quot;Numbers&quot;}
+```chart bar unit=ms scale=log caption=&quot;Pause sizes span four orders of magnitude. Compare each one with the 16.7 ms frame budget.&quot;
+ZGC pause goal | 1 ! under 1 ms (JEP 439)
+Browser frame at 60 fps | 16.7
+*G1 default pause goal | 200 ! -XX:MaxGCPauseMillis default
+Full GC, 8 GB live (illustrative) | 2000 ! at 4 GB/s
+```
+JavaScript runs your code on one main thread. Any GC work on that thread delays input and rendering. V8 hides most of it with parallel scavenges, concurrent marking and GC work scheduled in idle time between frames.
+
+## Long pauses come from a few known triggers {kicker=&quot;Where it breaks&quot; span=full}
+```figure caption=&quot;The same 10 s of app time under four triggers. Red = app stopped. Only the first is routine. Illustrative.&quot; wide
+&lt;div class=&quot;cs&quot; style=&quot;display:grid;gap:12px&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+const C = [
+  ['ok', 'Minor GC, few survivors', '~1–10 ms each, often', [[1, .01], [3, .01], [5, .01], [7, .01], [9, .01]]],
+  ['warn', 'Old gen fills before concurrent mark ends', 'falls back to a full GC', [[1, .01], [3, .01], [4, 1.2]]],
+  ['warn', 'Allocation outruns the collector', 'threads stall waiting for memory', [[2, .15], [2.6, .2], [3.4, .3], [6, .25]]],
+  ['risk', 'Huge live set, stop-the-world collector', '16 GB live ≈ 4 s', [[1, 4]]],
+];
+const box = fig.querySelector('.cs');
+for (const [st, title, note, ps] of C) {
+  const s = L.svg('svg', { viewBox: '0 0 400 26', width: '100%', preserveAspectRatio: 'none', style: 'height:22px' });
+  s.append(L.svg('rect', { x: 0, y: 0, width: 400, height: 26, fill: L.color('ok'), opacity: 0.25 }));
+  for (const [t, d] of ps) s.append(L.svg('rect', { x: t * 40, y: 0, width: Math.max(3, d * 40), height: 26, fill: L.color('risk') }));
+  box.append(L.el('div', { style: 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center' },
+    L.el('div', { style: 'text-align:left' }, L.el('span', { class: 'tag' }, st.toUpperCase()), ' ', L.el('b', {}, title), L.el('div', { class: 'muted', style: 'text-align:left' }, note)), s));
+}
+&lt;/script&gt;
+```
+
+| Symptom | Cause | Try |
+|---|---|---|
+| Short regular pauses | minor GC | ok Usually fine |
+| Rare multi-second pause | full GC | no G1 or ZGC; find leaks |
+| Janky JS animation | GC in a frame | warn Reuse objects |
+| Memory grows forever | reachable leak | no Find the root |
+
+## What to remember {kicker=&quot;Summary&quot;}
+```callout key Four rules
+1. GC frees only unreachable objects. A forgotten cache entry or listener is a leak the GC cannot fix.
+2. Young collections are cheap because their cost is the survivors, not the garbage.
+3. Long pauses come from stop-the-world work on the old generation. Concurrent collectors shrink them by doing that work while your code runs.
+4. Lower pauses cost CPU and memory: barriers slow each write or read, and GC threads compete with your threads.
+```
+
+```quiz
+? A Java service on the Parallel collector has 16 GB of live data and pauses for 4 s. You double the heap to 64 GB. What happens to the full-GC pause?
+- [ ] It halves :: A bigger heap makes full GCs less frequent, but each one still traces all 16 GB of live data.
+- [x] Full GCs come less often, but each one is still about as long :: Correct. Stop-the-world pause tracks live data, so switch to G1 or ZGC to shorten it.
+- [ ] It disappears :: The old generation still fills eventually, and the Parallel collector compacts it with the app stopped.
+
+? A web game creates a new {x, y} object for every particle on every frame. What is the risk?
+- [x] Frequent young-gen collections on the main thread, which can push frames past 16.7 ms :: Correct. Reusing objects removes the allocation that triggers them.
+- [ ] A memory leak :: The objects become unreachable after the frame, so they are collected. The cost is time, not memory.
+- [ ] Nothing, because JavaScript has no GC pauses :: V8 does pause the main thread, though it keeps most pauses short.
+
+? You remove an item from a list but keep it in a Map used as a cache. Will the GC free it?
+- [ ] Yes, it is no longer in the list :: The Map still holds a reference, and the Map is reachable from a root.
+- [x] No — it is still reachable through the Map :: Correct. Use a WeakMap (JS) or WeakReference/WeakHashMap (Java) if the cache should not keep it alive.
+```
+
+## Glossary
+```glossary
+Root: A reference the program holds directly: a stack variable, a static field, a global, or a register.
+Stop-the-world (STW): A GC phase that runs while every application thread is paused.
+Safepoint: A place in the code where a thread can stop so the collector sees a consistent heap.
+Write barrier: Code the runtime adds to each reference store, so a concurrent collector learns about changes.
+Promotion: Moving an object that survived several young collections into the old generation.
+Remembered set: A record of old→young references, so a minor GC does not need to scan the old generation.
+```
+
+## Sources
+- Oracle, [HotSpot Virtual Machine Garbage Collection Tuning Guide (JDK 21)](https://docs.oracle.com/en/java/javase/21/gctuning/) — generations, G1 pause goal (`MaxGCPauseMillis` = 200 ms), Parallel and Serial collectors.
+- OpenJDK, [JEP 439: Generational ZGC](https://openjdk.org/jeps/439) and [ZGC wiki](https://wiki.openjdk.org/display/zgc) — sub-millisecond pause goal.
+- V8 blog, [Trash talk: the Orinoco garbage collector](https://v8.dev/blog/trash-talk) — Scavenger, concurrent marking, parallel compaction.
+- V8 blog, [Free garbage collection](https://v8.dev/blog/free-garbage-collection) — GC scheduled in idle time between frames.
+- MDN, [Memory management in JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management) — reachability, mark-and-sweep, cycles.
+</script>
+<script>
+(() => {
+  'use strict';
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const root = document.documentElement;
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage may be blocked */ } },
+  };
+  const pageKey = 'clearproof:' + (document.title || location.pathname);
+  const params = new URLSearchParams(location.search);
+
+  /* theme */
+  const savedTheme = store.get('clearproof:theme');
+  if (savedTheme && !root.dataset.theme) root.dataset.theme = savedTheme;
+  $('[data-act="theme"]')?.addEventListener('click', () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    store.set('clearproof:theme', root.dataset.theme);
+  });
+
+  /* copy the draft */
+  $('[data-act="source"]')?.addEventListener('click', async (e) => {
+    const text = $('#clearproof-source').textContent;
+    try { await navigator.clipboard.writeText(text); } catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    const b = e.currentTarget; const t = b.textContent; b.textContent = 'Copied ✓'; setTimeout(() => (b.textContent = t), 1400);
+  });
+
+  /* sticky title + contents highlight */
+  addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 120), { passive: true });
+  const tocLinks = new Map($$('.toc a').map((a) => [a.getAttribute('href').slice(1), a]));
+  if (tocLinks.size && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) {
+        tocLinks.forEach((a) => a.classList.remove('on'));
+        tocLinks.get(en.target.id)?.classList.add('on');
+      }
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    $$('main > section').forEach((s) => io.observe(s));
+  }
+
+  /* step-through diagrams */
+  for (const fig of $$('figure.playable')) {
+    const n = +fig.dataset.steps || 0;
+    const items = $$('[data-step]', fig);
+    const cap = $('.caption', fig);
+    const count = $('.count', fig);
+    let cur = 0; let timer = null;
+    const noteOf = (k) => items.find((el) => +el.dataset.step === k && el.dataset.note)?.dataset.note || '';
+    const go = (k) => {
+      cur = Math.max(0, Math.min(n, k));
+      if (!cur) {
+        fig.classList.remove('stepping');
+        items.forEach((el) => el.classList.remove('now', 'future'));
+        if (cap) cap.textContent = 'Press ▶ or › to walk through it.';
+        if (count) count.textContent = n + ' steps';
+        return;
+      }
+      fig.classList.add('stepping');
+      for (const el of items) {
+        const s = +el.dataset.step;
+        el.classList.toggle('future', s > cur);
+        el.classList.toggle('now', s === cur && !el.classList.contains('node'));
+      }
+      if (cap) cap.textContent = noteOf(cur);
+      if (count) count.textContent = cur + ' / ' + n;
+    };
+    const stop = () => { clearInterval(timer); timer = null; const p = $('[data-act="play"]', fig); if (p) p.textContent = '▶'; };
+    fig.addEventListener('click', (e) => {
+      const act = e.target.closest('button')?.dataset.act;
+      if (!act) return;
+      if (act === 'next') { stop(); go(cur >= n ? 0 : cur + 1); }
+      if (act === 'prev') { stop(); go(cur - 1); }
+      if (act === 'play') {
+        if (timer) return stop();
+        e.target.textContent = '❚❚';
+        if (cur >= n) go(0);
+        go(cur + 1);
+        timer = setInterval(() => (cur >= n ? (stop(), setTimeout(() => go(0), 1600)) : go(cur + 1)), 1900);
+      }
+    });
+    fig.clearproof = { n, go, noteOf, stop };
+  }
+
+  /* hover previews: code refs and glossary terms */
+  const tip = $('.snip');
+  const show = (el, text, cls) => {
+    if (!tip) return;
+    tip.className = 'snip' + (cls ? ' ' + cls : '');
+    tip.textContent = text;
+    tip.hidden = false;
+    const r = el.getBoundingClientRect();
+    const w = tip.offsetWidth; const h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+    tip.style.top = (r.bottom + h + 12 < innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+  };
+  const hide = () => tip && (tip.hidden = true);
+  document.addEventListener('mouseover', (e) => {
+    const ref = e.target.closest('a.ref[data-snip]');
+    const term = e.target.closest('abbr.term');
+    if (ref) show(ref, ref.dataset.snip);
+    else if (term) show(term, term.dataset.def, 'term');
+  });
+  document.addEventListener('mouseout', (e) => { if (e.target.closest('a.ref, abbr.term')) hide(); });
+  document.addEventListener('focusin', (e) => { const r = e.target.closest('a.ref[data-snip]'); if (r) show(r, r.dataset.snip); });
+  document.addEventListener('focusout', hide);
+
+  /* glossary: mark the first use of each term in every section */
+  let gloss = {};
+  try { gloss = JSON.parse($('#clearproof-glossary')?.textContent || '{}'); } catch { /* ignore */ }
+  const terms = Object.keys(gloss).sort((a, b) => b.length - a.length);
+  if (terms.length) {
+    const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    for (const sec of $$('main > section')) {
+      const seen = new Set();
+      const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => n.parentElement.closest('code, pre, a, abbr, svg, h2, .glossary, button, figure.code') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        for (const t of terms) {
+          if (seen.has(t)) continue;
+          const re = new RegExp('(^|[^\\w])(' + escRe(t) + ')(?![\\w])', t === t.toUpperCase() ? '' : 'i');
+          const m = node.nodeValue.match(re);
+          if (!m) continue;
+          seen.add(t);
+          const at = m.index + m[1].length;
+          const after = node.splitText(at);
+          after.nodeValue = after.nodeValue.slice(m[2].length);
+          const ab = document.createElement('abbr');
+          ab.className = 'term'; ab.textContent = m[2]; ab.dataset.def = t + ': ' + gloss[t]; ab.tabIndex = 0;
+          node.parentNode.insertBefore(ab, after);
+          break;
+        }
+      }
+    }
+  }
+
+  /* linked highlighting: names in the prose light up the matching part of the section's diagram */
+  for (const sec of $$('main > section')) {
+    const figs = $$('figure.diagram', sec);
+    if (!figs.length) continue;
+    const names = [...new Set(figs.flatMap((f) => $$('[data-id]', f).map((g) => g.dataset.id)))].filter((n) => n.length >= 3).sort((a, b) => b.length - a.length);
+    if (!names.length) continue;
+    const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(^|[^\\w])(' + names.map(escRe).join('|') + ')(?![\\w])');
+    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => n.parentElement.closest('svg, code, pre, a, abbr, h2, button, .xref, figure.code, .player') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (let node of nodes) {
+      let m;
+      while (node && (m = node.nodeValue.match(re))) {
+        const at = m.index + m[1].length;
+        const after = node.splitText(at);
+        node = after.splitText(m[2].length);
+        const span = document.createElement('span');
+        span.className = 'xref'; span.dataset.x = m[2]; span.tabIndex = 0;
+        after.replaceWith(span); span.append(after);
+      }
+    }
+    const light = (name, on) => {
+      for (const f of figs) {
+        f.classList.toggle('linking', on);
+        $$('[data-id], [data-from]', f).forEach((g) => g.classList.toggle('lit', on && (g.dataset.id === name || g.dataset.from === name || g.dataset.to === name)));
+      }
+    };
+    sec.addEventListener('mouseover', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('mouseout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+    sec.addEventListener('focusin', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('focusout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+  }
+
+  /* quiz */
+  for (const quiz of $$('.quiz')) {
+    let right = 0; let done = 0; const total = $$('.q', quiz).length;
+    const score = $('.score', quiz);
+    const finish = (q, ok) => {
+      if (q.dataset.done) return;
+      q.dataset.done = '1'; done++; if (ok) right++;
+      $$('.owhy', q).forEach((w) => w.removeAttribute('hidden'));
+      $('.why', q)?.removeAttribute('hidden');
+      if (score && done === total) score.textContent = right + ' of ' + total + ' right on the first try.';
+    };
+    quiz.addEventListener('click', (e) => {
+      const q = e.target.closest('.q'); if (!q) return;
+      if (e.target.closest('.reveal')) { $('.ans', q).hidden = false; e.target.closest('.reveal').hidden = true; finish(q, true); return; }
+      const opt = e.target.closest('.opt'); if (!opt || q.dataset.done) return;
+      const ok = opt.dataset.ok === 'true';
+      opt.classList.add(ok ? 'right' : 'wrong');
+      opt.querySelector('.owhy')?.removeAttribute('hidden');
+      const multi = q.dataset.multi === 'true';
+      if (!ok) { q.dataset.miss = '1'; $$('.opt', q).forEach((o) => o.dataset.ok === 'true' && o.classList.add('right')); finish(q, false); return; }
+      const all = $$('.opt', q).filter((o) => o.dataset.ok === 'true').every((o) => o.classList.contains('right'));
+      if (!multi || all) finish(q, !q.dataset.miss);
+    });
+  }
+
+  /* checklist */
+  for (const cl of $$('.checklist')) {
+    const boxes = $$('input', cl);
+    const prog = $('.progress span', cl);
+    const update = () => { if (prog) prog.textContent = boxes.filter((b) => b.checked).length; };
+    for (const b of boxes) {
+      const k = pageKey + ':' + b.dataset.k; const v = store.get(k);
+      if (v !== null) b.checked = v === '1';
+      b.addEventListener('change', () => { store.set(k, b.checked ? '1' : '0'); update(); });
+    }
+    update();
+  }
+
+  /* figure kit: bespoke figures get consistent controls and theme colours */
+  const NS = 'http://www.w3.org/2000/svg';
+  const make = (ns) => (tag, attrs = {}, ...kids) => {
+    const el = ns ? document.createElementNS(NS, tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  };
+  const controls = (fig) => fig.querySelector(':scope > .fig-controls') || fig.appendChild(Object.assign(document.createElement('div'), { className: 'fig-controls' }));
+  const L = {
+    el: make(false),
+    svg: make(true),
+    color: (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim(),
+    readout(fig, label) {
+      const v = L.el('b', {}, '–');
+      controls(fig).append(L.el('span', { class: 'readout' }, `${label} `, v));
+      return { set: (x) => { v.textContent = x; } };
+    },
+    toggle(fig, labels, onChange, initial = 0) {
+      const box = L.el('span', { class: 'seg', role: 'group' });
+      const btns = labels.map((t, i) => L.el('button', { type: 'button', 'aria-pressed': String(i === initial), onclick: () => { btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))); onChange(i); } }, t));
+      box.append(...btns);
+      controls(fig).prepend(box);
+      return { set: (i) => btns[i].click() };
+    },
+    slider(fig, o, onInput) {
+      const out = L.el('output', {}, o.format ? o.format(o.value) : String(o.value));
+      const input = L.el('input', { type: 'range', min: o.min, max: o.max, step: o.step ?? 1, value: o.value });
+      input.addEventListener('input', () => { const v = Number(input.value); out.textContent = o.format ? o.format(v) : String(v); onInput(v); });
+      controls(fig).append(L.el('label', { class: 'slider' }, `${o.label} `, input, out));
+      return { set: (v) => { input.value = v; input.dispatchEvent(new Event('input')); } };
+    },
+    player(fig, o) {
+      let cur = o.start ?? o.steps - 1; let timer = null;
+      const count = L.el('span', { class: 'count' });
+      const cap = o.labels ? L.el('span', { class: 'caption' }) : null;
+      const go = (k) => { cur = Math.max(0, Math.min(o.steps - 1, k)); count.textContent = `${cur + 1} / ${o.steps}`; if (cap) cap.textContent = o.labels[cur] || ''; o.onStep(cur); };
+      const stop = () => { clearInterval(timer); timer = null; play.textContent = '▶'; };
+      const play = L.el('button', { type: 'button', 'aria-label': 'Play', onclick: () => {
+        if (timer) return stop();
+        if (cur >= o.steps - 1) go(0);
+        play.textContent = '❚❚';
+        timer = setInterval(() => (cur >= o.steps - 1 ? stop() : go(cur + 1)), o.interval ?? 800);
+      } }, '▶');
+      const bar = L.el('div', { class: 'player' },
+        L.el('button', { type: 'button', 'aria-label': 'Previous', onclick: () => { stop(); go(cur - 1); } }, '‹'),
+        play,
+        L.el('button', { type: 'button', 'aria-label': 'Next', onclick: () => { stop(); go(cur + 1); } }, '›'),
+        count, cap);
+      controls(fig).append(bar);
+      go(cur); // start on the most informative frame (the end state unless o.start says otherwise)
+      return { go, stop, get step() { return cur; } };
+    },
+  };
+  // Parts marked data-s="k" appear at step k; the current step is accented, future steps fade (text hidden).
+  L.steps = (fig, captions, o = {}) => {
+    const parts = [...fig.querySelectorAll('[data-s]')];
+    const n = captions?.length || Math.max(...parts.map((p) => +p.dataset.s));
+    return L.player(fig, { steps: n, labels: captions, start: o.start, interval: o.interval ?? 1600, onStep: (k) => {
+      for (const p of parts) { const s = +p.dataset.s; p.classList.toggle('future', s > k + 1); p.classList.toggle('now', s === k + 1); }
+      o.onStep?.(k);
+    } });
+  };
+  // One drawing, two states: .only-before / .only-after parts swap; what stays put is what did not change.
+  L.beforeAfter = (fig, labels = ['Before', 'After'], initial = 1) => {
+    const set = (i) => { fig.dataset.view = i ? 'after' : 'before'; };
+    set(initial);
+    return L.toggle(fig, labels, set, initial);
+  };
+  window.L = L;
+  for (const fig of $$('[data-fig]')) {
+    const src = $('.fig-src', fig)?.textContent;
+    if (!src) continue;
+    try { new Function('fig', 'L', src)(fig, L); } catch (err) {
+      console.error(`figure ${fig.id}: ${err.message}`);
+      fig.append(L.el('p', { class: 'fig-error' }, `This figure failed to run: ${err.message}`));
+    }
+  }
+
+  /* tour: a narrated walk through the page; the video exporter drives the same code */
+  const bar = $('.tourbar');
+  const tcap = $('.tcap');
+  const segments = () => {
+    const out = [];
+    for (const sec of $$('main > section')) {
+      if (sec.classList.contains('appendix') && !params.has('all')) continue;
+      out.push({ sec, text: sec.dataset.say || sec.querySelector('h2')?.textContent || '' });
+      const fig = $('figure.playable', sec);
+      if (fig?.clearproof && fig.clearproof.n > 1) for (let k = 1; k <= fig.clearproof.n; k++) out.push({ sec, fig, step: k, text: fig.clearproof.noteOf(k) });
+    }
+    const tldr = $('.tldr p');
+    if (tldr) out.unshift({ sec: $('.hero'), text: (document.querySelector('.hero h1')?.textContent || '') + '. ' + tldr.textContent });
+    return out;
+  };
+  let segs = []; let idx = -1; let timer = null; let paused = false;
+  const timings = window.CLEARPROOF_TIMINGS || null; // seconds per segment, set by the video exporter
+  const voice = 'speechSynthesis' in window && !params.has('video') && !params.has('mute');
+  const estimate = (t) => Math.max(2.2, t.split(/\s+/).length / 2.7 + 0.8);
+  const clear = () => { clearTimeout(timer); if (voice) speechSynthesis.cancel(); };
+  const play = (k) => {
+    clear();
+    $$('.touring').forEach((s) => s.classList.remove('touring'));
+    if (k < 0) k = 0;
+    if (k >= segs.length) return endTour();
+    idx = k;
+    const s = segs[k];
+    s.sec.classList.add('touring');
+    if (!s.fig || s.step === 1) s.sec.scrollIntoView({ behavior: params.has('video') ? 'instant' : 'smooth', block: s.sec.offsetHeight > innerHeight * 0.8 ? 'start' : 'center' });
+    $$('figure.playable').forEach((f) => f !== s.fig && f.clearproof.go(0));
+    if (s.fig) s.fig.clearproof.go(s.step);
+    tcap.textContent = s.text;
+    if (paused) return;
+    const dur = timings ? timings[k] : estimate(s.text);
+    if (voice && !timings) {
+      const u = new SpeechSynthesisUtterance(s.text);
+      u.rate = 1.04;
+      let moved = false;
+      const next = () => { if (!moved && idx === k && !paused) { moved = true; play(k + 1); } };
+      u.onend = next;
+      speechSynthesis.speak(u);
+      timer = setTimeout(next, (dur * 1.6 + 2) * 1000);
+    } else timer = setTimeout(() => play(k + 1), dur * 1000);
+  };
+  const endTour = () => {
+    clear(); idx = -1;
+    $$('.touring').forEach((s) => s.classList.remove('touring'));
+    $$('figure.playable').forEach((f) => f.clearproof.go(0));
+    if (bar) bar.hidden = true;
+    window.clearproofTourDone = true;
+  };
+  const startTour = () => { segs = segments(); paused = false; window.clearproofTourDone = false; if (bar) bar.hidden = false; play(0); };
+  $('[data-act="tour"]')?.addEventListener('click', startTour);
+  bar?.addEventListener('click', (e) => {
+    const act = e.target.closest('button')?.dataset.act;
+    if (act === 'tnext') play(idx + 1);
+    if (act === 'tprev') play(idx - 1);
+    if (act === 'tstop') endTour();
+    if (act === 'tpause') { paused = !paused; e.target.textContent = paused ? '▶' : '❚❚'; if (paused) clear(); else play(idx); }
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && idx >= 0) endTour(); });
+  window.clearproofSegments = () => segments().map((s) => s.text);
+  window.clearproofStartTour = startTour;
+  if (params.has('video')) document.body.classList.add('video');
+  if (params.has('tour')) addEventListener('load', () => setTimeout(startTour, 300));
+})();
+
+</script>
+</body>
+</html>

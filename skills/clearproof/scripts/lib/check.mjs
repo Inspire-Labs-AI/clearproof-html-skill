@@ -9,7 +9,7 @@ function inspect() {
   const out = [];
   const name = (el) => {
     const sec = el.closest('section');
-    return sec ? `section "${sec.querySelector('h2')?.textContent.replace(/^\S+\s/, '').trim()}"` : 'page header';
+    return sec ? `section "${sec.querySelector('h2')?.textContent.replace(/^\S+\s/, '').trim() || 'hero'}"` : 'page header';
   };
   const doc = document.documentElement;
   if (doc.scrollWidth > innerWidth + 2) out.push({ level: 'error', where: 'page', message: `page scrolls sideways (${doc.scrollWidth}px wide in a ${innerWidth}px window)` });
@@ -43,7 +43,7 @@ function inspect() {
         const clipped = texts.find(({ r: tr }) => tr.width > 0 && (tr.right > r.right + 1 || tr.left < r.left - 1 || tr.bottom > r.bottom + 1 || tr.top < r.top - 1));
         if (clipped) out.push({ level: 'warn', where: name(svg), message: `label "${clipped.t.textContent.trim().slice(0, 30)}" is cut off at the edge of its figure; widen the viewBox or move the label` });
       }
-      const shapes = [...svg.querySelectorAll('.node')].map((g) => ({ g, r: g.querySelector('rect,polygon,path').getBoundingClientRect() }));
+      const shapes = [...svg.querySelectorAll('.node, g.cn:not(.faded)')].map((g) => ({ g, r: g.querySelector('rect,polygon,path').getBoundingClientRect() }));
       const area = (r) => Math.max(0, r.width) * Math.max(0, r.height);
       const inter = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
       let reported = 0;
@@ -65,7 +65,7 @@ function inspect() {
         for (let j = i + 1; j < grps.length; j++)
           if (inter(grps[i].r, grps[j].r) > 0 && !(grps[i].r.left <= grps[j].r.left && grps[i].r.right >= grps[j].r.right && grps[i].r.top <= grps[j].r.top && grps[i].r.bottom >= grps[j].r.bottom))
             out.push({ level: 'warn', where: name(svg), message: `group boxes overlap: "${grps[i].g.nextSibling?.textContent}" and "${grps[j].g.nextSibling?.textContent}"; drop a group or split the diagram` });
-      for (const lab of svg.querySelectorAll('.elabel')) {
+      for (const lab of svg.querySelectorAll('.elabel, .cl')) {
         const lr = lab.getBoundingClientRect();
         for (const s of shapes) {
           if (inter(lr, s.r) > 0.3 * area(lr)) {

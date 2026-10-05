@@ -11,7 +11,7 @@ import { md } from '../skills/clearproof/scripts/lib/md.mjs';
 import { layoutGraph, isotonic } from '../skills/clearproof/scripts/lib/layout.mjs';
 import { parseFlow } from '../skills/clearproof/scripts/lib/components/flow.mjs';
 import { parseSequence } from '../skills/clearproof/scripts/lib/components/sequence.mjs';
-import { renderDraft, fillRows } from '../skills/clearproof/scripts/lib/render.mjs';
+import { renderDraft, fillRows, accentNumber } from '../skills/clearproof/scripts/lib/render.mjs';
 import { lintDraft } from '../skills/clearproof/scripts/lib/lint.mjs';
 import { parseUnified } from '../skills/clearproof/scripts/lib/git.mjs';
 import { DraftError } from '../skills/clearproof/scripts/lib/util.mjs';
@@ -356,4 +356,9 @@ test('cases share one layout and mark the changed part', () => {
 test('a headline count must match the risks it introduces', () => {
   const doc = parseDraft('---\ntitle: R\ntldr: x\nkind: review\n---\n## Six problems\n```risks\nhigh | a\n  why: x\nlow | b\n```');
   assert.ok(lintDraft(doc).some((w) => w.rule === 'consistency' && /says 6 but the risks block lists 2/.test(w.message)));
+});
+
+test('headline accent includes currency and Indian units', () => {
+  assert.match(accentNumber('₹7.99 lakh saved by prepaying'), /<span class="num-accent">₹7.99 lakh<\/span>/);
+  assert.match(accentNumber('Memory costs 75× an L1 hit'), /<span class="num-accent">75×<\/span>/);
 });
