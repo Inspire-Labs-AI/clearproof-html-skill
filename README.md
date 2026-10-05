@@ -145,7 +145,9 @@ every member has it. Anyone can also run the two install commands above.
 No. Install the plugin and ask.
 
 **Does it send my data anywhere?**
-No. Pages are built and checked on your computer, and each page is a single offline file.
+No. Pages are built and checked on your computer, and each page is a single offline file. The one exception is
+optional: if you ask for a voiced video and have set an ElevenLabs API key, the narration text is sent to ElevenLabs
+to make the voice.
 
 **How is it different from asking Claude for an HTML page?**
 A plain request gives a page that looks good but checks nothing. clearproof calculates its numbers, quotes real code,

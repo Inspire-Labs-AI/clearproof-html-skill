@@ -1,11 +1,17 @@
 {
   "name": "clearproof",
+  "displayName": "clearproof",
   "version": "0.1.0",
   "description": "Clear visuals, proven answers: ask anything — tech, learning, money, code an AI wrote — and get an interactive page with step-through diagrams, real numbers and proof for every claim.",
   "author": {
     "name": "Inspire Labs AI"
   },
+  "homepage": "https://github.com/Inspire-Labs-AI/clearproof-html-skill",
   "repository": "https://github.com/Inspire-Labs-AI/clearproof-html-skill",
+  "documentationUrl": "https://github.com/Inspire-Labs-AI/clearproof-html-skill#readme",
+  "supportUrl": "https://github.com/Inspire-Labs-AI/clearproof-html-skill/issues",
+  "icon": "./docs/images/icon.png",
+  "license": "MIT",
   "keywords": [
     "code-review",
     "ai-code-review",
@@ -15,7 +21,5 @@
     "visualization",
     "video",
     "simplified-technical-english"
-  ],
-  "license": "MIT",
-  "homepage": "https://github.com/Inspire-Labs-AI/clearproof-html-skill"
+  ]
 }
