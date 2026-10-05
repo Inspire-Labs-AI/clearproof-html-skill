@@ -263,6 +263,7 @@ export function layoutArchitecture({ tiers, nodes, edges }) {
   };
   const meet = (A, B) => A.flatMap(([a0, a1]) => B.map(([b0, b1]) => [Math.max(a0, b0), Math.min(a1, b1)])).filter(([p, q]) => q - p > 4);
   const used = new Map();
+  const lanes = new Map();
 
   const routes = edges.map((e, i) => {
     const a = nodes.get(e.from);
@@ -304,8 +305,14 @@ export function layoutArchitecture({ tiers, nodes, edges }) {
     const n = used.get(k) || 0;
     used.set(k, n + 1);
     cx += n * 9 * (n % 2 ? 1 : -1);
-    const y1 = down ? gap(a.row) : gap(a.row - 1);
-    const y2 = down ? gap(b.row - 1) : gap(b.row);
+    // Each line gets its own lane in a gap, so two lines never share a horizontal run.
+    const lane = (g) => {
+      const n = lanes.get(g) || 0;
+      lanes.set(g, n + 1);
+      return gap(g) + Math.ceil(n / 2) * 10 * (n % 2 ? 1 : -1);
+    };
+    const y1 = lane(down ? a.row : a.row - 1);
+    const y2 = lane(down ? b.row - 1 : b.row);
     const pts = [s, { x: s.x, y: y1 }, { x: cx, y: y1 }, { x: cx, y: y2 }, { x: f.x, y: y2 }, f];
     return { ...e, d: elbow(pts), labelAt: { x: Math.abs(cx - s.x) > 40 ? (s.x + cx) / 2 : s.x, y: y1 } };
   });
