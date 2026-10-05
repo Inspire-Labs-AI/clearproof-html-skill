@@ -14,5 +14,3 @@ First public release.
   every figure for the agent's critique pass.
 - **Plain-English lint** inspired by ASD-STE100; a number inventory that flags one quantity with two values.
 - **Video:** `clearproof video` records the page tour to MP4 with ElevenLabs, `say` or `espeak` narration.
-- **Benchmark:** five blind rounds against plain HTML, answer-me-with-html and visual-explainer
-  ([docs/benchmark.md](docs/benchmark.md)).

@@ -8,7 +8,7 @@
 interactive page you understand in minutes and can trust: diagrams you step through, charts from real numbers, and
 proof for every claim.**
 
-[![CI](https://github.com/Inspire-Labs-AI/html-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/Inspire-Labs-AI/html-skill/actions/workflows/ci.yml)
+[![CI](https://github.com/Inspire-Labs-AI/clearproof-html-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/Inspire-Labs-AI/clearproof-html-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)
 ![Works offline](https://img.shields.io/badge/pages-offline-brightgreen.svg)
@@ -39,7 +39,7 @@ and you cannot tell which sentences are checked and which are guessed.
 **In Claude Code** (terminal, desktop app or IDE), run these two commands once:
 
 ```text
-/plugin marketplace add Inspire-Labs-AI/html-skill
+/plugin marketplace add Inspire-Labs-AI/clearproof-html-skill
 /plugin install clearproof@clearproof
 ```
 
@@ -76,8 +76,6 @@ More pages:
 - [Simplified Technical English, explained](docs/examples/ste100.html): the aerospace writing standard Andrej Karpathy
   suggested for reading AI answers, with measured before-and-after rewrites.
 - [How internet connections open and close (TCP)](docs/examples/tcp.html): diagrams that play message by message.
-- [The clearproof method](docs/methodology.html) and [how we built clearproof](docs/how-we-built-clearproof.html), both
-  made with clearproof.
 
 ## How it works
 
@@ -146,7 +144,7 @@ No. Pages are built and checked on your computer, and each page is a single offl
 
 **How is it different from asking Claude for an HTML page?**
 A plain request gives a page that looks good but checks nothing. clearproof calculates its numbers, quotes real code,
-labels what it verified, and checks the page before you see it. In blind tests it also scored higher.
+labels what it verified, and checks the page before you see it.
 
 **What is Simplified Technical English?**
 The controlled English that aircraft maintenance manuals use: short sentences, one meaning per word, no vague words.
@@ -157,7 +155,7 @@ Andrej Karpathy suggested it for reading AI answers. clearproof writes in that s
 Andrej Karpathy argued that we will spend more and more time *understanding* what AI produces, and suggested a ladder:
 plain controlled English, then diagrams, then interactive pages, then narrated videos. Arpit Bhayani pointed out that
 reviewing AI-written code asks people for "zero-context scrutiny", which human attention is not built for. clearproof
-puts both ideas into one tool. More in [docs/design.md](docs/design.md).
+puts both ideas into one tool.
 
 Thanks to [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) for the idea that the model should
 write a short description and a tool should build the page, and to

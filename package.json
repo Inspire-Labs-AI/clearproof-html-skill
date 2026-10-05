@@ -22,13 +22,13 @@
     "education",
     "explain-anything"
   ],
-  "homepage": "https://github.com/Inspire-Labs-AI/html-skill#readme",
+  "homepage": "https://github.com/Inspire-Labs-AI/clearproof-html-skill#readme",
   "bugs": {
-    "url": "https://github.com/Inspire-Labs-AI/html-skill/issues"
+    "url": "https://github.com/Inspire-Labs-AI/clearproof-html-skill/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Inspire-Labs-AI/html-skill.git"
+    "url": "git+https://github.com/Inspire-Labs-AI/clearproof-html-skill.git"
   },
   "license": "MIT",
   "author": "Inspire Labs AI",

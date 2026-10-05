@@ -5,7 +5,7 @@
   "author": {
     "name": "Inspire Labs AI"
   },
-  "repository": "https://github.com/Inspire-Labs-AI/html-skill",
+  "repository": "https://github.com/Inspire-Labs-AI/clearproof-html-skill",
   "keywords": [
     "code-review",
     "ai-code-review",
@@ -17,5 +17,5 @@
     "simplified-technical-english"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/Inspire-Labs-AI/html-skill"
+  "homepage": "https://github.com/Inspire-Labs-AI/clearproof-html-skill"
 }
