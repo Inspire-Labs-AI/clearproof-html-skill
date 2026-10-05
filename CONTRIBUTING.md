@@ -21,7 +21,7 @@ npm test          # Node.js 20+; no install step
 | `skills/clearproof/scripts/lib/` | Draft parser, layout engine, components, git diff, lint, browser check, video. |
 | `skills/clearproof/scripts/assets/` | Page CSS and the in-browser runtime. |
 | `examples/` | Drafts. Each renders with `node skills/clearproof/scripts/clearproof.mjs render <draft> --check`. |
-| `docs/` | Rendered pages, screenshots, benchmark and design notes. |
+| `docs/` | Example pages, screenshots and the project website. |
 | `test/` | `node --test` suite. |
 
 ## Pull requests
@@ -31,4 +31,4 @@ npm test          # Node.js 20+; no install step
 3. A new component needs `help` text with a working example, and a line in the SKILL.md table.
 4. Rendering a page for `docs/`? Set `CLEARPROOF_LINK='https://github.com/Inspire-Labs-AI/clearproof-html-skill/blob/HEAD/{path}#L{line}'`
    so code references link to GitHub, not to your machine.
-5. If a change claims to improve output quality, show it: a before/after page or a benchmark run as in [docs/benchmark.md](docs/benchmark.md).
+5. If a change claims to improve output quality, show it with a before/after page.
