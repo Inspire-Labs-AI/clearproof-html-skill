@@ -371,3 +371,35 @@ test('video and check give a one-line error for a missing or wrong page', () => 
     assert.doesNotMatch(r.stderr, /at .*\(/);
   }
 });
+
+test('architecture: tiers, kinds, labelled steps, and routes around cards', () => {
+  const draft = [
+    '---', 'title: An order passes the gateway first', 'tldr: The gateway checks every request.', '---',
+    '## System', '```architecture',
+    'tier Users', '  Shopper (user) web',
+    'tier Services', '  *Orders (service) src/orders/, Payments (api)',
+    'tier Data', '  Orders DB (db) Postgres',
+    'tier External', '  Stripe (saas)',
+    'Shopper ==> Orders: POST /orders | The order arrives.',
+    'Orders -> Orders DB & Payments: write',
+    'Payments --> Stripe: charge',
+    'Shopper -> Stripe: skips two tiers',
+    '```',
+  ].join('\n');
+  const { html } = renderDraft(draft, { cwd: ROOT });
+  assert.match(html, /class="node arch fam-people[^"]*" data-step="1" data-id="Shopper"/);
+  assert.match(html, /class="node arch fam-compute hot"/);
+  assert.match(html, /fam-external/); // "saas" is an alias of external
+  assert.match(html, /<text class="s"[^>]*>Postgres<\/text>/);
+  assert.equal((html.match(/>write<\/text>/g) || []).length, 1, 'a fan-out label is shown once');
+  assert.match(html, /data-note="The order arrives\."/);
+  assert.match(html, /class="player" data-steps="4"/);
+  assert.match(html, /data-from="Shopper" data-to="Stripe"[^>]*><path d="M[^"]* Q/, 'a line that skips tiers is routed with elbows');
+});
+
+test('architecture: errors name the problem and the fix', () => {
+  const run = (body) => () => renderDraft(`---\ntitle: T\ntldr: x\n---\n## S\n\`\`\`architecture\n${body}\n\`\`\``, { cwd: ROOT });
+  assert.throws(run('tier A\n  X (spaceship)'), /Unknown kind "spaceship"/);
+  assert.throws(run('tier A\n  X\nX -> Y'), /"Y" is not in any tier/);
+  assert.throws(run('X (service)'), /Start with a tier line/);
+});

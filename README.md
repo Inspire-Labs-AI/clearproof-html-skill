@@ -56,7 +56,7 @@ answer has several connected ideas.
 | **Understand a tech concept** | "How do vector databases find similar items so fast?" | The mechanism, drawn and stepped through, with real numbers |
 | **Learn any topic** | "Explain how vaccines train the immune system." | Short steps, a picture per idea, and a quiz that checks you got it |
 | **Make a decision** | "Should I prepay my home loan or invest? ₹50 lakh at 8.5% for 20 years." | A slider for the choice, and every number calculated, not guessed |
-| **Understand a codebase** | "Explain how this project works." | An architecture diagram and the real code behind each part |
+| **Understand a system or codebase** | "Explain how this project works." | An architecture diagram in tiers, with every part typed and every connection labelled, plus the real code behind each part |
 | **Check code an AI wrote** | "An agent made these changes. Is it safe to ship?" | The verdict first, each problem shown happening, and proof that every change was reviewed |
 | **Compare options** | "Postgres vs MongoDB vs DynamoDB for my app?" | A side-by-side view of what changes between them |
 | **Watch instead of read** | "Make a narrated video of that page." | A video walkthrough of the page |
@@ -70,6 +70,11 @@ diagrams and drag the sliders.
 |---|---|
 | **Tech: garbage collection** · [page](docs/examples/garbage-collection.html)<br>Drag the slider and the pause time redraws for three designs.<br><img src="docs/images/explain-gc-live.png" alt="Interactive chart of pause time against live data for three designs" width="420"> | **Money: home-loan prepayment** · [page](docs/examples/home-loan.html)<br>Every number comes from a real loan calculation.<br><img src="docs/images/loan.png" alt="Home-loan page with the saving as the headline and a yearly interest chart" width="420"> |
 | **Code review: changes an AI wrote**<br>The verdict, the ranked risks, and "4/4 changes explained".<br><img src="docs/images/review-verdict.png" alt="Review page: do-not-merge verdict, coverage and ranked risks" width="420"> | **Proof, not opinion**<br>Each problem is shown happening, with the real output.<br><img src="docs/images/review-proof.png" alt="Real output that shows each problem happening" width="420"> |
+
+**Architecture: how an online shop works** · [page](docs/examples/architecture.html)<br>
+Tiers from people to data, an icon for every kind of part, labelled connections, and a step-through of one order.
+
+<img src="docs/images/architecture.png" alt="Architecture diagram in tiers: users, apps, edge, services, data and external services, with the order path in bold" width="760">
 
 More pages:
 
@@ -97,7 +102,7 @@ Claude spends its effort on the content, not on styling. A page costs about as m
 ## What is on every page
 
 - **A headline that answers the question**, then a one-line summary and a contents list.
-- **Figures that show how things work:** step-by-step diagrams, interactive sliders and toggles, charts with the
+- **Figures that show how things work:** architecture diagrams in tiers, step-by-step diagrams, interactive sliders and toggles, charts with the
   important bar highlighted, side-by-side comparisons, timelines.
 - **A "Checked" strip** that says what was verified: calculations run, code quoted, claims labelled.
 - **Plain English:** short sentences and common words, following the ideas of Simplified Technical English.
