@@ -60,7 +60,7 @@ Where it stops short of the ladder above:
    text, a missing one-line answer.
 9. **One offline file, zero dependencies.** Node 20+, no npm install, no CDN. Pages embed their own draft.
 
-## Status (v0.1, this branch)
+## Status (v0.1)
 
 | Rung | What ships |
 |---|---|
@@ -82,9 +82,8 @@ Two cold-read trials: fresh agents given only SKILL.md and the CLI's help.
 
 ## Next
 
-1. **Comprehension benchmark.** Same questions and same diffs answered three ways (plain HTML, answer-me-with-html,
-   clearproof). Score tokens, time and cost, plus how well a separate model, given only screenshots, answers quiz
-   questions about the topic, and whether reviewers catch planted bugs.
+1. **Benchmark with people.** Done with model judges in five rounds ([BENCHMARK.md](BENCHMARK.md)); next: human
+   judges and scoring interactive states, not only the first frame.
 2. **Animated diagrams beyond stepping.** Moving tokens along edges, state values changing per step (the "3b1b" feel).
 3. **PR mode.** `clearproof diff --pr <url>` and posting the page as a PR artifact; per-hunk "reviewed" state.
 4. **Call graph from code.** Draft `changemap` arrows from static analysis instead of by hand.

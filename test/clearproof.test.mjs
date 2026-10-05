@@ -362,3 +362,12 @@ test('headline accent includes currency and Indian units', () => {
   assert.match(accentNumber('₹7.99 lakh saved by prepaying'), /<span class="num-accent">₹7.99 lakh<\/span>/);
   assert.match(accentNumber('Memory costs 75× an L1 hit'), /<span class="num-accent">75×<\/span>/);
 });
+
+test('video and check give a one-line error for a missing or wrong page', () => {
+  for (const args of [['video', '/no/such/page.html'], ['check', '/no/such/page.html'], ['video', join(ROOT, 'README.md')]]) {
+    const r = spawnSync('node', [CLI, ...args], { encoding: 'utf8' });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /^✗ /);
+    assert.doesNotMatch(r.stderr, /at .*\(/);
+  }
+});

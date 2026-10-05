@@ -2,7 +2,7 @@
 // clearproof: turn a short draft into a page a human can understand quickly.
 // Usage: node clearproof.mjs <command> [...]. Run "node clearproof.mjs help" for the list.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { spawn } from 'node:child_process';
@@ -188,12 +188,19 @@ async function main() {
       return;
     }
     case 'check': {
-      const file = resolve(opts._[0] || '');
+      const file = pageArg(opts._[0]);
+      if (!file) return;
       return runCheck(file, opts.shot || file.replace(/\.html$/, '.png'), opts.section);
     }
     case 'video': {
       const { makeVideo } = await import('./lib/video.mjs');
-      const file = resolve(opts._[0] || '');
+      const file = pageArg(opts._[0]);
+      if (!file) return;
+      if (!readFileSync(file, 'utf8').includes('clearproofSegments')) {
+        console.error(`✗ ${opts._[0]} is not a clearproof page; render a draft first and pass the path it prints`);
+        process.exitCode = 1;
+        return;
+      }
       const out = resolve(opts.out || file.replace(/\.html$/, '.mp4'));
       const res = await makeVideo(file, { out, voice: opts.voice, log: (m) => console.log(`  ${m}`) });
       console.log(`✓ ${res.out}`);
@@ -248,3 +255,14 @@ main().catch((e) => {
   console.error(`✗ ${e.message}`);
   process.exitCode = 1;
 });
+
+// A page path from the command line: must be an existing file, else a one-line error the agent can act on.
+function pageArg(arg) {
+  const file = resolve(arg || '');
+  if (!arg || !existsSync(file) || !statSync(file).isFile()) {
+    console.error(`✗ no page at ${arg || '(missing path)'}; pass the .html file that render printed`);
+    process.exitCode = 1;
+    return null;
+  }
+  return file;
+}

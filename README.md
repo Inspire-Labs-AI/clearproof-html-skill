@@ -92,8 +92,8 @@ verdict: changes
 ````
 
 For these two examples the model wrote 2.7 KB and 4.3 KB of draft. clearproof turned them into 15 KB and 43 KB of page
-markup, plus 35 KB of fixed CSS and runtime the model never sees. (These are byte counts, not a model benchmark —
-see [PLAN.md](PLAN.md) for the benchmark we still owe.)
+markup, plus 35 KB of fixed CSS and runtime the model never sees. For measured tokens, time and blind quality scores,
+see [BENCHMARK.md](BENCHMARK.md).
 
 ## What you get
 

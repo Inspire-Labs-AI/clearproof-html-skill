@@ -11,7 +11,7 @@ for: anyone who wants to use clearproof, on tech topics or not
 Plan -> Draw: 2 | Draw: one claim per section, each proved by a figure with real values.
 Draw -> *Prove: 3 | Prove: real code, real command output, sources. Nothing typed in by hand.
 *Prove -> Check: 4 | Check: lint the prose, render at desktop and phone, flag overlaps and mismatched numbers.
-Check -> Critique: 5 | Critique: read each figure close-up, score it like a judge, fix the 3 weakest.
+Check -> Critique: 5 | Critique: read all figures on one sheet, score them like a judge, fix the 3 weakest in one round.
 Critique -> (Page)
 ```
 
@@ -101,7 +101,7 @@ The model never sees its own page by default. clearproof makes it look.
 ```
 
 ## 5. Critique: score it like a blind judge, then fix {kicker="Critique"}
-Read each figure close-up and score four things. Fix the three weakest before you answer.
+Read all figures on one sheet and score four things. Fix the three weakest in one round, then answer.
 
 ```chart bar unit=points caption="clearproof's average explainer score in round 4 was 18.0 of 20, ahead of 17.5 for visual-explainer."
 *clearproof | 18.0 ! figure-first pages plus the critique pass

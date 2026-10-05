@@ -75,11 +75,3 @@ low | src/auth/session.js:15-17 | Old session is not deleted after a refresh, so
 - [ ] The retry loop has a limit and surfaces the error
 - [ ] A test covers: token expires, request inside 30 s, next request uses the new token
 ```
-
-```quiz
-? A token expired 10 seconds ago. The client sends it twice, one second apart. How many sessions exist afterwards?
-- [ ] One — the refreshed session
-- [x] Three — the old one plus two orphans
-- [ ] Zero — the old one is deleted
-> Each request refreshes again, because the client still holds the old token, and nothing deletes the old session.
-```
