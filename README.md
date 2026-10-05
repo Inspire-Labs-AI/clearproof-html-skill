@@ -158,6 +158,9 @@ model and new tasks each round ([full results and method](BENCHMARK.md)):
 | **Reviews of AI-written branches** | **1st** | 3rd | 2nd | 4th |
 | Time per explainer | 175 s | 379 s | 145 s | 75 s |
 
+**Tokens (round 5, lean mode):** clearproof 0.66 M per explainer vs 0.53 M plain HTML and 0.60 M answer-me-with-html, with
+the top blind score (18 and 17 of 20, vs 17 and 12.5 on average). See [BENCHMARK.md](BENCHMARK.md#round-5-tokens-vector-database-explainer).
+
 Across all rounds, **clearproof ranked first in every review judgment** (5/5 on verifiability, completeness and trust:
 real hunks with notes, executed proof of each bug, a claim ledger, an "N/N changes explained" index). On explainers it
 climbed from 3rd/4th to joint-first after adopting figure-first pages: bespoke interactive figures with a small kit,

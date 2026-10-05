@@ -1,6 +1,6 @@
 # Benchmark: clearproof vs visual-explainer vs answer-me-with-html vs plain HTML
 
-Blind, screenshot-judged comparisons with the same model under every condition. Last run on 2026-10-05 (round 4).
+Blind, screenshot-judged comparisons with the same model under every condition. Last run on 2026-10-05 (round 5).
 
 ## Contestants
 
@@ -17,6 +17,26 @@ comprehension questions from each page alone; the review judges played an engine
 reading the code. Answer keys and planted bugs were fixed before any run.
 
 ## Results
+
+### Round 5: tokens (vector-database explainer)
+
+Same question, fresh agents, two runs per condition. Tokens are everything the model processed (each tool call re-reads
+the conversation, mostly from cache). Quality: two blind judges, screenshots only, scores out of 20.
+
+| Round 5 | plain HTML | answer-me-with-html | clearproof (before) | **clearproof lean** |
+|---|---|---|---|---|
+| Tool-call turns | 8, 8 | 13, 9 | 20, 22 | **9, 12** |
+| Tokens processed | 0.52 M, 0.54 M | 0.72 M, 0.48 M | 1.43 M, 1.56 M | **0.54 M, 0.78 M** |
+| Average tokens | 0.53 M | 0.60 M | 1.49 M | **0.66 M** |
+| Time | 2.5, 3.2 min | 1.2, 1.1 min | 13.4, 9.7 min | **3.4, 4.8 min** |
+| Blind score /20 | 17, 17 | 14, 11 | 18, 18 | **18, 17** |
+
+"Before" spent 20+ turns: syntax look-ups, re-tuning its own benchmark, and several rounds nudging label positions
+in hand-written figures, with one screenshot read per figure. The lean version sets a call budget in SKILL.md (no help
+look-ups, one numbers script run once, one fix round, at most two hand-written figures) and `--check` puts every figure
+on one sheet. Result: **2.3× fewer tokens and 2.8× faster than before, within ~25% of plain HTML's tokens, and still
+the top or joint-top score in both sets** (plain HTML 17, answer-me-with-html 12.5 on average). Judges' main complaint
+on the lean pages: headline percentages taken from a small benchmark without saying its scale.
 
 ### Latest round (4): clearproof is first on both tasks
 
