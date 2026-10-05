@@ -8,7 +8,7 @@
 interactive page you understand in minutes and can trust: diagrams you step through, charts from real numbers, and
 proof for every claim.**
 
-[![CI](https://github.com/Inspire-Labs-AI/clearproof/actions/workflows/ci.yml/badge.svg)](https://github.com/Inspire-Labs-AI/clearproof/actions/workflows/ci.yml)
+[![CI](https://github.com/Inspire-Labs-AI/clearproof-html-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/Inspire-Labs-AI/clearproof-html-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)
 ![Works offline](https://img.shields.io/badge/pages-offline-brightgreen.svg)
@@ -39,7 +39,7 @@ and you cannot tell which sentences are checked and which are guessed.
 **In Claude Code** (terminal, desktop app or IDE), run these two commands once:
 
 ```text
-/plugin marketplace add Inspire-Labs-AI/clearproof
+/plugin marketplace add Inspire-Labs-AI/clearproof-html-skill
 /plugin install clearproof@clearproof
 ```
 
