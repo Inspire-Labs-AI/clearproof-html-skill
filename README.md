@@ -108,25 +108,6 @@ Claude spends its effort on the content, not on styling. A page costs about as m
   count that proves every change was reviewed.
 - **A guided tour** that walks through the page, and a **video** version on request.
 
-## Results
-
-We compared clearproof with a plain "answer me with an HTML page" request and with other popular skills. Fresh Claude
-sessions answered the same question each way. Separate judges saw only screenshots, with the names hidden, and
-answered fixed questions about the topic. The topic changed every round.
-[Full method and every round](docs/benchmark.md).
-
-| Latest round: "How does a vector database find similar items fast?" | clearproof | Plain HTML | answer-me-with-html |
-|---|---|---|---|
-| Judges' score, out of 20 (two runs) | **18, 17** | 17, 17 | 14, 11 |
-| Cost per page (tokens) | 0.66 M | 0.53 M | 0.60 M |
-| Time per page | 4.1 min | 2.8 min | 1.1 min |
-
-For code reviews, clearproof **ranked first in every round**. It was the only approach where judges could check every
-finding against evidence on the page and confirm that nothing was skipped.
-
-*Limits:* the judges were AI models, not people, and they scored still screenshots, so sliders, diagrams that play
-and videos were not part of the score.
-
 ## How it compares
 
 | | clearproof | answer-me-with-html | visual-explainer | Plain HTML answer |
