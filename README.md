@@ -14,7 +14,7 @@ proof for every claim.**
 ![Works offline](https://img.shields.io/badge/pages-offline-brightgreen.svg)
 
 [Get started](#get-started) · [What you can ask](#what-you-can-ask) · [Examples](#examples) ·
-[How it works](#how-it-works) · [Results](#results) · [FAQ](#faq)
+[How it works](#how-it-works) · [FAQ](#faq)
 
 <img src="docs/images/explain-gc.png" alt="A clearproof page: the answer as the headline, then a step-through diagram" width="820">
 
