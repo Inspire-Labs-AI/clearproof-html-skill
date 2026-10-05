@@ -13,7 +13,7 @@ HTML pages: step-through diagrams, real code, executed proof, and a verdict-firs
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
 ![Claude Code skill](https://img.shields.io/badge/Claude%20Code-skill-8A63D2.svg)
 
-[Quick start](#quick-start) · [Examples](#what-it-makes) · [Benchmark](#benchmark) · [How it works](#how-it-works) ·
+[Quick start](#quick-start) · [Examples](#what-it-makes) · [How it works](#how-it-works) · [Benchmark](#benchmark) ·
 [FAQ](#faq)
 
 <img src="docs/images/explain-gc.png" alt="clearproof explainer page: the answer as the headline, then a step-through diagram of garbage-collection marking" width="820">
@@ -52,10 +52,8 @@ git clone https://github.com/Inspire-Labs-AI/html-skill.git
 cp -R html-skill/skills/clearproof ~/.claude/skills/clearproof   # or your agent's skills folder
 ```
 
-Requirements: **Node.js 20+**. Nothing to `npm install`. The layout check and video export use Playwright (Chromium)
-and ffmpeg when they are installed.
-
-That is the whole setup: no configuration, no API keys. Then ask in plain words. The skill also starts on its own when
+It needs **Node.js 20 or later**, which most machines with Claude Code already have. That is the whole setup: no
+configuration, no API keys. Then ask in plain words. The skill also starts on its own when
 an answer needs a page.
 
 ```text
@@ -66,8 +64,8 @@ an answer needs a page.
 > Make a narrated video of that page.
 ```
 
-The agent plans the page, writes a short draft, renders it, reads its own screenshots, fixes the weakest points, and
-replies with the path to one self-contained HTML file.
+Claude replies with one HTML file. Open it in any browser. [How it works](#how-it-works) explains what happens in
+between.
 
 ## What it makes
 
@@ -102,33 +100,19 @@ clearproof applies Karpathy's ladder to both jobs: answers and code changes. The
 
 ## How it works
 
-The model writes a short Markdown **draft**. A zero-dependency Node CLI turns it into one offline HTML file: layout,
-SVG, interactivity, light and dark themes, all computed. The model points at `src/auth.js:40-52` or diff hunk `H3`, and
-clearproof reads the real lines from disk or git.
+You ask a question or ask for a review. Behind the scenes, five things happen:
 
-````markdown
----
-title: Do not merge — reset tokens work only after they expire
-tldr: The expiry check is inverted, so fresh links fail and old ones work forever.
-verdict: block
----
-## Proof: the real code, run against an in-memory database
-```run
-$ node --import ./test/stubs.mjs ./scripts/ttl-check.mjs
-shows: token age 31 min -> ACCEPTED
-note: A 31-minute-old token is accepted; a 1-minute-old one is refused.
-```
-## The expiry check
-```diff H1
-+20: `<` where it should be `>`: "age < 30 min" throws "token expired".
-```
-````
+1. **Plan.** Claude decides the one sentence you must leave with and makes it the page's headline. For a review, the
+   headline is the verdict: merge, fix first, or block.
+2. **Write a short draft.** Claude writes a few pages of plain text that describe the diagrams, charts and sections.
+   It never retypes your code: it points at the real lines, and clearproof copies them from your files.
+3. **Build the page.** clearproof turns the draft into one HTML file: it lays out the diagrams, draws the charts, adds
+   the step-through controls, and runs the small commands that prove each number or bug.
+4. **Check the page.** clearproof opens the page in a browser at laptop and phone size and reports anything broken:
+   overlapping labels, cut-off tables, unreadable text, or the same number written two ways.
+5. **Look and fix.** Claude looks at screenshots of its own page, fixes the weakest parts once, and gives you the file.
 
-```text
-draft.md ──► clearproof render ──► layout · real code · run commands · lint ──► page.html
-                                   └─► --check: Chromium at 1280 px and 390 px ──► screenshots + one figure sheet
-                                                                                    └─► agent critiques and fixes once
-```
+You get one HTML file that works offline. Open it in any browser and share it like any other file.
 
 ## Features
 
@@ -144,19 +128,19 @@ draft.md ──► clearproof render ──► layout · real code · run comman
 
 **Review mode** (code understanding)
 
-- `clearproof diff` indexes committed, uncommitted **and untracked** work as hunks `H1…Hn`.
+- Reads your committed, uncommitted **and untracked** work, so nothing an agent changed is missed.
 - `diff` blocks show the real hunk with notes pinned to the lines that matter; `changemap` shows the shape of the
   change; `risks` ranks critical → low with *why*, *trigger* and *fix*.
 - A coverage meter — **"4/4 changes explained"** — and an *All changes* appendix flag anything the walkthrough skipped.
 
 **For both**
 
-- **Executed proof:** `run` blocks run real commands at build time with `shows:` / `expect:` checks; `claims` ledger.
+- **Executed proof:** real commands run while the page is built, and every claim is marked verified, inferred or unverified.
 - **Self-check:** `--check` renders the page in headless Chromium at desktop and phone width and reports overflow,
   cut-off tables, overlapping labels, tiny text and runtime errors.
 - **Plain-English lint** inspired by ASD-STE100: sentence length, passive voice, wordy words, and a number inventory that
   flags one quantity with two values.
-- **Narrated video:** `clearproof video` records the page tour to MP4, voiced by ElevenLabs, macOS `say` or `espeak`.
+- **Narrated video:** ask for a video of any page and get an MP4 walkthrough.
 - **One offline file:** no CDN, no tracking; the page embeds its own draft.
 
 ## Benchmark
@@ -193,39 +177,6 @@ videos were not scored.
 | Layout check in a real browser before delivery | ✅ | ❌ | ❌ | ❌ |
 | Narrated video export | ✅ | ❌ | ❌ | ❌ |
 
-## Advanced: CLI and settings (optional)
-
-You do not need this section to use clearproof: install the plugin and ask. The agent runs the CLI for you. Use the
-commands below only to render drafts by hand, script it, or change defaults.
-
-```bash
-L="node skills/clearproof/scripts/clearproof.mjs"
-$L render draft.md --check            # page + browser layout check + screenshots
-$L render draft.md --check --allow-run   # also run the draft's `run` blocks
-$L diff [--base main]                 # hunk index of the current change (committed, uncommitted, untracked)
-$L check page.html [--section 3]      # re-check a page; sharp close-up of one section
-$L video page.html [--voice none]     # narrated MP4 of the page tour
-$L lint draft.md                      # plain-English and consistency warnings only
-$L list                               # all components
-$L help <component>                   # syntax and an example for one component
-```
-
-Optional settings:
-
-| Environment variable | Purpose |
-|---|---|
-| `CLEARPROOF_HOME` | Base folder; pages are written to `$CLEARPROOF_HOME/pages` (default `~/.clearproof`) |
-| `CLEARPROOF_LINK` | Editor link pattern for code references, tokens `{abs}`, `{path}`, `{line}` (default `vscode://file/{abs}:{line}`) |
-| `CLEARPROOF_OPEN` | Set to `0` to never open the browser |
-| `ELEVENLABS_API_KEY` | Narration voice for `video` |
-
-Try the review mode on a demo repository:
-
-```bash
-examples/make-review-demo.sh /tmp/clearproof-demo && cd /tmp/clearproof-demo
-node "$OLDPWD/skills/clearproof/scripts/clearproof.mjs" render "$OLDPWD/examples/review-token-refresh.md" --check
-```
-
 ## FAQ
 
 **What is clearproof?**
@@ -251,12 +202,10 @@ writing rules and a dictionary of about 900 approved words. Andrej Karpathy sugg
 clearproof's prose lint applies its core ideas. [Read the explainer](docs/examples/ste100.html).
 
 **Do I need to configure anything?**
-No. Install and ask. Optional settings (output folder, editor links, a narration voice) are listed under
-[Advanced](#advanced-cli-and-settings-optional).
+No. Install the plugin and ask. Claude runs everything else for you.
 
 **Does it send my code anywhere?**
-No. Pages are built and checked locally. `run` blocks execute only with `--allow-run`. The only network call is the
-optional ElevenLabs narration for `video`.
+No. Pages are built and checked on your machine, and the page itself is one offline file.
 
 **How much does a page cost?**
 In the latest benchmark, about 0.66 M tokens and 4 minutes per explainer, close to asking for plain HTML (0.53 M).
