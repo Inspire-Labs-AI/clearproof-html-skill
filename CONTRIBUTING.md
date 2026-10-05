@@ -5,8 +5,8 @@ Thanks for helping. clearproof has no runtime dependencies; keep it that way.
 ## Set up
 
 ```bash
-git clone https://github.com/Inspire-Labs-AI/html-skill.git
-cd html-skill
+git clone https://github.com/Inspire-Labs-AI/clearproof.git
+cd clearproof
 npm test          # Node.js 20+; no install step
 ```
 
@@ -29,6 +29,6 @@ npm test          # Node.js 20+; no install step
 1. One change per pull request, with a test when behaviour changes.
 2. `npm test` passes; changed examples render with `--check` and no layout problems.
 3. A new component needs `help` text with a working example, and a line in the SKILL.md table.
-4. Rendering a page for `docs/`? Set `CLEARPROOF_LINK='https://github.com/Inspire-Labs-AI/html-skill/blob/HEAD/{path}#L{line}'`
+4. Rendering a page for `docs/`? Set `CLEARPROOF_LINK='https://github.com/Inspire-Labs-AI/clearproof/blob/HEAD/{path}#L{line}'`
    so code references link to GitHub, not to your machine.
 5. If a change claims to improve output quality, show it: a before/after page or a benchmark run as in [docs/benchmark.md](docs/benchmark.md).
