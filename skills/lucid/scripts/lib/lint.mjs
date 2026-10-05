@@ -94,6 +94,17 @@ export function lintDraft(doc, { coverage } = {}) {
     const m = b.text.match(/\b\d+(?:\.\d+)?x\b/);
     if (m) out.push({ line: b.line, rule: 'typography', message: `"${m[0]}"`, suggestion: `use × ("${m[0].replace(/x$/, '×')}")` });
   }
+  // A headline that counts things ("Six problems") must match what the page lists.
+  const WORDS = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+  for (const p of panels) {
+    const m = p.title.match(/\b(\d+|two|three|four|five|six|seven|eight|nine|ten)\s+(problems|risks|issues|bugs|findings|ways|cases|failure modes)\b/i);
+    if (!m) continue;
+    const n = Number(m[1]) || WORDS[m[1].toLowerCase()];
+    const block = p.blocks.find((b) => b.type === 'fence' && ['risks', 'cases'].includes(b.lang));
+    if (!block) continue;
+    const count = block.lang === 'risks' ? block.text.split('\n').filter((l) => l.trim() && !/^\s/.test(l)).length : block.text.split('\n').filter((l) => /^\s*#/.test(l)).length;
+    if (count !== n) out.push({ line: p.line, rule: 'consistency', message: `"${p.title}" says ${n} but the ${block.lang} block lists ${count}`, suggestion: 'make the count in the headline match' });
+  }
   if (meta.kind === 'review') {
     for (const b of panels.flatMap((p) => p.blocks)) {
       if (b.type === 'fence' && ['quiz', 'glossary'].includes(b.lang)) out.push({ line: b.line, rule: 'review', message: `a ${b.lang} in a review is padding for a busy reviewer`, suggestion: 'drop it' });

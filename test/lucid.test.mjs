@@ -269,7 +269,8 @@ test('run shows: is evidence of behaviour, reported separately from expectations
   const r = renderDraft('## P\n```run\n$ node -e "console.log(\'offset 20\')"\nshows: offset 20\nexpect: offset 0\n```', { cwd: ROOT, allowRun: true });
   assert.match(r.html, /chk shows ok">✓ output shows “offset 20”/);
   assert.match(r.html, /chk expect no">✗ expected “offset 0” — not in the output/);
-  assert.match(r.html, /1 of 1 behaviours reproduced · 0 of 1 expectations held/);
+  assert.match(r.html, /1 of 1 behaviours reproduced/);
+  assert.ok(!/expectations held/.test(r.html));
 });
 
 test('reviews warn about quiz and glossary padding', () => {
@@ -349,4 +350,9 @@ test('cases share one layout and mark the changed part', () => {
   assert.match(cards[1], /class="cn is-st"><rect[^>]*\/><text[^>]*>DB</);
   const vb = (c) => c.match(/viewBox="([^"]+)"/)[1];
   assert.equal(vb(cards[0]), vb(cards[1]));
+});
+
+test('a headline count must match the risks it introduces', () => {
+  const doc = parseDraft('---\ntitle: R\ntldr: x\nkind: review\n---\n## Six problems\n```risks\nhigh | a\n  why: x\nlow | b\n```');
+  assert.ok(lintDraft(doc).some((w) => w.rule === 'consistency' && /says 6 but the risks block lists 2/.test(w.message)));
 });

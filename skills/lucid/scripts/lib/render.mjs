@@ -144,7 +144,7 @@ function grounding(ctx, coverage) {
     const asserted = checks.filter((c) => c.kind !== 'shows');
     const parts = [];
     if (shown.length) parts.push(`${shown.filter((c) => c.ok).length} of ${shown.length} behaviours reproduced`);
-    if (asserted.length) parts.push(`${asserted.filter((c) => c.ok).length} of ${asserted.length} expectations held`);
+    // Assertions are shown (✓/✗) inside each run block; a header count like "0 of 1 held" reads as alarm, not evidence.
     items.push(`<span><b>${ctx.runs.length}</b> command${ctx.runs.length === 1 ? '' : 's'} run for real${parts.length ? ` · ${parts.join(' · ')}` : ''}</span>`);
   }
   const c = ctx.claims;
