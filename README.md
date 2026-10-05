@@ -162,10 +162,6 @@ plain controlled English, then diagrams, then interactive pages, then narrated v
 reviewing AI-written code asks people for "zero-context scrutiny", which human attention is not built for. clearproof
 puts both ideas into one tool.
 
-Thanks to [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) for the idea that the model should
-write a short description and a tool should build the page, and to
-[visual-explainer](https://github.com/nicobailon/visual-explainer) for raising the bar on figures.
-
 ## Contributing
 
 Ideas, bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
