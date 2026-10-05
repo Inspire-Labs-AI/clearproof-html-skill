@@ -4,233 +4,187 @@
 
 ### Clear visuals, proven answers
 
-**An agent skill for Claude Code, Codex and Cursor that turns AI answers and AI-written code changes into interactive
-HTML pages: step-through diagrams, real code, executed proof, and a verdict-first code review.**
+**Ask Claude anything — a tech concept, a topic you are learning, a money decision, code an AI wrote — and get one
+interactive page you understand in minutes and can trust: diagrams you step through, charts from real numbers, and
+proof for every claim.**
 
 [![CI](https://github.com/Inspire-Labs-AI/html-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/Inspire-Labs-AI/html-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Node.js 20+](https://img.shields.io/badge/node-%E2%89%A520-brightgreen.svg)
-![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
-![Claude Code skill](https://img.shields.io/badge/Claude%20Code-skill-8A63D2.svg)
+![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2.svg)
+![Works offline](https://img.shields.io/badge/pages-offline-brightgreen.svg)
 
-[Quick start](#quick-start) · [Examples](#what-it-makes) · [How it works](#how-it-works) · [Benchmark](#benchmark) ·
-[FAQ](#faq)
+[Get started](#get-started) · [What you can ask](#what-you-can-ask) · [Examples](#examples) ·
+[How it works](#how-it-works) · [Results](#results) · [FAQ](#faq)
 
-<img src="docs/images/explain-gc.png" alt="clearproof explainer page: the answer as the headline, then a step-through diagram of garbage-collection marking" width="820">
+<img src="docs/images/explain-gc.png" alt="A clearproof page: the answer as the headline, then a step-through diagram" width="820">
 
 </div>
 
 ---
 
-Reading is now the bottleneck. An AI agent writes 400 lines of code or a 2,000-word answer in a minute, and a person
-needs half an hour to understand it and decide whether to trust it. **clearproof** makes that output understandable:
+AI answers are getting longer, and reading them is now the slow part. A wall of text hides the one idea that matters,
+and you cannot tell which sentences are checked and which are guessed.
 
-- **Explain anything** — a concept, a system, a codebase, a money decision — as one offline HTML page whose spine is
-  figures: diagrams you step through, sliders you drag, charts drawn from real numbers.
-- **Review AI-written code** — a branch, a PR, or uncommitted agent work — as a page that leads with the verdict and the
-  risks, reproduces each bug by running the real code, and proves it covered **every changed hunk**.
-- **Prove every claim** — code is read from disk or git, never retyped; numbers come from commands run while the page
-  is built; every claim is marked verified, inferred or unverified.
+**clearproof** is a plugin for Claude that answers with a page instead of a wall of text:
 
-In blind, screenshot-only tests against plain "answer in HTML", [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html)
-and [visual-explainer](https://github.com/nicobailon/visual-explainer), clearproof scored highest on explainers and
-**ranked first in every code-review judgment**. ([Results](#benchmark))
+- **The answer comes first.** The headline states the answer, with the key number. One short summary follows.
+- **Pictures carry the explanation.** Diagrams play step by step, sliders let you feel a trade-off, and charts compare
+  real numbers.
+- **Every claim shows its proof.** Numbers come from calculations Claude actually runs, code is quoted from the real
+  files, sources are linked, and each claim is marked *checked*, *inferred* or *not verified*.
+- **One file, yours to keep.** The page opens in any browser, works offline, and is easy to share.
 
-## Quick start
+## Get started
 
-**Claude Code** (plugin):
+**In Claude Code** (terminal, desktop app or IDE), run these two commands once:
 
 ```text
 /plugin marketplace add Inspire-Labs-AI/html-skill
 /plugin install clearproof@clearproof
 ```
 
-**Codex, Cursor, OpenCode or any agent with skills:** copy the skill folder.
+That is the whole setup: no configuration and no API keys. Your computer needs Node.js 20 or later, which most
+machines with Claude Code already have.
 
-```bash
-git clone https://github.com/Inspire-Labs-AI/html-skill.git
-cp -R html-skill/skills/clearproof ~/.claude/skills/clearproof   # or your agent's skills folder
-```
+Then ask in plain words, and add "make a page" if you want one every time. Claude also makes a page on its own when an
+answer has several connected ideas.
 
-It needs **Node.js 20 or later**, which most machines with Claude Code already have. That is the whole setup: no
-configuration, no API keys. Then ask in plain words. The skill also starts on its own when
-an answer needs a page.
+## What you can ask
 
-```text
-> Explain how garbage collection pauses work. Make a page.
-> An agent wrote this branch. Help me understand it — is it safe to merge?
-> Walk me through how authentication works in this repo.
-> Should I prepay my home loan? ₹50 lakh at 8.5%, 20 years. Show real numbers.
-> Make a narrated video of that page.
-```
+| You want to… | Ask, for example | You get |
+|---|---|---|
+| **Understand a tech concept** | "How do vector databases find similar items so fast?" | The mechanism, drawn and stepped through, with real numbers |
+| **Learn any topic** | "Explain how vaccines train the immune system." | Short steps, a picture per idea, and a quiz that checks you got it |
+| **Make a decision** | "Should I prepay my home loan or invest? ₹50 lakh at 8.5% for 20 years." | A slider for the choice, and every number calculated, not guessed |
+| **Understand a codebase** | "Explain how this project works." | An architecture diagram and the real code behind each part |
+| **Check code an AI wrote** | "An agent made these changes. Is it safe to ship?" | The verdict first, each problem shown happening, and proof that every change was reviewed |
+| **Compare options** | "Postgres vs MongoDB vs DynamoDB for my app?" | A side-by-side view of what changes between them |
+| **Watch instead of read** | "Make a narrated video of that page." | A video walkthrough of the page |
 
-Claude replies with one HTML file. Open it in any browser. [How it works](#how-it-works) explains what happens in
-between.
+## Examples
 
-## What it makes
-
-Every page below was made by an agent using only this skill. Open the HTML files in a browser to step through the
+Every page below was made by Claude with clearproof. Download an HTML file and open it in a browser to step through the
 diagrams and drag the sliders.
 
 | | |
 |---|---|
-| **Explainer: garbage collection** · [page](docs/examples/garbage-collection.html) · [draft](examples/garbage-collection.md)<br>A live figure: drag the live-data slider or switch collector, and the pause redraws.<br><img src="docs/images/explain-gc-live.png" alt="Interactive figure: GC pause length versus live data for three collector designs" width="420"> | **Code review of an AI-written change**<br>Verdict first, risks ranked, "4/4 changes explained", and a ledger of what was checked.<br><img src="docs/images/review-verdict.png" alt="clearproof code review page: do-not-merge verdict, coverage meter and ranked risks" width="420"> |
-| **Proof, not opinion**<br>Each bug is reproduced by running the real code; the output is captured while the page is built.<br><img src="docs/images/review-proof.png" alt="Run blocks showing real command output that reproduces each bug" width="420"> | **Not only code: home-loan prepayment** · [page](docs/examples/home-loan.html) · [draft](examples/home-loan.md)<br>Every number comes from a [calculator](examples/home-loan/loan.mjs) run at build time.<br><img src="docs/images/loan.png" alt="Home-loan explainer with the saving as the headline and a yearly interest chart" width="420"> |
+| **Tech: garbage collection** · [page](docs/examples/garbage-collection.html)<br>Drag the slider and the pause time redraws for three designs.<br><img src="docs/images/explain-gc-live.png" alt="Interactive chart of pause time against live data for three designs" width="420"> | **Money: home-loan prepayment** · [page](docs/examples/home-loan.html)<br>Every number comes from a real loan calculation.<br><img src="docs/images/loan.png" alt="Home-loan page with the saving as the headline and a yearly interest chart" width="420"> |
+| **Code review: changes an AI wrote**<br>The verdict, the ranked risks, and "4/4 changes explained".<br><img src="docs/images/review-verdict.png" alt="Review page: do-not-merge verdict, coverage and ranked risks" width="420"> | **Proof, not opinion**<br>Each problem is shown happening, with the real output.<br><img src="docs/images/review-proof.png" alt="Real output that shows each problem happening" width="420"> |
 
 More pages:
 
-- [ASD-STE100 (Simplified Technical English) explained](docs/examples/ste100.html) — the aerospace writing standard
-  Andrej Karpathy suggested for reading model output, with measured before/after rewrites of an LLM answer and a prompt.
-- [How TCP opens and closes a connection](docs/examples/tcp.html) — sequence diagrams that play step by step.
-- [The clearproof method](docs/methodology.html) and [how we built clearproof](docs/how-we-built-clearproof.html) —
-  both made with clearproof.
-
-## Why
-
-Two observations, one tool.
-
-- **Andrej Karpathy:** we will spend more and more of our time *understanding* model output. Move it up a ladder:
-  controlled plain English ([ASD-STE100](docs/examples/ste100.html)), then diagrams, then interactive HTML, then
-  narrated explainer videos.
-- **Arpit Bhayani:** human attention is not built for *zero-context scrutiny*, yet that is exactly what reviewing
-  AI-generated code asks for. Code review has to become **code understanding**.
-
-clearproof applies Karpathy's ladder to both jobs: answers and code changes. The full reasoning is in
-[docs/design.md](docs/design.md).
+- [Simplified Technical English, explained](docs/examples/ste100.html): the aerospace writing standard Andrej Karpathy
+  suggested for reading AI answers, with measured before-and-after rewrites.
+- [How internet connections open and close (TCP)](docs/examples/tcp.html): diagrams that play message by message.
+- [The clearproof method](docs/methodology.html) and [how we built clearproof](docs/how-we-built-clearproof.html), both
+  made with clearproof.
 
 ## How it works
 
-You ask a question or ask for a review. Behind the scenes, five things happen:
+You ask a question. Behind the scenes, five things happen:
 
-1. **Plan.** Claude decides the one sentence you must leave with and makes it the page's headline. For a review, the
-   headline is the verdict: merge, fix first, or block.
-2. **Write a short draft.** Claude writes a few pages of plain text that describe the diagrams, charts and sections.
-   It never retypes your code: it points at the real lines, and clearproof copies them from your files.
-3. **Build the page.** clearproof turns the draft into one HTML file: it lays out the diagrams, draws the charts, adds
-   the step-through controls, and runs the small commands that prove each number or bug.
-4. **Check the page.** clearproof opens the page in a browser at laptop and phone size and reports anything broken:
-   overlapping labels, cut-off tables, unreadable text, or the same number written two ways.
-5. **Look and fix.** Claude looks at screenshots of its own page, fixes the weakest parts once, and gives you the file.
+1. **Plan.** Claude decides the one sentence you must leave with and makes it the headline. For a code review, the
+   headline is the verdict: ship it, fix it first, or stop.
+2. **Write.** Claude writes a short description of the page: the sections, the diagrams, the charts. It never retypes
+   code; it points at the real lines, and clearproof copies them from your files.
+3. **Build.** clearproof turns that description into one page: it lays out the diagrams, draws the charts, adds the
+   controls, and runs the small calculations that prove each number.
+4. **Check.** clearproof opens the page at laptop and phone size and reports anything broken: overlapping labels,
+   cut-off tables, text too small to read, or one number written two different ways.
+5. **Fix.** Claude looks at pictures of its own page, fixes the weakest parts, and gives you the file.
 
-You get one HTML file that works offline. Open it in any browser and share it like any other file.
+The design, the light and dark themes, the guided tour and the step-through controls are built into clearproof, so
+Claude spends its effort on the content, not on styling. A page costs about as much as asking for a plain HTML answer.
 
-## Features
+## What is on every page
 
-**Explain mode**
+- **A headline that answers the question**, then a one-line summary and a contents list.
+- **Figures that show how things work:** step-by-step diagrams, interactive sliders and toggles, charts with the
+  important bar highlighted, side-by-side comparisons, timelines.
+- **A "Checked" strip** that says what was verified: calculations run, code quoted, claims labelled.
+- **Plain English:** short sentences and common words, following the ideas of Simplified Technical English.
+- **Checks on your understanding:** quizzes that explain every answer, and terms you can hover for a definition.
+- **For code reviews:** the verdict and risks first, each problem shown happening, notes beside the exact lines, and a
+  count that proves every change was reviewed.
+- **A guided tour** that walks through the page, and a **video** version on request.
 
-- **Figures that show the mechanism:** `flow` and `sequence` diagrams with an automatic layered layout that **play step
-  by step**; bespoke interactive `figure` blocks with a small kit (player, steps, before/after, toggle, slider,
-  readouts).
-- **Numbers with pictures:** `chart` (bar, line, log scale, highlighted bar, in-place notes), `waffle`, `cases` (small
-  multiples), `tree`, `timeline`, `kv`.
-- **Editorial layout:** the answer as the headline, a lead, claim headings, numbered figure captions.
-- **Understanding checks:** `quiz` with an explanation for every option, `glossary` hover definitions, `checklist`.
+## Results
 
-**Review mode** (code understanding)
+We compared clearproof with a plain "answer me with an HTML page" request and with other popular skills. Fresh Claude
+sessions answered the same question each way. Separate judges saw only screenshots, with the names hidden, and
+answered fixed questions about the topic. The topic changed every round.
+[Full method and every round](docs/benchmark.md).
 
-- Reads your committed, uncommitted **and untracked** work, so nothing an agent changed is missed.
-- `diff` blocks show the real hunk with notes pinned to the lines that matter; `changemap` shows the shape of the
-  change; `risks` ranks critical → low with *why*, *trigger* and *fix*.
-- A coverage meter — **"4/4 changes explained"** — and an *All changes* appendix flag anything the walkthrough skipped.
-
-**For both**
-
-- **Executed proof:** real commands run while the page is built, and every claim is marked verified, inferred or unverified.
-- **Self-check:** `--check` renders the page in headless Chromium at desktop and phone width and reports overflow,
-  cut-off tables, overlapping labels, tiny text and runtime errors.
-- **Plain-English lint** inspired by ASD-STE100: sentence length, passive voice, wordy words, and a number inventory that
-  flags one quantity with two values.
-- **Narrated video:** ask for a video of any page and get an MP4 walkthrough.
-- **One offline file:** no CDN, no tracking; the page embeds its own draft.
-
-## Benchmark
-
-Blind, screenshot-judged rounds with the same model under every condition and a **new topic every round**. Judges saw
-only shuffled screenshots and answered fixed comprehension questions written before any page existed.
-[Full method, every round, and the harness fixes](docs/benchmark.md).
-
-| Latest explainer round (vector databases) | clearproof | plain HTML | answer-me-with-html |
+| Latest round: "How does a vector database find similar items fast?" | clearproof | Plain HTML | answer-me-with-html |
 |---|---|---|---|
-| Blind score, out of 20 (two runs) | **18, 17** | 17, 17 | 14, 11 |
-| Tokens per page (average) | 0.66 M | 0.53 M | 0.60 M |
-| Time per page (average) | 4.1 min | 2.8 min | 1.1 min |
+| Judges' score, out of 20 (two runs) | **18, 17** | 17, 17 | 14, 11 |
+| Cost per page (tokens) | 0.66 M | 0.53 M | 0.60 M |
+| Time per page | 4.1 min | 2.8 min | 1.1 min |
 
-| Code reviews of AI-written branches (all rounds) | clearproof | plain HTML | visual-explainer | answer-me-with-html |
-|---|---|---|---|---|
-| Rank in each judgment | **1st every time** | 2nd | 3rd | 3rd–4th |
+For code reviews, clearproof **ranked first in every round**. It was the only approach where judges could check every
+finding against evidence on the page and confirm that nothing was skipped.
 
-clearproof was the only condition whose pages let judges **verify** each claim (5/5) and confirm that **nothing was
-skipped** (5/5). Every condition found the planted bugs; the difference is whether a reviewer can check the findings.
-
-**Limits:** model judges rather than people, two runs per condition, and static screenshots, so sliders, steppers and
-videos were not scored.
+*Limits:* the judges were AI models, not people, and they scored still screenshots, so sliders, diagrams that play
+and videos were not part of the score.
 
 ## How it compares
 
-| | clearproof | answer-me-with-html | visual-explainer | plain "answer in HTML" |
+| | clearproof | answer-me-with-html | visual-explainer | Plain HTML answer |
 |---|---|---|---|---|
-| Model writes a short draft, CLI writes the HTML | ✅ | ✅ | ❌ hand-written HTML | ❌ hand-written HTML |
-| Step-through diagrams and live figures | ✅ | ❌ static | ✅ | varies |
-| Code read from disk or git, never retyped | ✅ | ❌ | ❌ | ❌ |
-| Numbers from commands run at build time | ✅ | ❌ | ❌ | ❌ |
-| Review mode with every changed hunk accounted for | ✅ | ❌ | partial | ❌ |
-| Layout check in a real browser before delivery | ✅ | ❌ | ❌ | ❌ |
-| Narrated video export | ✅ | ❌ | ❌ | ❌ |
+| Answer as the headline, pictures first | ✅ | partial | ✅ | varies |
+| Diagrams you step through, sliders | ✅ | ❌ | ✅ | varies |
+| Numbers calculated, not guessed | ✅ | ❌ | ❌ | ❌ |
+| Code quoted from the real files | ✅ | ❌ | ❌ | ❌ |
+| Code review that proves every change was covered | ✅ | ❌ | partial | ❌ |
+| Page checked in a browser before you see it | ✅ | ❌ | ❌ | ❌ |
+| Narrated video | ✅ | ❌ | ❌ | ❌ |
 
 ## FAQ
 
 **What is clearproof?**
-An open-source agent skill that turns an AI answer or an AI-written code change into one interactive, self-contained
-HTML page that a person understands fast and can verify.
+A free, open-source plugin for Claude that turns answers into interactive pages you understand fast and can verify.
 
-**Which agents does it work with?**
-Claude Code (as a plugin or a skill), and any agent that loads skills from a folder, such as Codex, Cursor and OpenCode.
-The CLI also runs on its own with Node.js 20+.
+**Is it only for programmers?**
+No. It explains tech, science, health, history, money and everyday decisions. Code review is one of the things it
+does well, not the only one.
 
-**Is it only for code?**
-No. It explains concepts, systems and decisions in any field. For money, science or statistics, the agent writes a
-small script, runs it, and quotes its output, so the numbers on the page are computed, not guessed.
+**Where does it work?**
+In Claude Code: the terminal, the desktop app and the IDE extensions. It also works in other assistants that support
+skills, such as Codex and Cursor: copy the `skills/clearproof` folder into the assistant's skills folder. We have not
+yet tested uploading it to the Claude web app, because building a page needs Node.js.
 
-**How is it different from answer-me-with-html?**
-Both let the model write a short draft that a CLI turns into HTML. clearproof adds figures that show the mechanism,
-code read from the repository, numbers from executed commands, a code-review mode, and a browser check before delivery.
-In blind tests it scored 17.5 of 20 on average against 12.5.
-
-**What is ASD-STE100, and why does it matter here?**
-ASD-STE100 Simplified Technical English is the controlled-English standard for aerospace maintenance manuals: 53
-writing rules and a dictionary of about 900 approved words. Andrej Karpathy suggested it for reading LLM output.
-clearproof's prose lint applies its core ideas. [Read the explainer](docs/examples/ste100.html).
+**Can my whole team get it?**
+Yes. On Claude Team and Enterprise, an admin can add this plugin in the organization's Claude Code settings so that
+every member has it. Anyone can also run the two install commands above.
 
 **Do I need to configure anything?**
-No. Install the plugin and ask. Claude runs everything else for you.
+No. Install the plugin and ask.
 
-**Does it send my code anywhere?**
-No. Pages are built and checked on your machine, and the page itself is one offline file.
+**Does it send my data anywhere?**
+No. Pages are built and checked on your computer, and each page is a single offline file.
 
-**How much does a page cost?**
-In the latest benchmark, about 0.66 M tokens and 4 minutes per explainer, close to asking for plain HTML (0.53 M).
+**How is it different from asking Claude for an HTML page?**
+A plain request gives a page that looks good but checks nothing. clearproof calculates its numbers, quotes real code,
+labels what it verified, and checks the page before you see it. In blind tests it also scored higher.
 
-## Project structure
+**What is Simplified Technical English?**
+The controlled English that aircraft maintenance manuals use: short sentences, one meaning per word, no vague words.
+Andrej Karpathy suggested it for reading AI answers. clearproof writes in that style. [Read the explainer](docs/examples/ste100.html).
 
-```text
-skills/clearproof/        the skill: SKILL.md + zero-dependency CLI (scripts/)
-examples/                 drafts you can render, including a demo review repository script
-docs/                     rendered example pages, screenshots, benchmark and design notes
-test/                     node --test suite (npm test)
-.claude-plugin/           Claude Code plugin and marketplace manifests
-```
+## Why we built it
+
+Andrej Karpathy argued that we will spend more and more time *understanding* what AI produces, and suggested a ladder:
+plain controlled English, then diagrams, then interactive pages, then narrated videos. Arpit Bhayani pointed out that
+reviewing AI-written code asks people for "zero-context scrutiny", which human attention is not built for. clearproof
+puts both ideas into one tool. More in [docs/design.md](docs/design.md).
+
+Thanks to [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) for the idea that the model should
+write a short description and a tool should build the page, and to
+[visual-explainer](https://github.com/nicobailon/visual-explainer) for raising the bar on figures.
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md); run `npm test` before you open a pull
-request.
-
-## Acknowledgements
-
-- [Andrej Karpathy](https://x.com/karpathy) for the ladder from plain English to explainer video.
-- [Arpit Bhayani](https://x.com/arpit_bhayani) for framing code review as code understanding.
-- [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) for the draft-plus-CLI idea, and
-  [visual-explainer](https://github.com/nicobailon/visual-explainer) for raising the bar on figures.
+Ideas, bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "clearproof-skill",
   "version": "0.1.0",
-  "description": "Agent skill for Claude Code, Codex and Cursor: turns AI answers and AI-written code changes into interactive HTML pages with diagrams, real code, executed proof and blind-tested clarity.",
+  "description": "clearproof: ask Claude anything — tech, learning, money, code an AI wrote — and get an interactive page with step-through diagrams, real numbers and proof for every claim.",
   "keywords": [
     "claude-code",
     "claude-skill",
@@ -17,7 +17,10 @@
     "asd-ste100",
     "karpathy",
     "codex",
-    "cursor"
+    "cursor",
+    "learning",
+    "education",
+    "explain-anything"
   ],
   "homepage": "https://github.com/Inspire-Labs-AI/html-skill#readme",
   "bugs": {
