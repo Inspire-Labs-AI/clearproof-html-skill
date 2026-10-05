@@ -53,13 +53,13 @@ All cases share one layout, so the eye sees only the difference. * marks the par
         if (!edges.has(key)) edges.set(key, { from: e.from, to: e.to, kind: '->', label: '', labelSize: null });
       }
     }
-    const F = 12;
-    const size = (n) => ({ w: Math.max(44, textWidth(n.label, F) + 20), h: 28 });
+    const F = 14; // drawn at roughly 0.8× in a card, so this lands at about 12px
+    const size = (n) => ({ w: Math.max(48, textWidth(n.label, F) + 22), h: 32 });
     const L = layoutGraph({
       dir: 'LR',
       nodes: [...nodes.values()].map((n) => ({ id: n.id, ...size(n), group: null })),
-      edges: [...edges.values()].map((e) => ({ ...e, labelSize: { w: 64, h: 14 } })),
-      rankGap: 58,
+      edges: [...edges.values()].map((e) => ({ ...e, labelSize: { w: 72, h: 16 } })),
+      rankGap: 50,
       nodeGap: 16,
     });
     const pad = 10;

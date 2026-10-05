@@ -433,7 +433,7 @@ rect.muted { fill: var(--line-2); }
 .editorial .toc { padding-top: 40px; }
 
 /* small multiples */
-.cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr)); gap: 12px; margin: .8em 0; }
+.cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 12px; margin: .8em 0; }
 .case { --st: var(--ink-2); --st-soft: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px; background: var(--surface); }
 .case.st-ok { --st: var(--ok); --st-soft: var(--ok-soft); } .case.st-warn { --st: var(--warn); --st-soft: var(--warn-soft); }
 .case.st-risk { --st: var(--risk); --st-soft: var(--risk-soft); } .case.st-info { --st: var(--info); --st-soft: var(--info-soft); }
@@ -442,7 +442,7 @@ rect.muted { fill: var(--line-2); }
 .case-chip { font: 700 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; background: var(--st-soft); color: var(--st); }
 .case svg { display: block; width: 100%; height: auto; }
 .case .cn rect { fill: var(--node); stroke: var(--line-2); stroke-width: 1.2; }
-.case .cn text { font: 12px var(--sans); text-anchor: middle; fill: var(--ink); }
+.case .cn text { font: 14px var(--sans); text-anchor: middle; fill: var(--ink); }
 .case .cn.faded { opacity: .28; }
 .case .cn.is-off rect { stroke-dasharray: 4 3; opacity: .45; }
 .case .cn.is-off text { fill: var(--ink-3); text-decoration: line-through; }
@@ -451,7 +451,7 @@ rect.muted { fill: var(--line-2); }
 .case .ce { fill: none; stroke: var(--edge); stroke-width: 1.4; }
 .case .ce.dashed { stroke-dasharray: 5 4; }
 .case .ce.is-st { stroke: var(--st); stroke-width: 2.4; }
-.case .cl { font: 10.5px var(--mono); text-anchor: middle; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.case .cl { font: 13px var(--mono); text-anchor: middle; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
 .case-note { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
 .custom-fig [data-s] { transition: opacity .35s ease; }
 .custom-fig [data-s].future { opacity: .15; }
