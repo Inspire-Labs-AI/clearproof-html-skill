@@ -44,6 +44,8 @@ drift from the math.
 
 ![Pick the figure by the shape of the information](docs/images/methodology-forms.png)
 
+How we built it, why it beats answer-me-with-html, and why the tests are fair: [docs/how-we-built-clearproof.html](docs/how-we-built-clearproof.html) ([draft](docs/how-we-built-clearproof.md)), made with clearproof.
+
 ## How to use it
 
 Install it (below), then just ask in your agent. It triggers on its own for answers with several connected ideas, and
