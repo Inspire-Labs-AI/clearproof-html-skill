@@ -82,7 +82,7 @@ function inspect() {
 
 export async function checkPage(htmlPath, { shot, section } = {}) {
   const browser = await launch();
-  if (!browser) return { skipped: 'Playwright is not installed, so the visual check was skipped (npm i -g playwright).' };
+  if (!browser) return { skipped: 'Playwright is not installed, so the visual check was skipped.' };
   const problems = [];
   let closeups = [];
   let sheetFile = null;

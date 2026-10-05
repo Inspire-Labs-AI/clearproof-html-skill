@@ -47,7 +47,7 @@ export function pickVoice(name) {
 export async function makeVideo(htmlPath, { out, voice = 'auto', width = 1280, height = 720, log = () => {} } = {}) {
   if (!has('ffmpeg')) throw new Error('ffmpeg is needed for video export');
   const browser = await launch();
-  if (!browser) throw new Error('Playwright is needed for video export (npm i -g playwright)');
+  if (!browser) throw new Error('Playwright is needed for video export');
   const work = mkdtempSync(join(tmpdir(), 'clearproof-video-'));
   const url = pathToFileURL(htmlPath).href;
   try {
