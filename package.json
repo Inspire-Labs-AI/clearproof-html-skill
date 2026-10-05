@@ -1,11 +1,43 @@
 {
   "name": "clearproof-skill",
   "version": "0.1.0",
-  "description": "An agent skill that turns answers and code changes into pages people understand fast: explainers, reviewed diffs, step-through diagrams and narrated videos.",
+  "description": "Agent skill for Claude Code, Codex and Cursor: turns AI answers and AI-written code changes into interactive HTML pages with diagrams, real code, executed proof and blind-tested clarity.",
+  "keywords": [
+    "claude-code",
+    "claude-skill",
+    "agent-skill",
+    "ai-code-review",
+    "code-review",
+    "llm",
+    "explainer",
+    "interactive-html",
+    "diagrams",
+    "visualization",
+    "simplified-technical-english",
+    "asd-ste100",
+    "karpathy",
+    "codex",
+    "cursor"
+  ],
+  "homepage": "https://github.com/Inspire-Labs-AI/html-skill#readme",
+  "bugs": {
+    "url": "https://github.com/Inspire-Labs-AI/html-skill/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Inspire-Labs-AI/html-skill.git"
+  },
+  "license": "MIT",
+  "author": "Inspire Labs AI",
   "type": "module",
   "bin": {
     "clearproof": "skills/clearproof/scripts/clearproof.mjs"
   },
+  "files": [
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },

@@ -1,4 +1,7 @@
-# clearproof — plan and thesis
+# clearproof — design notes
+
+Design notes and history: the problem, the thesis and the principles behind clearproof. For current usage see the
+[README](../README.md); for measured results see [benchmark.md](benchmark.md).
 
 ## The two inputs
 
@@ -82,7 +85,7 @@ Two cold-read trials: fresh agents given only SKILL.md and the CLI's help.
 
 ## Next
 
-1. **Benchmark with people.** Done with model judges in five rounds ([BENCHMARK.md](BENCHMARK.md)); next: human
+1. **Benchmark with people.** Done with model judges in five rounds ([benchmark.md](benchmark.md)); next: human
    judges and scoring interactive states, not only the first frame.
 2. **Animated diagrams beyond stepping.** Moving tokens along edges, state values changing per step (the "3b1b" feel).
 3. **PR mode.** `clearproof diff --pr <url>` and posting the page as a PR artifact; per-hunk "reviewed" state.

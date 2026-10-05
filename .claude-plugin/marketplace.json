@@ -1,11 +1,13 @@
 {
   "name": "clearproof",
-  "owner": { "name": "Inspire Labs AI" },
+  "owner": {
+    "name": "Inspire Labs AI"
+  },
   "plugins": [
     {
       "name": "clearproof",
       "source": "./",
-      "description": "Answers and code reviews as pages people understand fast."
+      "description": "Clear visuals, proven answers: interactive HTML explainers and verdict-first reviews of AI-written code."
     }
   ]
 }

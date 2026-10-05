@@ -111,7 +111,7 @@ answer-me-with-html | 13.5
 ```
 
 ```run
-$ grep "Explain average" BENCHMARK.md
+$ grep "Explain average" docs/benchmark.md
 shows: 18.0
 note: The chart quotes the benchmark record, not memory.
 ```

@@ -1,8 +1,21 @@
 {
   "name": "clearproof",
   "version": "0.1.0",
-  "description": "Answers and code reviews as pages people understand fast: step-through diagrams, grounded code references, every-hunk-accounted-for reviews, narrated videos.",
-  "author": { "name": "Inspire Labs AI" },
+  "description": "Clear visuals, proven answers: AI answers and AI-written code changes as interactive HTML pages with diagrams, real code, executed proof and a verdict-first code review.",
+  "author": {
+    "name": "Inspire Labs AI"
+  },
   "repository": "https://github.com/Inspire-Labs-AI/html-skill",
-  "keywords": ["html", "explain", "code-review", "diagrams", "video", "skill"]
+  "keywords": [
+    "code-review",
+    "ai-code-review",
+    "explain",
+    "html",
+    "diagrams",
+    "visualization",
+    "video",
+    "simplified-technical-english"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/Inspire-Labs-AI/html-skill"
 }

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>clearproof — interactive HTML explainers and AI code review for Claude Code</title>
+<meta name="description" content="clearproof is an open-source agent skill for Claude Code, Codex and Cursor that turns AI answers and AI-written code changes into interactive HTML pages with step-through diagrams, real code, executed proof and a verdict-first code review.">
+<meta name="keywords" content="Claude Code skill, agent skill, AI code review, LLM explainer, interactive HTML, diagrams, ASD-STE100, Simplified Technical English, Karpathy">
+<meta property="og:type" content="website">
+<meta property="og:title" content="clearproof — clear visuals, proven answers">
+<meta property="og:description" content="Turn AI answers and AI-written code into interactive pages people understand fast and can verify.">
+<meta property="og:image" content="https://inspire-labs-ai.github.io/html-skill/images/explain-gc.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://inspire-labs-ai.github.io/html-skill/">
+<style>
+:root{--bg:#f7f6f2;--ink:#1d1d1f;--muted:#5b5b60;--line:#e2e0d8;--accent:#2457d6;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--ink:#ececef;--muted:#a3a3ab;--line:#2c2c31;--accent:#7aa2ff;--card:#1c1c20}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:56px 16px 80px}
+.kicker{color:var(--accent);font:600 13px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+h1{font:700 clamp(36px,6vw,60px)/1.05 Georgia,"Times New Roman",serif;margin:14px 0 16px;letter-spacing:-.02em}
+.lead{font-size:20px;color:var(--muted);max-width:720px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 36px}
+.cta a{padding:10px 16px;border-radius:8px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:600;background:var(--card)}
+.cta a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:14px}
+img{max-width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+h2{font:700 28px/1.2 Georgia,serif;margin:48px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;text-decoration:none;color:var(--ink)}
+.card b{display:block;margin-bottom:6px}.card span{color:var(--muted);font-size:15px}
+footer{margin-top:56px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<div class="kicker">Agent skill · Claude Code · Codex · Cursor</div>
+<h1>clearproof: clear visuals, proven answers</h1>
+<p class="lead">Turn AI answers and AI-written code changes into one interactive HTML page that people understand fast and can verify: step-through diagrams, real code, commands run for real, and a verdict-first code review.</p>
+<div class="cta">
+<a class="primary" href="https://github.com/Inspire-Labs-AI/html-skill">View on GitHub</a>
+<a href="examples/garbage-collection.html">See an explainer</a>
+<a href="https://github.com/Inspire-Labs-AI/html-skill/blob/HEAD/docs/benchmark.md">Benchmark</a>
+</div>
+<pre>/plugin marketplace add Inspire-Labs-AI/html-skill
+/plugin install clearproof@clearproof</pre>
+<img src="images/explain-gc.png" alt="clearproof explainer: the answer as the headline and a step-through diagram of garbage-collection marking">
+
+<h2>Example pages</h2>
+<div class="grid">
+<a class="card" href="examples/garbage-collection.html"><b>Garbage collection</b><span>Why GC pauses grow with live data. Stepper and live slider.</span></a>
+<a class="card" href="examples/home-loan.html"><b>Home-loan prepayment</b><span>Every number computed by a calculator run at build time.</span></a>
+<a class="card" href="examples/ste100.html"><b>ASD-STE100 explained</b><span>The aerospace writing standard Karpathy suggested for reading LLM output.</span></a>
+<a class="card" href="examples/tcp.html"><b>TCP connections</b><span>Handshake and teardown as sequence diagrams you play step by step.</span></a>
+<a class="card" href="methodology.html"><b>The clearproof method</b><span>Plan, draw, prove, check, critique.</span></a>
+<a class="card" href="how-we-built-clearproof.html"><b>How we built it</b><span>Five blind benchmark rounds and why they are fair.</span></a>
+</div>
+<footer>MIT licensed · <a href="https://github.com/Inspire-Labs-AI/html-skill">github.com/Inspire-Labs-AI/html-skill</a></footer>
+</main>
+</body>
+</html>

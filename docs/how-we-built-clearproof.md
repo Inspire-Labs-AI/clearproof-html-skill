@@ -14,7 +14,7 @@ answer-me-with-html | 14, 11
 ```
 
 ```run
-$ sed -n '32p' BENCHMARK.md
+$ sed -n '32p' docs/benchmark.md
 shows: 18, 17
 note: The chart copies this row of the benchmark record (columns: plain HTML, answer-me-with-html, clearproof before the token fix, clearproof now).
 ```
@@ -60,7 +60,7 @@ clearproof before | 1.49
 ```
 
 ```run
-$ sed -n '30p' BENCHMARK.md
+$ sed -n '30p' docs/benchmark.md
 shows: 0.66
 note: Average tokens per page, from the benchmark record.
 ```
@@ -68,7 +68,7 @@ note: Average tokens per page, from the benchmark record.
 In code review the gap is larger. clearproof ranked first in every review judgment, in every round.
 
 ```run
-$ grep -E "^\| (1|2, set 1|2, set 2|4) \| (orders|password)" BENCHMARK.md
+$ grep -E "^\| (1|2, set 1|2, set 2|4) \| (orders|password)" docs/benchmark.md
 shows: **1st**
 note: Review rankings per round. Columns: clearproof, plain HTML, visual-explainer, answer-me-with-html.
 ```
@@ -120,6 +120,6 @@ Judges were models, not people, with 2 runs per condition. They saw static scree
 ```
 
 ## Sources
-- [BENCHMARK.md](../BENCHMARK.md) — every round, score and harness fix
-- [PLAN.md](../PLAN.md) — the thesis from Karpathy's tweet and Arpit Bhayani's post
+- [Benchmark](benchmark.md) — every round, score and harness fix
+- [Design notes](design.md) — the thesis from Karpathy's tweet and Arpit Bhayani's post
 - [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) — the skill we compared against
