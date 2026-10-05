@@ -12,12 +12,12 @@ export function selectHunks(diff, spec, line = 0) {
     else if ((m = part.match(/^H(\d+)-H?(\d+)$/i))) {
       for (let k = +m[1]; k <= +m[2]; k++) {
         const h = diff.hunks.find((x) => x.id === `H${k}`);
-        if (!h) throw new DraftError(`There is no hunk H${k}. This diff has H1-H${diff.hunks.length}. Run "lucid diff" to see them`, { line, component: 'diff' });
+        if (!h) throw new DraftError(`There is no hunk H${k}. This diff has H1-H${diff.hunks.length}. Run "clearproof diff" to see them`, { line, component: 'diff' });
         add(h);
       }
     } else if (/^H\d+$/i.test(part)) {
       const h = diff.hunks.find((x) => x.id === part.toUpperCase());
-      if (!h) throw new DraftError(`There is no hunk ${part}. This diff has H1-H${diff.hunks.length}. Run "lucid diff" to see them`, { line, component: 'diff' });
+      if (!h) throw new DraftError(`There is no hunk ${part}. This diff has H1-H${diff.hunks.length}. Run "clearproof diff" to see them`, { line, component: 'diff' });
       add(h);
     } else {
       const f = diff.files.find((x) => x.path === part) ?? diff.files.filter((x) => x.path.endsWith(`/${part}`)).at(0);
@@ -61,7 +61,7 @@ export function hunkTable(h, notes = [], { fold = 6 } = {}) {
 export default {
   name: 'diff',
   summary: 'Review mode. Show real hunks from the git diff (by id or file) with notes on changed lines.',
-  syntax: `\`\`\`diff H3,H4              hunk ids from "lucid diff"; also H2-H5, a file path, or all
+  syntax: `\`\`\`diff H3,H4              hunk ids from "clearproof diff"; also H2-H5, a file path, or all
 +42: Expiry is now checked before the token is used     note on an added or unchanged line (new-file numbering)
 -17: The old code trusted the cache blindly              note on a removed line (old-file numbering)
 \`\`\`

@@ -1,4 +1,4 @@
-// Code references. A draft points at code ("src/auth.js:40-52"); lucid reads the real lines.
+// Code references. A draft points at code ("src/auth.js:40-52"); clearproof reads the real lines.
 // A reference to a missing file or line is an error, so a page can never cite code that is not there.
 
 import { readFileSync, existsSync, statSync } from 'node:fs';
@@ -20,7 +20,7 @@ export function createRepo(root, { link } = {}) {
     }
     return { abs, rel: relative(root, abs) || path, lines: files.get(abs) };
   };
-  const template = link || process.env.LUCID_LINK || 'vscode://file/{abs}:{line}';
+  const template = link || process.env.CLEARPROOF_LINK || 'vscode://file/{abs}:{line}';
   const href = (abs, rel, line) => template.replace('{abs}', abs).replace('{path}', rel).replace('{line}', String(line ?? 1));
 
   return {

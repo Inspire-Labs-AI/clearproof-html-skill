@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// lucid: turn a short draft into a page a human can understand quickly.
-// Usage: node lucid.mjs <command> [...]. Run "node lucid.mjs help" for the list.
+// clearproof: turn a short draft into a page a human can understand quickly.
+// Usage: node clearproof.mjs <command> [...]. Run "node clearproof.mjs help" for the list.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
@@ -13,24 +13,24 @@ import { formatWarning, numberInventory } from './lib/lint.mjs';
 import { DraftError, slug } from './lib/util.mjs';
 import { parseDraft } from './lib/parse.mjs';
 
-const HELP = `lucid ${VERSION} — answers and code reviews as pages people can understand fast
+const HELP = `clearproof ${VERSION} — answers and code reviews as pages people can understand fast
 
-  lucid render <draft.md | -> [options]   draft -> one HTML file (prints ✓ path)
-      -o, --out <file>      output path (default: $LUCID_HOME/pages/<title>.html)
+  clearproof render <draft.md | -> [options]   draft -> one HTML file (prints ✓ path)
+      -o, --out <file>      output path (default: $CLEARPROOF_HOME/pages/<title>.html)
       --check               also open it in headless Chromium, report layout problems, save a screenshot
       --open / --no-open    open in the browser (default: open on a desktop, never in CI or over SSH)
       --base <rev>          review: diff base (default: merge-base with the default branch)
       --mode <auto|light|dark>
       --allow-run           execute run blocks (real command output on the page)
-  lucid diff [--base <rev>] [--brief] [--max-lines N]
+  clearproof diff [--base <rev>] [--brief] [--max-lines N]
                                           index of the change: files, hunk ids (H1, H2, ...) and their lines
-  lucid check <page.html> [--shot <png>] [--section <n|id>]
+  clearproof check <page.html> [--shot <png>] [--section <n|id>]
                                           layout check + screenshots; --section saves a sharp close-up
-  lucid video <page.html> [-o out.mp4] [--voice auto|elevenlabs|say|espeak|none]
+  clearproof video <page.html> [-o out.mp4] [--voice auto|elevenlabs|say|espeak|none]
                                           narrated explainer video of the page's tour
-  lucid lint <draft.md>                   readability and coverage warnings only
-  lucid list                              components
-  lucid help <component|format|review>    syntax for one topic
+  clearproof lint <draft.md>                   readability and coverage warnings only
+  clearproof list                              components
+  clearproof help <component|format|review>    syntax for one topic
 `;
 
 const FORMAT = `Draft format
@@ -41,7 +41,7 @@ tldr: Three messages prove both sides can send and receive.   required: the answ
 subtitle: optional line under the title
 kind: explain | review                     review is automatic when the draft uses diff/changemap
 verdict: approve | changes | discuss | block      review only
-base: <git rev>                            review only; copy it from "lucid diff"
+base: <git rev>                            review only; copy it from "clearproof diff"
 cols: 2                                    grid columns (explain: 2, review: 1)
 style: warn | strict | off                 readability checks (default warn)
 any-other-key: shown as a chip under the title
@@ -51,7 +51,7 @@ Optional intro paragraph.
 ## Section title {span=2 say="What the tour narrator says here"}
 Markdown: paragraphs, lists, tables (cells starting with ok / no / warn get ✓ ✗ ! badges),
 > quotes, **bold**, \`code\`, [links](https://...), and [[src/file.js:40-52]] code references
-(real code, previewed on hover; lucid fails if the file or lines do not exist). [[H3]] cites a diff hunk.
+(real code, previewed on hover; clearproof fails if the file or lines do not exist). [[H3]] cites a diff hunk.
 
 \`\`\`<component> args
 component body
@@ -62,7 +62,7 @@ Plain fences (\`\`\`js) show code you wrote yourself. \`\`\`html and \`\`\`svg e
 
 const REVIEW = `Review workflow (understanding a change, not just reading it)
 
-1. lucid diff                 read the index: files, hunk ids, the changed lines
+1. clearproof diff                 read the index: files, hunk ids, the changed lines
 2. write a draft that walks the reader from intent to risk:
      tldr + verdict             what changed and whether it is safe, in one line
      Intent                     why the change exists (from the request, commits, or the code)
@@ -72,7 +72,7 @@ const REVIEW = `Review workflow (understanding a change, not just reading it)
      \`\`\`risks                  ranked: what could break, where
      \`\`\`checklist              what a human must still verify
      \`\`\`quiz                   optional: check the reviewer understood the change
-3. lucid render --check       every hunk must be shown (\`\`\`diff) or cited ([[H#]]); unexplained hunks are warned
+3. clearproof render --check       every hunk must be shown (\`\`\`diff) or cited ([[H#]]); unexplained hunks are warned
                               and flagged in the "All changes" appendix that every review page gets.`;
 
 function parseArgs(argv) {
@@ -92,14 +92,14 @@ function parseArgs(argv) {
   return opts;
 }
 
-const home = () => process.env.LUCID_HOME || join(homedir(), '.lucid');
+const home = () => process.env.CLEARPROOF_HOME || join(homedir(), '.clearproof');
 const readDraft = (p) => (p === '-' || !p ? readFileSync(0, 'utf8') : readFileSync(resolve(p), 'utf8'));
 
 function shouldOpen(opts) {
   if (opts.noOpen) return false;
   if (opts.open) return true;
-  if (process.env.LUCID_OPEN === '0' || process.env.CI || process.env.SSH_CONNECTION) return false;
-  if (process.env.LUCID_OPEN === '1') return true;
+  if (process.env.CLEARPROOF_OPEN === '0' || process.env.CI || process.env.SSH_CONNECTION) return false;
+  if (process.env.CLEARPROOF_OPEN === '1') return true;
   return platform() === 'darwin' || platform() === 'win32' || Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
 }
 function openFile(file) {

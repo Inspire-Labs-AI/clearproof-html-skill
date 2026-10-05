@@ -1,9 +1,9 @@
 {
-  "name": "lucid",
+  "name": "clearproof",
   "owner": { "name": "Inspire Labs AI" },
   "plugins": [
     {
-      "name": "lucid",
+      "name": "clearproof",
       "source": "./",
       "description": "Answers and code reviews as pages people understand fast."
     }

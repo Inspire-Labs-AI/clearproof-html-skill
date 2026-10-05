@@ -41,7 +41,7 @@ Postgres | 2.1, 1.2
 \`\`\`
 Use real numbers only. Say "illustrative" in the panel if they are not measured.
 scale=log for values that span orders of magnitude (1 vs 1,000,000). If the numbers come from a run block on the page,
-copy them exactly: lucid warns when a chart value does not appear in any run output.`,
+copy them exactly: clearproof warns when a chart value does not appear in any run output.`,
   example: '```chart bar unit=ms\nRedis | 0.4\nPostgres | 2.1\n```',
   render(text, ctx) {
     const { series, rows } = parseChart(text);

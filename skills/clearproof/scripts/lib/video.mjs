@@ -62,13 +62,13 @@ export async function makeVideo(htmlPath, { out, voice = 'auto', width = 1280, h
   if (!has('ffmpeg')) throw new Error('ffmpeg is needed for video export');
   const browser = await launch();
   if (!browser) throw new Error('Playwright is needed for video export (npm i -g playwright)');
-  const work = mkdtempSync(join(tmpdir(), 'lucid-video-'));
+  const work = mkdtempSync(join(tmpdir(), 'clearproof-video-'));
   const url = pathToFileURL(htmlPath).href;
   try {
     // 1. Read the narration script from the page itself.
     const probe = await browser.newPage({ viewport: { width, height } });
     await probe.goto(url);
-    const texts = await probe.evaluate(() => window.lucidSegments());
+    const texts = await probe.evaluate(() => window.clearproofSegments());
     await probe.close();
     if (!texts.length) throw new Error('The page has nothing to narrate');
 
@@ -92,15 +92,15 @@ export async function makeVideo(htmlPath, { out, voice = 'auto', width = 1280, h
 
     // 3. Record the tour, paced by those timings.
     const ctx = await browser.newContext({ viewport: { width, height }, recordVideo: { dir: work, size: { width, height } } });
-    await ctx.addInitScript((t) => (window.LUCID_TIMINGS = t), timings);
+    await ctx.addInitScript((t) => (window.CLEARPROOF_TIMINGS = t), timings);
     const page = await ctx.newPage();
     const t0 = Date.now();
     await page.goto(`${url}?video&mute`);
     await page.waitForFunction(() => document.readyState === 'complete');
     const lead = (Date.now() - t0) / 1000;
-    await page.evaluate(() => window.lucidStartTour());
+    await page.evaluate(() => window.clearproofStartTour());
     const total = timings.reduce((a, b) => a + b, 0);
-    await page.waitForFunction(() => window.lucidTourDone === true, null, { timeout: (total + 30) * 1000, polling: 200 });
+    await page.waitForFunction(() => window.clearproofTourDone === true, null, { timeout: (total + 30) * 1000, polling: 200 });
     await page.waitForTimeout(400);
     await ctx.close();
     const webm = readdirSync(work).find((f) => f.endsWith('.webm'));

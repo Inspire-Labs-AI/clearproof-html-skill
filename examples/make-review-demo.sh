@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds the small repository that examples/review-token-refresh.md reviews:
 # a committed base, a feature branch with one commit, plus uncommitted and untracked work.
-# Usage: examples/make-review-demo.sh /tmp/lucid-demo && cd /tmp/lucid-demo &&
-#        node <repo>/skills/lucid/scripts/lucid.mjs render <repo>/examples/review-token-refresh.md --check
+# Usage: examples/make-review-demo.sh /tmp/clearproof-demo && cd /tmp/clearproof-demo &&
+#        node <repo>/skills/clearproof/scripts/clearproof.mjs render <repo>/examples/review-token-refresh.md --check
 set -euo pipefail
 D=${1:?target directory}
 rm -rf "$D" && mkdir -p "$D/src/auth" && cd "$D"

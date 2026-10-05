@@ -1,7 +1,7 @@
 import { esc, DraftError } from '../util.mjs';
 
 // A bespoke figure: hand-built HTML/SVG plus an optional script, for the one or two figures that carry the
-// explanation (a simulator, a walk-through with real data, a before/after). lucid supplies the frame, the
+// explanation (a simulator, a walk-through with real data, a before/after). clearproof supplies the frame, the
 // controls kit (L), theme colours, numbering and the checks; the model supplies only the figure's logic.
 export default {
   name: 'figure',

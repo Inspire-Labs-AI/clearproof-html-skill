@@ -22,7 +22,7 @@ export default {
 41-44: This retry loop has no upper bound           note on a range (highlighted)
 \`\`\`
 Add "side" after the path to put the notes in a column beside the code (best for walking through code line by line).
-The path is relative to the repository root. lucid fails if the file or lines do not exist.
+The path is relative to the repository root. clearproof fails if the file or lines do not exist.
 For code that is not in a file (an example you made up), use a normal fence: \`\`\`js`,
   example: '```code src/server.js:10-24\n12: Port comes from the environment\n```',
   render(text, ctx) {

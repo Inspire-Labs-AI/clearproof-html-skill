@@ -1,16 +1,16 @@
 {
-  "name": "lucid-skill",
+  "name": "clearproof-skill",
   "version": "0.1.0",
   "description": "An agent skill that turns answers and code changes into pages people understand fast: explainers, reviewed diffs, step-through diagrams and narrated videos.",
   "type": "module",
   "bin": {
-    "lucid": "skills/lucid/scripts/lucid.mjs"
+    "clearproof": "skills/clearproof/scripts/clearproof.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "examples": "node skills/lucid/scripts/lucid.mjs render examples/tcp.md --check --no-open"
+    "examples": "node skills/clearproof/scripts/clearproof.mjs render examples/tcp.md --check --no-open"
   }
 }

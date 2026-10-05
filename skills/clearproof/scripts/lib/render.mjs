@@ -150,7 +150,7 @@ function grounding(ctx, coverage) {
   const c = ctx.claims;
   const total = (c.verified ?? 0) + (c.inferred ?? 0) + (c.unverified ?? 0);
   if (total) items.push(`<span><b>${c.verified ?? 0}</b> verified · <b>${c.inferred ?? 0}</b> inferred · <b>${c.unverified ?? 0}</b> unverified claims</span>`);
-  return items.length ? `<div class="grounding" title="Checked by lucid while making this page, not asserted by the model"><i>Checked</i>${items.join('')}</div>` : '';
+  return items.length ? `<div class="grounding" title="Checked by clearproof while making this page, not asserted by the model"><i>Checked</i>${items.join('')}</div>` : '';
 }
 
 // Make lone panels fill their row so the grid has no holes.
@@ -216,20 +216,20 @@ function page({ meta, introHtml, panels, appendix, coverage, review, source, glo
     reviewHead = `<div class="review-head">${vText ? `<span class="verdict v-${vCls}">${vText}</span>` : ''}<span class="chip"><b>base</b> <code>${esc(d.base.sha ? d.base.sha.slice(0, 10) : 'none')}</code>${d.base.sha && d.base.sha.startsWith(d.base.label) ? '' : ` ${esc(d.base.label)}`}</span>${d.head ? `<span class="chip"><b>head</b> <code>${esc(d.head.slice(0, 10))}</code>${d.dirty ? ' + uncommitted work' : ''}</span>` : ''}<span class="chip"><b>${d.files.length}</b> files <b class="a">+${d.add}</b> <b class="d">−${d.del}</b></span><a class="coverage${coverage.missing.length ? ' partial' : ''}" href="#all-changes" title="Hunks shown or referenced in the walkthrough"><span class="meter"><i style="width:${pct}%"></i></span> ${coverage.covered}/${coverage.total} changes explained</a></div>`;
   }
   const mode = meta.mode && meta.mode !== 'auto' ? ` data-theme="${meta.mode}"` : '';
-  const title = meta.title || panels[0]?.title || 'Lucid page';
+  const title = meta.title || panels[0]?.title || 'Clearproof page';
   return `<!doctype html>
 <html lang="${esc(meta.lang || 'en')}"${mode}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="lucid ${VERSION}">
+<meta name="generator" content="clearproof ${VERSION}">
 <title>${esc(title)}</title>
 <style>
 ${asset('style.css')}
 </style>
 </head>
 <body class="kind-${review ? 'review' : 'explain'}${editorial ? ' editorial' : ''}">
-<div class="topbar"><span class="brand">lucid</span><span class="tb-title">${esc(title)}</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
+<div class="topbar"><span class="brand">clearproof</span><span class="tb-title">${esc(title)}</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
 <header class="hero">
 ${editorial && meta.kicker ? `<p class="eyebrow">${esc(meta.kicker)}</p>` : ''}
 <h1>${editorial ? accentNumber(inline(title)) : inline(title)}</h1>
@@ -251,9 +251,9 @@ ${appendix}
 </div>
 <div class="tourbar" hidden><button type="button" data-act="tprev" aria-label="Previous">‹</button><button type="button" data-act="tpause" aria-label="Pause">❚❚</button><button type="button" data-act="tnext" aria-label="Next">›</button><p class="tcap" aria-live="polite"></p><button type="button" data-act="tstop" aria-label="Close tour">✕</button></div>
 <div class="snip" role="tooltip" hidden></div>
-<footer>Made with lucid ${VERSION} · ${esc(new Date().toISOString().slice(0, 16).replace('T', ' '))}</footer>
-<script type="application/json" id="lucid-glossary">${JSON.stringify(Object.fromEntries(glossary)).replace(/</g, '\\u003c')}</script>
-<script type="text/plain" id="lucid-source">${esc(source)}</script>
+<footer>Made with clearproof ${VERSION} · ${esc(new Date().toISOString().slice(0, 16).replace('T', ' '))}</footer>
+<script type="application/json" id="clearproof-glossary">${JSON.stringify(Object.fromEntries(glossary)).replace(/</g, '\\u003c')}</script>
+<script type="text/plain" id="clearproof-source">${esc(source)}</script>
 <script>
 ${asset('runtime.js')}
 </script>

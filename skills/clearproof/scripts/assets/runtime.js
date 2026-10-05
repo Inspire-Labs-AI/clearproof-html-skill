@@ -7,21 +7,21 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage may be blocked */ } },
   };
-  const pageKey = 'lucid:' + (document.title || location.pathname);
+  const pageKey = 'clearproof:' + (document.title || location.pathname);
   const params = new URLSearchParams(location.search);
 
   /* theme */
-  const savedTheme = store.get('lucid:theme');
+  const savedTheme = store.get('clearproof:theme');
   if (savedTheme && !root.dataset.theme) root.dataset.theme = savedTheme;
   $('[data-act="theme"]')?.addEventListener('click', () => {
     const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
     root.dataset.theme = dark ? 'light' : 'dark';
-    store.set('lucid:theme', root.dataset.theme);
+    store.set('clearproof:theme', root.dataset.theme);
   });
 
   /* copy the draft */
   $('[data-act="source"]')?.addEventListener('click', async (e) => {
-    const text = $('#lucid-source').textContent;
+    const text = $('#clearproof-source').textContent;
     try { await navigator.clipboard.writeText(text); } catch {
       const ta = Object.assign(document.createElement('textarea'), { value: text });
       document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
@@ -82,7 +82,7 @@
         timer = setInterval(() => (cur >= n ? (stop(), setTimeout(() => go(0), 1600)) : go(cur + 1)), 1900);
       }
     });
-    fig.lucid = { n, go, noteOf, stop };
+    fig.clearproof = { n, go, noteOf, stop };
   }
 
   /* hover previews: code refs and glossary terms */
@@ -110,7 +110,7 @@
 
   /* glossary: mark the first use of each term in every section */
   let gloss = {};
-  try { gloss = JSON.parse($('#lucid-glossary')?.textContent || '{}'); } catch { /* ignore */ }
+  try { gloss = JSON.parse($('#clearproof-glossary')?.textContent || '{}'); } catch { /* ignore */ }
   const terms = Object.keys(gloss).sort((a, b) => b.length - a.length);
   if (terms.length) {
     const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -306,14 +306,14 @@
       if (sec.classList.contains('appendix') && !params.has('all')) continue;
       out.push({ sec, text: sec.dataset.say || sec.querySelector('h2')?.textContent || '' });
       const fig = $('figure.playable', sec);
-      if (fig?.lucid && fig.lucid.n > 1) for (let k = 1; k <= fig.lucid.n; k++) out.push({ sec, fig, step: k, text: fig.lucid.noteOf(k) });
+      if (fig?.clearproof && fig.clearproof.n > 1) for (let k = 1; k <= fig.clearproof.n; k++) out.push({ sec, fig, step: k, text: fig.clearproof.noteOf(k) });
     }
     const tldr = $('.tldr p');
     if (tldr) out.unshift({ sec: $('.hero'), text: (document.querySelector('.hero h1')?.textContent || '') + '. ' + tldr.textContent });
     return out;
   };
   let segs = []; let idx = -1; let timer = null; let paused = false;
-  const timings = window.LUCID_TIMINGS || null; // seconds per segment, set by the video exporter
+  const timings = window.CLEARPROOF_TIMINGS || null; // seconds per segment, set by the video exporter
   const voice = 'speechSynthesis' in window && !params.has('video') && !params.has('mute');
   const estimate = (t) => Math.max(2.2, t.split(/\s+/).length / 2.7 + 0.8);
   const clear = () => { clearTimeout(timer); if (voice) speechSynthesis.cancel(); };
@@ -326,8 +326,8 @@
     const s = segs[k];
     s.sec.classList.add('touring');
     if (!s.fig || s.step === 1) s.sec.scrollIntoView({ behavior: params.has('video') ? 'instant' : 'smooth', block: s.sec.offsetHeight > innerHeight * 0.8 ? 'start' : 'center' });
-    $$('figure.playable').forEach((f) => f !== s.fig && f.lucid.go(0));
-    if (s.fig) s.fig.lucid.go(s.step);
+    $$('figure.playable').forEach((f) => f !== s.fig && f.clearproof.go(0));
+    if (s.fig) s.fig.clearproof.go(s.step);
     tcap.textContent = s.text;
     if (paused) return;
     const dur = timings ? timings[k] : estimate(s.text);
@@ -344,11 +344,11 @@
   const endTour = () => {
     clear(); idx = -1;
     $$('.touring').forEach((s) => s.classList.remove('touring'));
-    $$('figure.playable').forEach((f) => f.lucid.go(0));
+    $$('figure.playable').forEach((f) => f.clearproof.go(0));
     if (bar) bar.hidden = true;
-    window.lucidTourDone = true;
+    window.clearproofTourDone = true;
   };
-  const startTour = () => { segs = segments(); paused = false; window.lucidTourDone = false; if (bar) bar.hidden = false; play(0); };
+  const startTour = () => { segs = segments(); paused = false; window.clearproofTourDone = false; if (bar) bar.hidden = false; play(0); };
   $('[data-act="tour"]')?.addEventListener('click', startTour);
   bar?.addEventListener('click', (e) => {
     const act = e.target.closest('button')?.dataset.act;
@@ -358,8 +358,8 @@
     if (act === 'tpause') { paused = !paused; e.target.textContent = paused ? '▶' : '❚❚'; if (paused) clear(); else play(idx); }
   });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && idx >= 0) endTour(); });
-  window.lucidSegments = () => segments().map((s) => s.text);
-  window.lucidStartTour = startTour;
+  window.clearproofSegments = () => segments().map((s) => s.text);
+  window.clearproofStartTour = startTour;
   if (params.has('video')) document.body.classList.add('video');
   if (params.has('tour')) addEventListener('load', () => setTimeout(startTour, 300));
 })();

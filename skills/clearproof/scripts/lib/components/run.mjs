@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { esc, DraftError } from '../util.mjs';
 import { inline } from '../md.mjs';
 
-// Proof, not prose: lucid runs the command while rendering and embeds the real output.
+// Proof, not prose: clearproof runs the command while rendering and embeds the real output.
 // The model never types the output, so it cannot be invented. Needs --allow-run.
 const MAX_LINES = 40;
 

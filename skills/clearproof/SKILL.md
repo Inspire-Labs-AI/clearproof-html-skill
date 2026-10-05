@@ -1,16 +1,16 @@
 ---
-name: lucid
-description: Turn an answer or a code change into one HTML page a human understands fast — explainers with step-through diagrams, charts, glossaries and quizzes, and code reviews that walk through the real diff with every changed hunk accounted for; optionally a narrated video. The model writes a short Markdown draft; the bundled CLI does layout, SVG, interactivity and checks. Use it without being asked when an answer has 3+ connected ideas, a flow/protocol/architecture, a comparison on 3+ dimensions, a hierarchy or timeline, or when the user must understand or review a change (AI-written code, a branch, a PR, "what did you change", "walk me through this diff"). Also on "explain visually / draw it / make a page / html / review this / help me understand this code". Not for short answers, commands to copy, or when the user asks for plain text.
+name: clearproof
+description: Clear visuals, proven answers. Turn an answer or a code change into one HTML page a human understands fast, where every claim is checked (real code, real command output, every change accounted for) — explainers with step-through diagrams, charts, glossaries and quizzes, and code reviews that walk through the real diff with every changed hunk accounted for; optionally a narrated video. The model writes a short Markdown draft; the bundled CLI does layout, SVG, interactivity and checks. Use it without being asked when an answer has 3+ connected ideas, a flow/protocol/architecture, a comparison on 3+ dimensions, a hierarchy or timeline, or when the user must understand or review a change (AI-written code, a branch, a PR, "what did you change", "walk me through this diff"). Also on "explain visually / draw it / make a page / html / review this / help me understand this code". Not for short answers, commands to copy, or when the user asks for plain text.
 ---
 
-# lucid — make the output understandable, not just correct
+# clearproof — clear visuals, proven answers
 
-Reading is now the bottleneck. lucid turns an answer into a page whose **spine is figures** (text is caption, not content) and turns code review into **code understanding**: verdict first, real code and real proof second, nothing hidden. Quality beats speed: take the extra minutes to plan, draw and critique.
+Reading is now the bottleneck. clearproof turns an answer into a page whose **spine is figures** (text is caption, not content) and turns code review into **code understanding**: verdict first, real code and real proof second, nothing hidden. Quality beats speed: take the extra minutes to plan, draw and critique.
 
 You write a **draft** (extended Markdown). The CLI does layout, typography, diagrams, charts, numbering, checks and screenshots. **Never retype code — reference it.** Hand-write HTML/SVG/JS only inside a ```` ```figure ```` block, for the figure that carries the explanation.
 
 ```bash
-L="node ${CLAUDE_SKILL_DIR}/scripts/lucid.mjs"   # if the variable is not expanded, use this file's folder
+L="node ${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs"   # if the variable is not expanded, use this file's folder
 ```
 
 | The user needs to… | Mode | First command |
@@ -104,7 +104,7 @@ The header automatically shows provenance (base, head, uncommitted work) and a *
    - **Proof** — ```` ```run ```` blocks that reproduce each critical/high risk by **calling the real code** (import the module, run a test) — not by copying a line into `eval`. Use `shows:` with the buggy output (the page shows "✓ output shows …" as evidence). If the real code cannot run (missing dependency), say so in `note:` and mark the claim inferred. Fast, local, read-only; never destructive or networked. Render with `--allow-run`.
    - **Intent** — what the change is for and the approach, in 2–4 bullets.
    - ```` ```changemap ```` — the shape: `routes.js -> session.js: calls`. Keep arrow labels to 1–2 words (empty body = file list with sizes).
-   - **Walkthrough** — one section per idea, **in the order data flows, not file order**; one step may show hunks from several files (```` ```diff H2,H4 ````). Each shows the diff with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `lucid diff` prints. Explain *why* and *what could go wrong*, not what the line literally says. State the exact value the behaviour turns on (`TTL = 60_000`, `page * 20`). When the code does not say why, say so: "likely…, though nothing in the code states it" — never invent intent.
+   - **Walkthrough** — one section per idea, **in the order data flows, not file order**; one step may show hunks from several files (```` ```diff H2,H4 ````). Each shows the diff with notes on the lines that matter: `+42: …` (added or unchanged line, new-file number), `-17: …` (removed line, old-file number) — the numbers `clearproof diff` prints. Explain *why* and *what could go wrong*, not what the line literally says. State the exact value the behaviour turns on (`TTL = 60_000`, `page * 20`). When the code does not say why, say so: "likely…, though nothing in the code states it" — never invent intent.
    - ```` ```claims ```` — the 3–6 claims the verdict rests on, each `verified` (with evidence), `inferred` or `unverified`.
    - ```` ```checklist ```` — the fix list and what a human must still verify.
    - **No quiz, no glossary, no filler in reviews.** Aim for under 6 screens.
@@ -113,13 +113,13 @@ The header automatically shows provenance (base, head, uncommitted work) and a *
 ## 5. Render, check, look
 
 ```bash
-$L render - --check <<'LUCID'
+$L render - --check <<'CLEARPROOF'
 ---
 title: …
 tldr: …
 ---
 ## …
-LUCID
+CLEARPROOF
 ```
 
 - Drafts with ```` ```run ```` blocks need `--allow-run`; the CLI reports how many commands ran and which checks failed.
@@ -128,7 +128,7 @@ LUCID
 - Warnings (readability, coverage, layout) quote the sentence they mean → fix and re-render, at most 2 rounds; then ship and mention what is left. Diff notes and step captions are checked too.
 - Full-page screenshots are small. For detail, `$L check <page.html> --section 3` saves a sharp close-up of section 3.
 - Review drafts must be rendered from inside the repository (the CLI reads git and files from the current directory).
-- Pages go to `~/.lucid/pages/` (`-o file.html` to choose). They are single offline files. The browser opens automatically on a desktop; pass `--no-open` when the user should not be interrupted.
+- Pages go to `~/.clearproof/pages/` (`-o file.html` to choose). They are single offline files. The browser opens automatically on a desktop; pass `--no-open` when the user should not be interrupted.
 
 Reply in the terminal with 1–3 lines: the conclusion (for reviews: the verdict and the top risk) and the page path. Do not paste the draft or the HTML.
 

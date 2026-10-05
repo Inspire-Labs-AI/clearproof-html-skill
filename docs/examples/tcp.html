@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="lucid 0.1.0">
+<meta name="generator" content="clearproof 0.1.0">
 <title>How TCP opens and closes a connection</title>
 <style>
 :root {
@@ -62,9 +62,9 @@ body.scrolled .tb-title { opacity: 1; }
 .hero { max-width: 1180px; margin: 0 auto; padding: 36px 24px 8px; }
 .hero h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
 .sub { margin: 0 0 14px; color: var(--ink-2); font-size: 17px; }
-.tldr { display: flex; gap: 14px; align-items: baseline; margin: 18px 0 10px; padding: 14px 18px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; }
+.tldr { display: flex; gap: 14px; align-items: baseline; margin: 18px 0 10px; padding: 16px 20px; max-width: 980px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; }
 .tldr span { flex: none; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); }
-.tldr p { margin: 0; font-size: 17px; font-weight: 550; color: var(--ink); }
+.tldr p { margin: 0; font-size: clamp(18px, 2vw, 22px); line-height: 1.4; font-weight: 650; color: var(--ink); letter-spacing: -.005em; }
 .intro { color: var(--ink-2); max-width: 78ch; }
 .chips, .review-head { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; align-items: center; }
 .chip { font-size: 12.5px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
@@ -169,6 +169,7 @@ svg text { font-family: var(--sans); fill: var(--ink); }
 
 /* charts */
 .chart figcaption { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.chart-note { margin: 4px 0 0; font-size: 12px; color: var(--ink-3); }
 .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .chart .lab { font-size: 13px; text-anchor: end; fill: var(--ink-2); }
@@ -236,8 +237,8 @@ a.ref.hunk { background: var(--ink); color: var(--surface); font-weight: 700; }
 
 /* review */
 .risks { list-style: none; padding: 0; margin: .4em 0; }
-.risks li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
-.risks li:last-child { border-bottom: 0; }
+.risks > li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.risks > li:last-child { border-bottom: 0; }
 .lvl { flex: none; width: 58px; text-align: center; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-radius: 5px; padding: 2px 0; }
 .r-critical .lvl { background: var(--risk); color: var(--surface); }
 .r-high .lvl { background: var(--risk-soft); color: var(--risk); }
@@ -307,50 +308,216 @@ footer { text-align: center; color: var(--ink-3); font-size: 12px; padding: 0 0 
   details { display: block; }
 }
 
+/* run: real command output */
+figure.run { margin: .7em 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+figure.run figcaption { padding: 6px 12px; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ok); background: var(--ok-soft); }
+.run-step + .run-step { border-top: 1px solid var(--line); }
+.run-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px 0; }
+.run-head .cmd { background: none; border: 0; padding: 0; font-weight: 600; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.exit { font: 700 11px var(--mono); padding: 1px 7px; border-radius: 99px; }
+.exit.ok { background: var(--ok-soft); color: var(--ok); } .exit.no { background: var(--warn-soft); color: var(--warn); }
+.ms { font: 11px var(--mono); color: var(--ink-3); }
+.run-note { margin: 4px 12px 0; font-size: 13.5px; color: var(--ink-2); }
+pre.out { margin: 8px 12px 10px; padding: 10px 12px; background: var(--sunk); border-radius: 8px; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.chk { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; }
+.chk.ok { background: var(--ok-soft); color: var(--ok); } .chk.no { background: var(--risk-soft); color: var(--risk); }
+.chk.shows.ok { background: var(--accent-soft); color: var(--accent-ink); } .chk.shows.no { background: var(--sunk); color: var(--ink-3); }
+.rdetail { margin: 4px 0 0; padding-left: 1.1em; font-size: 13.5px; color: var(--ink-2); }
+.rdetail li { margin: 2px 0; }
+
+/* grounding strip, audience line, claims */
+.for { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-3); }
+.grounding { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 8px 0 4px; font-size: 12.5px; color: var(--ink-2); }
+.grounding i { font-style: normal; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--ok); background: var(--ok-soft); border-radius: 99px; padding: 1px 9px; }
+.grounding b { color: var(--ink); }
+.claims { display: grid; gap: 8px; margin: .6em 0; }
+.claim { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.claim p { margin: 0; }
+.claim .ev { margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+.cs { font-size: 11.5px; font-weight: 700; border-radius: 99px; padding: 2px 9px; text-align: center; }
+.c-verified .cs { background: var(--ok-soft); color: var(--ok); }
+.c-inferred .cs { background: var(--warn-soft); color: var(--warn); }
+.c-unverified .cs { background: var(--sunk); color: var(--ink-3); }
+@media (max-width: 560px) { .claim { grid-template-columns: 1fr; gap: 4px; } .cs { justify-self: start; } }
+
+/* linked highlighting */
+.xref { border-bottom: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: default; }
+.xref:hover, .xref:focus { background: var(--accent-soft); outline: none; }
+.linking [data-id]:not(.lit), .linking [data-from]:not(.lit) { opacity: .18; }
+.linking .lit rect, .linking .lit polygon, .linking .node.lit path { stroke: var(--accent); stroke-width: 2.4; }
+.linking .lit > path, .linking .lit > line { stroke: var(--accent); }
+.linking .lit text { fill: var(--accent-ink); }
+
+/* side-by-side code, quiz option explanations */
+figure.sbs td.side { width: 32%; white-space: normal; text-indent: 0; padding: 2px 10px; vertical-align: top; border-left: 1px solid var(--line); background: var(--surface); }
+figure.sbs td.side .cnote { max-width: none; }
+figure.sbs td.src { padding-left: 10px; text-indent: 0; }
+.owhy { display: block; margin-top: 4px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.opt.right .owhy, .opt.wrong .owhy { color: var(--ink-2); }
+@media (max-width: 700px) { figure.sbs td.side { width: 45%; } }
+
+/* single reading column: comfortable measure, full-width figures */
+.grid[style*="--cols:1"] { max-width: 920px; }
+.grid[style*="--cols:1"] .panel { padding: 22px 28px 24px; }
+.grid[style*="--cols:1"] .panel h2 { font-size: 21px; }
+.grid[style*="--cols:1"] .prose { font-size: 16px; max-width: 72ch; }
+
+/* waffle */
+figure.waffle { margin: .8em 0; display: grid; gap: 14px; }
+.wrow { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 16px; align-items: center; }
+.wlab { display: grid; gap: 2px; }
+.wnum { font: 700 20px var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.wnum small { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.wnote { font-size: 13px; color: var(--ink-3); }
+.wgrid { display: grid; grid-template-columns: repeat(40, 1fr); gap: 2px; }
+.wgrid i { aspect-ratio: 1; border-radius: 2px; background: var(--line); }
+.wgrid i.on { background: var(--accent); }
+.wrow:first-child .wgrid i.on { background: var(--ink-2); }
+figure.waffle figcaption { font-size: 12px; color: var(--ink-3); }
+@media (max-width: 640px) { .wrow { grid-template-columns: 1fr; gap: 6px; } }
+
+/* record nodes (real data in cells) and faded (skipped) nodes */
+.node.record rect { fill: var(--node); stroke: var(--line-2); stroke-width: 1.3; }
+.node.record text { font: 13px var(--mono); text-anchor: middle; }
+.node.record line.div { stroke: var(--line-2); }
+.node.record.hot rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+.node.record.hot text { fill: var(--accent-ink); font-weight: 700; }
+.node.faded { opacity: .38; }
+.node.faded rect, .node.faded polygon, .node.faded path { stroke-dasharray: 4 3; }
+
+/* bespoke figures and captions */
+.figwrap { margin: 1.1em 0; }
+.figcap { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-2); max-width: 70ch; }
+.figcap b { font: 700 11.5px var(--mono); color: var(--ink); margin-right: 6px; }
+.custom-fig { position: relative; margin: .4em 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.custom-fig svg { max-width: 100%; height: auto; display: block; }
+.custom-fig svg text { font-family: var(--sans); fill: var(--ink); }
+.fig-controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; }
+.fig-controls .player { margin: 0; padding: 0; border: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 12px; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.readout { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ink); font-size: 15px; }
+.slider { display: inline-flex; gap: 8px; align-items: center; color: var(--ink-2); }
+.slider input { accent-color: var(--accent); }
+.slider output { font: 600 13px var(--mono); color: var(--ink); min-width: 4ch; }
+.fig-error { color: var(--risk); font-weight: 600; }
+.custom-fig .cell { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 4px; margin: 2px; border-radius: 5px; background: var(--sunk); border: 1px solid var(--line); font: 12px var(--mono); color: var(--ink-2); transition: background .25s, border-color .25s; }
+.custom-fig .cell.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.custom-fig .cell.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.custom-fig .cell.miss { background: var(--risk-soft); border-color: var(--risk); color: var(--risk); }
+.custom-fig .cell.dim { opacity: .35; }
+.custom-fig .tag { display: inline-block; font: 600 11px var(--mono); padding: 1px 7px; border-radius: 99px; background: var(--sunk); color: var(--ink-2); }
+.custom-fig .mono { font-family: var(--mono); }
+.custom-fig .muted { color: var(--ink-3); }
+rect.muted { fill: var(--line-2); }
+.chart .val.hot { fill: var(--ink); font-weight: 700; }
+.chart .anno { fill: var(--accent-ink); font-weight: 600; }
+
+/* ---------- editorial explainer ---------- */
+.editorial { --serif: "Iowan Old Style", "Charter", "Bitstream Charter", "Source Serif Pro", "Sitka Text", Cambria, Georgia, serif; font-size: 16.5px; }
+.editorial .hero { padding-top: 48px; }
+.editorial .eyebrow { margin: 0 0 14px; font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+.editorial .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+.editorial .hero h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(34px, 5.2vw, 56px); line-height: 1.06; letter-spacing: -.02em; max-width: 19ch; text-wrap: balance; margin-bottom: 14px; }
+.num-accent { color: var(--accent); font-variant-numeric: tabular-nums; }
+.editorial .lead { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.5; color: var(--ink-2); max-width: 46ch; margin: 0 0 12px; }
+.editorial .lead strong { color: var(--ink); }
+.editorial .grid[style*="--cols:1"] { max-width: 960px; gap: 0; }
+.editorial .grid .panel { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 30px 0 34px; border-top: 1px solid var(--line); }
+.editorial .grid .panel.touring { box-shadow: none; border-top-color: var(--accent); }
+.editorial .grid .panel:first-child { border-top: 0; }
+.editorial .kick { font: 600 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.editorial .kick span { color: var(--accent); margin-right: 4px; }
+.editorial .grid .panel h2 { display: block; font-family: var(--serif); font-weight: 600; font-size: clamp(24px, 3vw, 33px); line-height: 1.15; letter-spacing: -.012em; max-width: 26ch; text-wrap: balance; margin: 0 0 14px; }
+.editorial .prose { font-size: 17px; line-height: 1.65; max-width: 65ch; }
+.editorial .prose p { margin: .55em 0; }
+.editorial .hero-fig { padding-top: 6px; border-top: 0 !important; }
+.editorial .figcap { font-size: 14px; }
+.editorial .callout { max-width: 70ch; }
+.editorial .toc { padding-top: 40px; }
+
+/* small multiples */
+.cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 12px; margin: .8em 0; }
+.case { --st: var(--ink-2); --st-soft: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px; background: var(--surface); }
+.case.st-ok { --st: var(--ok); --st-soft: var(--ok-soft); } .case.st-warn { --st: var(--warn); --st-soft: var(--warn-soft); }
+.case.st-risk { --st: var(--risk); --st-soft: var(--risk-soft); } .case.st-info { --st: var(--info); --st-soft: var(--info-soft); }
+.case.st-off { --st: var(--ink-3); --st-soft: var(--sunk); }
+.case-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 14px; }
+.case-chip { font: 700 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; background: var(--st-soft); color: var(--st); }
+.case svg { display: block; width: 100%; height: auto; }
+.case .cn rect { fill: var(--node); stroke: var(--line-2); stroke-width: 1.2; }
+.case .cn text { font: 14px var(--sans); text-anchor: middle; fill: var(--ink); }
+.case .cn.faded { opacity: .28; }
+.case .cn.is-off rect { stroke-dasharray: 4 3; opacity: .45; }
+.case .cn.is-off text { fill: var(--ink-3); text-decoration: line-through; }
+.case .cn.is-st rect { fill: var(--st-soft); stroke: var(--st); stroke-width: 2; }
+.case .cn.is-st text { fill: var(--st); font-weight: 700; }
+.case .ce { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+.case .ce.dashed { stroke-dasharray: 5 4; }
+.case .ce.is-st { stroke: var(--st); stroke-width: 2.4; }
+.case .cl { font: 13px var(--mono); text-anchor: middle; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.case-note { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+.custom-fig [data-s] { transition: opacity .35s ease; }
+.custom-fig [data-s].future { opacity: .15; }
+.custom-fig [data-s].future text, .custom-fig text[data-s].future { opacity: 0; }
+.custom-fig [data-s].now > rect, .custom-fig [data-s].now > path, .custom-fig [data-s].now > circle { stroke: var(--accent); stroke-width: 2.2; }
+.custom-fig [data-s].now.cell { border-color: var(--accent); }
+.custom-fig[data-view="before"] .only-after, .custom-fig[data-view="after"] .only-before { display: none; }
+.custom-fig .only-after.added, .custom-fig .added { stroke: var(--ok); color: var(--ok); }
+.custom-fig .removed { stroke: var(--risk); stroke-dasharray: 5 4; color: var(--risk); }
+
 </style>
 </head>
-<body class="kind-explain">
-<div class="topbar"><span class="brand">lucid</span><span class="tb-title">How TCP opens and closes a connection</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
+<body class="kind-explain editorial">
+<div class="topbar"><span class="brand">clearproof</span><span class="tb-title">How TCP opens and closes a connection</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
 <header class="hero">
+
 <h1>How TCP opens and closes a connection</h1>
 <p class="sub">The handshake, the states, and why the numbers are what they are</p>
 
-<div class="tldr"><span>In one line</span><p>Three messages prove both sides can send and receive; four messages close each direction on its own.</p></div>
+<p class="lead">Three messages prove both sides can send and receive; four messages close each direction on its own.</p>
+
+
+
 
 <div class="chips"><span class="chip"><b>source</b> RFC 9293</span></div>
 </header>
 <div class="layout has-toc">
 <nav class="toc" aria-label="Contents"><p>Contents</p><ol><li><a href="#the-handshake">The handshake</a></li><li><a href="#why-three-not-two">Why three, not two</a></li><li><a href="#states-on-each-side">States on each side</a></li><li><a href="#the-flags">The flags</a></li><li><a href="#words-used-here">Words used here</a></li><li><a href="#closing-takes-four-messages">Closing takes four messages</a></li><li><a href="#check-yourself">Check yourself</a></li></ol></nav>
-<main class="grid" style="--cols:2">
-<section class="panel span-full" id="the-handshake" data-say="Watch the three messages. Each one proves one more thing about the connection."><h2><span class="num">1</span> The handshake</h2><figure class="diagram playable" data-steps="3"><svg class="seq" viewBox="0 0 324 269" style="max-width:324px" role="img" aria-label="Sequence diagram"><defs><marker id="l1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs><g class="actor"><line x1="65" y1="40" x2="65" y2="263"/><rect x="12" y="4" width="106" height="32" rx="6"/><text x="65" y="25">Client</text></g><g class="actor"><line x1="258.36000000000007" y1="40" x2="258.36000000000007" y2="263"/><rect x="205.36000000000007" y="4" width="106" height="32" rx="6"/><text x="258.36000000000007" y="25">Server</text></g><g class="note" data-step="0"><rect x="213.36000000000007" y="66" width="90" height="27" rx="4"/><text x="258.36000000000007" y="84"><tspan x="258.36000000000007" dy="0">LISTEN</tspan></text></g><g class="msg" data-step="1" data-note="The client picks a random start number x and asks to connect."><line x1="65" y1="124" x2="256.36000000000007" y2="124" marker-end="url(#l1a)"/><text x="161.68000000000004" y="115"><tspan x="161.68000000000004" dy="0">SYN, seq=x</tspan></text><text class="num" x="73" y="120">1</text></g><g class="msg dashed" data-step="2" data-note="The server confirms x and sends its own start number y."><line x1="258.36000000000007" y1="161" x2="67" y2="161" marker-end="url(#l1a)"/><text x="161.68000000000004" y="152"><tspan x="161.68000000000004" dy="0">SYN+ACK, seq=y, ack=x+1</tspan></text><text class="num" x="73" y="157">2</text></g><g class="msg" data-step="3" data-note="The client confirms y. Both sides can now send data."><line x1="65" y1="198" x2="256.36000000000007" y2="198" marker-end="url(#l1a)"/><text x="161.68000000000004" y="189"><tspan x="161.68000000000004" dy="0">ACK, ack=y+1</tspan></text><text class="num" x="73" y="194">3</text></g><g class="note" data-step="3"><rect x="20" y="218" width="283.36000000000007" height="27" rx="4"/><text x="161.68000000000004" y="236"><tspan x="161.68000000000004" dy="0">ESTABLISHED</tspan></text></g></svg><div class="player" data-steps="3">
+<main class="grid" style="--cols:1">
+<section class="panel span-full" id="the-handshake" data-say="Watch the three messages. Each one proves one more thing about the connection."><div class="kick"><span>01</span></div><h2>The handshake</h2><figure class="diagram playable" data-steps="3"><svg class="seq" viewBox="0 0 324 269" style="max-width:324px" role="img" aria-label="Sequence diagram"><defs><marker id="l1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs><g class="actor" data-id="Client"><line x1="65" y1="40" x2="65" y2="263"/><rect x="12" y="4" width="106" height="32" rx="6"/><text x="65" y="25">Client</text></g><g class="actor" data-id="Server"><line x1="258.36000000000007" y1="40" x2="258.36000000000007" y2="263"/><rect x="205.36000000000007" y="4" width="106" height="32" rx="6"/><text x="258.36000000000007" y="25">Server</text></g><g class="note" data-step="0"><rect x="213.36000000000007" y="66" width="90" height="27" rx="4"/><text x="258.36000000000007" y="84"><tspan x="258.36000000000007" dy="0">LISTEN</tspan></text></g><g class="msg" data-step="1" data-from="Client" data-to="Server" data-note="The client picks a random start number x and asks to connect."><line x1="65" y1="124" x2="256.36000000000007" y2="124" marker-end="url(#l1a)"/><text x="161.68000000000004" y="115"><tspan x="161.68000000000004" dy="0">SYN, seq=x</tspan></text><text class="num" x="73" y="120">1</text></g><g class="msg dashed" data-step="2" data-from="Server" data-to="Client" data-note="The server confirms x and sends its own start number y."><line x1="258.36000000000007" y1="161" x2="67" y2="161" marker-end="url(#l1a)"/><text x="161.68000000000004" y="152"><tspan x="161.68000000000004" dy="0">SYN+ACK, seq=y, ack=x+1</tspan></text><text class="num" x="73" y="157">2</text></g><g class="msg" data-step="3" data-from="Client" data-to="Server" data-note="The client confirms y. Both sides can now send data."><line x1="65" y1="198" x2="256.36000000000007" y2="198" marker-end="url(#l1a)"/><text x="161.68000000000004" y="189"><tspan x="161.68000000000004" dy="0">ACK, ack=y+1</tspan></text><text class="num" x="73" y="194">3</text></g><g class="note" data-step="3"><rect x="20" y="218" width="283.36000000000007" height="27" rx="4"/><text x="161.68000000000004" y="236"><tspan x="161.68000000000004" dy="0">ESTABLISHED</tspan></text></g></svg><div class="player" data-steps="3">
 <button type="button" data-act="prev" aria-label="Previous step">‹</button>
 <button type="button" data-act="play" aria-label="Play">▶</button>
 <button type="button" data-act="next" aria-label="Next step">›</button>
 <span class="count">3 steps</span>
 <span class="caption" aria-live="polite">Press ▶ or › to walk through it.</span>
 </div></figure></section>
-<section class="panel span-full" id="why-three-not-two" data-say="1. Message 1 proves the client can send."><h2><span class="num">2</span> Why three, not two</h2><div class="prose"><ol><li>Message 1 proves the client can send.</li><li>Message 2 proves the server can send and receive.</li><li>Message 3 proves the client can receive.</li></ol></div>
+<section class="panel span-full" id="why-three-not-two" data-say="1. Message 1 proves the client can send."><div class="kick"><span>02</span></div><h2>Why three, not two</h2><div class="prose"><ol><li>Message 1 proves the client can send.</li><li>Message 2 proves the server can send and receive.</li><li>Message 3 proves the client can receive.</li></ol></div>
 <aside class="callout c-warn"><b class="ci" aria-hidden="true">!</b><div><strong>Two is not enough</strong><p>A late duplicate SYN from an old connection can arrive. With two messages, the server opens a connection that nobody wants.</p></div></aside></section>
-<section class="panel span-full" id="states-on-each-side" data-say="States on each side"><h2><span class="num">3</span> States on each side</h2><figure class="diagram playable" data-steps="5"><svg class="graph" viewBox="-16 -16 845 126" style="max-width:845px" role="img" aria-label="Diagram"><defs><marker id="l2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs><g class="edge" data-step="1" data-note="The server waits for a SYN."><path d="M85.9,39.4 C173.7,39.4 173.7,22.2 261.5,22.2" marker-end="url(#l2a)"/></g><g class="edge" data-step="2" data-note="get SYN, send SYN+ACK"><path d="M337.4,19.7 C429.9,19.7 429.9,26.9 522.5,26.9" marker-end="url(#l2a)"/></g><g class="edge dashed" data-step="3" data-note="The client starts here."><path d="M85.9,54.6 C169.8,54.6 169.8,71.8 253.8,71.8" marker-end="url(#l2a)"/></g><g class="edge thick" data-step="4" data-note="get SYN+ACK, send ACK"><path d="M345.2,74.3 C456.7,74.3 456.7,64.8 568.2,64.8 C631.7,64.8 631.7,51.4 695.3,51.4" marker-end="url(#l2a)"/></g><g class="edge thick" data-step="5" data-note="Both paths end in the same state."><path d="M613.9,33.7 C654.6,33.7 654.6,43.7 695.3,43.7" marker-end="url(#l2a)"/></g><g class="edge" data-step="1"><text class="elabel" x="169.8" y="22.9"><tspan x="169.8" dy="0">passive open</tspan></text></g><g class="edge" data-step="2"><text class="elabel" x="433.8" y="15.0"><tspan x="433.8" dy="0">get SYN, send SYN+ACK</tspan></text></g><g class="edge dashed" data-step="3"><text class="elabel" x="169.8" y="54.7"><tspan x="169.8" dy="0">active open, send SYN</tspan></text></g><g class="edge thick" data-step="4"><text class="elabel" x="433.8" y="62.5"><tspan x="433.8" dy="0">get SYN+ACK, send ACK</tspan></text></g><g class="edge thick" data-step="5"><text class="elabel" x="654.6" y="30.2"><tspan x="654.6" dy="0">get ACK</tspan></text></g><g class="node round" data-step="1"><rect x="0" y="30.5" width="85.92" height="33" rx="16.5"/><text x="42.96" y="51.5"><tspan x="42.96" dy="0">CLOSED</tspan></text></g><g class="node box" data-step="1"><rect x="261.49500000000006" y="0" width="75.92" height="33" rx="6"/><text x="299.45500000000004" y="21"><tspan x="299.45500000000004" dy="0">LISTEN</tspan></text></g><g class="node box" data-step="2"><rect x="522.47" y="12.75" width="91.38999999999999" height="33" rx="6"/><text x="568.165" y="33.75"><tspan x="568.165" dy="0">SYN_RCVD</tspan></text></g><g class="node box" data-step="3"><rect x="253.76000000000005" y="61" width="91.38999999999999" height="33" rx="6"/><text x="299.45500000000004" y="82"><tspan x="299.45500000000004" dy="0">SYN_SENT</tspan></text></g><g class="node box hot" data-step="4"><rect x="695.3" y="30.5" width="117.51999999999998" height="33" rx="6"/><text x="754.06" y="51.5"><tspan x="754.06" dy="0">ESTABLISHED</tspan></text></g></svg><div class="player" data-steps="5">
+<section class="panel span-full" id="states-on-each-side" data-say="States on each side"><div class="kick"><span>03</span></div><h2>States on each side</h2><figure class="diagram playable" data-steps="5"><svg class="graph" viewBox="-16 -16 845 126" style="max-width:845px" role="img" aria-label="Diagram"><defs><marker id="l2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs><g class="edge" data-step="1" data-from="CLOSED" data-to="LISTEN" data-note="The server waits for a SYN."><path d="M85.9,39.4 C173.7,39.4 173.7,22.2 261.5,22.2" marker-end="url(#l2a)"/></g><g class="edge" data-step="2" data-from="LISTEN" data-to="SYN_RCVD" data-note="get SYN, send SYN+ACK"><path d="M337.4,19.7 C429.9,19.7 429.9,26.9 522.5,26.9" marker-end="url(#l2a)"/></g><g class="edge dashed" data-step="3" data-from="CLOSED" data-to="SYN_SENT" data-note="The client starts here."><path d="M85.9,54.6 C169.8,54.6 169.8,71.8 253.8,71.8" marker-end="url(#l2a)"/></g><g class="edge thick" data-step="4" data-from="SYN_SENT" data-to="ESTABLISHED" data-note="get SYN+ACK, send ACK"><path d="M345.2,74.3 C456.7,74.3 456.7,64.8 568.2,64.8 C631.7,64.8 631.7,51.4 695.3,51.4" marker-end="url(#l2a)"/></g><g class="edge thick" data-step="5" data-from="SYN_RCVD" data-to="ESTABLISHED" data-note="Both paths end in the same state."><path d="M613.9,33.7 C654.6,33.7 654.6,43.7 695.3,43.7" marker-end="url(#l2a)"/></g><g class="edge" data-step="1"><text class="elabel" x="169.8" y="22.9"><tspan x="169.8" dy="0">passive open</tspan></text></g><g class="edge" data-step="2"><text class="elabel" x="433.8" y="15.0"><tspan x="433.8" dy="0">get SYN, send SYN+ACK</tspan></text></g><g class="edge dashed" data-step="3"><text class="elabel" x="169.8" y="54.7"><tspan x="169.8" dy="0">active open, send SYN</tspan></text></g><g class="edge thick" data-step="4"><text class="elabel" x="433.8" y="62.5"><tspan x="433.8" dy="0">get SYN+ACK, send ACK</tspan></text></g><g class="edge thick" data-step="5"><text class="elabel" x="654.6" y="30.2"><tspan x="654.6" dy="0">get ACK</tspan></text></g><g class="node round" data-step="1" data-id="CLOSED"><rect x="0" y="30.5" width="85.92" height="33" rx="16.5"/><text x="42.96" y="51.5"><tspan x="42.96" dy="0">CLOSED</tspan></text></g><g class="node box" data-step="1" data-id="LISTEN"><rect x="261.49500000000006" y="0" width="75.92" height="33" rx="6"/><text x="299.45500000000004" y="21"><tspan x="299.45500000000004" dy="0">LISTEN</tspan></text></g><g class="node box" data-step="2" data-id="SYN_RCVD"><rect x="522.47" y="12.75" width="91.38999999999999" height="33" rx="6"/><text x="568.165" y="33.75"><tspan x="568.165" dy="0">SYN_RCVD</tspan></text></g><g class="node box" data-step="3" data-id="SYN_SENT"><rect x="253.76000000000005" y="61" width="91.38999999999999" height="33" rx="6"/><text x="299.45500000000004" y="82"><tspan x="299.45500000000004" dy="0">SYN_SENT</tspan></text></g><g class="node box hot" data-step="4" data-id="ESTABLISHED"><rect x="695.3" y="30.5" width="117.51999999999998" height="33" rx="6"/><text x="754.06" y="51.5"><tspan x="754.06" dy="0">ESTABLISHED</tspan></text></g></svg><div class="player" data-steps="5">
 <button type="button" data-act="prev" aria-label="Previous step">‹</button>
 <button type="button" data-act="play" aria-label="Play">▶</button>
 <button type="button" data-act="next" aria-label="Next step">›</button>
 <span class="count">5 steps</span>
 <span class="caption" aria-live="polite">Press ▶ or › to walk through it.</span>
 </div></figure></section>
-<section class="panel span-1" id="the-flags" data-say="The flags"><h2><span class="num">4</span> The flags</h2><div class="prose"><div class="tbl"><table><thead><tr><th>Flag</th><th>Job</th><th>In the handshake</th></tr></thead><tbody><tr><td>SYN</td><td>Start a connection, carry the ISN</td><td><span class="st st-ok"><b aria-hidden="true">✓</b> messages 1, 2</span></td></tr><tr><td>ACK</td><td>Confirm what arrived</td><td><span class="st st-ok"><b aria-hidden="true">✓</b> messages 2, 3</span></td></tr><tr><td>FIN</td><td>Stop sending in one direction</td><td><span class="st st-no"><b aria-hidden="true">✗</b> only when closing</span></td></tr><tr><td>RST</td><td>Drop the connection at once</td><td><span class="st st-warn"><b aria-hidden="true">!</b> on errors</span></td></tr></tbody></table></div></div></section>
-<section class="panel span-1" id="words-used-here" data-say="Words used here"><h2><span class="num">5</span> Words used here</h2><dl class="glossary"><div><dt>ISN</dt><dd>Initial sequence number. Each side picks a random one per connection.</dd></div><div><dt>SYN</dt><dd>Synchronize. The flag that asks to start a connection.</dd></div><div><dt>MSL</dt><dd>Maximum segment lifetime. How long a stray packet can survive, often 2 minutes.</dd></div></dl></section>
-<section class="panel span-full" id="closing-takes-four-messages" data-say="Each side stops sending on its own. The server can still send data after the client sends FIN."><h2><span class="num">6</span> Closing takes four messages</h2><div class="prose"><p>Each side stops sending on its own. The server can still send data after the client sends FIN. The side that closes first waits 2 × MSL in TIME_WAIT, so late packets die before a new connection reuses the port.</p></div>
+<section class="panel span-full" id="the-flags" data-say="The flags"><div class="kick"><span>04</span></div><h2>The flags</h2><div class="prose"><div class="tbl"><table><thead><tr><th>Flag</th><th>Job</th><th>In the handshake</th></tr></thead><tbody><tr><td>SYN</td><td>Start a connection, carry the ISN</td><td><span class="st st-ok"><b aria-hidden="true">✓</b> messages 1, 2</span></td></tr><tr><td>ACK</td><td>Confirm what arrived</td><td><span class="st st-ok"><b aria-hidden="true">✓</b> messages 2, 3</span></td></tr><tr><td>FIN</td><td>Stop sending in one direction</td><td><span class="st st-no"><b aria-hidden="true">✗</b> only when closing</span></td></tr><tr><td>RST</td><td>Drop the connection at once</td><td><span class="st st-warn"><b aria-hidden="true">!</b> on errors</span></td></tr></tbody></table></div></div></section>
+<section class="panel span-full" id="words-used-here" data-say="Words used here"><div class="kick"><span>05</span></div><h2>Words used here</h2><dl class="glossary"><div><dt>ISN</dt><dd>Initial sequence number. Each side picks a random one per connection.</dd></div><div><dt>SYN</dt><dd>Synchronize. The flag that asks to start a connection.</dd></div><div><dt>MSL</dt><dd>Maximum segment lifetime. How long a stray packet can survive, often 2 minutes.</dd></div></dl></section>
+<section class="panel span-full" id="closing-takes-four-messages" data-say="Each side stops sending on its own. The server can still send data after the client sends FIN."><div class="kick"><span>06</span></div><h2>Closing takes four messages</h2><div class="prose"><p>Each side stops sending on its own. The server can still send data after the client sends FIN. The side that closes first waits 2 × MSL in TIME_WAIT, so late packets die before a new connection reuses the port.</p></div>
 <ol class="timeline"><li class="" data-step="1"><time>1</time><div><strong>FIN</strong><p>The client has no more data</p></div></li><li class="" data-step="2"><time>2</time><div><strong>ACK</strong><p>The server confirms; it may keep sending</p></div></li><li class="" data-step="3"><time>3</time><div><strong>FIN</strong><p>The server is done too</p></div></li><li class="hot" data-step="4"><time>4</time><div><strong>ACK</strong><p>The client confirms and waits in TIME_WAIT</p></div></li></ol></section>
-<section class="panel span-full" id="check-yourself" data-say="Check yourself"><h2><span class="num">7</span> Check yourself</h2><div class="quiz"><div class="q" data-multi="false"><p class="qq"><b>Q1.</b> Which message proves the client can receive?</p><div class="opts"><button type="button" class="opt" data-ok="false">SYN</button><button type="button" class="opt" data-ok="false">SYN+ACK</button><button type="button" class="opt" data-ok="true">The final ACK</button></div><div class="why" hidden><p>The client can only acknowledge y if the SYN+ACK reached it.</p></div></div><div class="q open"><p class="qq"><b>Q2.</b> Why does the ISN start at a random number?</p><button type="button" class="reveal">Show answer</button><div class="ans" hidden>So stray packets from an old connection, or a spoofer, cannot guess a valid sequence number.</div></div><p class="score" aria-live="polite"></p></div></section>
+<section class="panel span-full" id="check-yourself" data-say="Check yourself"><div class="kick"><span>07</span></div><h2>Check yourself</h2><div class="quiz"><div class="q" data-multi="false"><p class="qq"><b>Q1.</b> Which message proves the client can receive?</p><div class="opts"><button type="button" class="opt" data-ok="false">SYN</button><button type="button" class="opt" data-ok="false">SYN+ACK</button><button type="button" class="opt" data-ok="true">The final ACK</button></div><div class="why" hidden><p>The client can only acknowledge y if the SYN+ACK reached it.</p></div></div><div class="q open"><p class="qq"><b>Q2.</b> Why does the ISN start at a random number?</p><button type="button" class="reveal">Show answer</button><div class="ans" hidden>So stray packets from an old connection, or a spoofer, cannot guess a valid sequence number.</div></div><p class="score" aria-live="polite"></p></div></section>
 
 </main>
 </div>
 <div class="tourbar" hidden><button type="button" data-act="tprev" aria-label="Previous">‹</button><button type="button" data-act="tpause" aria-label="Pause">❚❚</button><button type="button" data-act="tnext" aria-label="Next">›</button><p class="tcap" aria-live="polite"></p><button type="button" data-act="tstop" aria-label="Close tour">✕</button></div>
 <div class="snip" role="tooltip" hidden></div>
-<footer>Made with lucid 0.1.0 · 2026-10-03 18:57</footer>
-<script type="application/json" id="lucid-glossary">{"ISN":"Initial sequence number. Each side picks a random one per connection.","SYN":"Synchronize. The flag that asks to start a connection.","MSL":"Maximum segment lifetime. How long a stray packet can survive, often 2 minutes."}</script>
-<script type="text/plain" id="lucid-source">---
+<footer>Made with clearproof 0.1.0 · 2026-10-05 04:00</footer>
+<script type="application/json" id="clearproof-glossary">{"ISN":"Initial sequence number. Each side picks a random one per connection.","SYN":"Synchronize. The flag that asks to start a connection.","MSL":"Maximum segment lifetime. How long a stray packet can survive, often 2 minutes."}</script>
+<script type="text/plain" id="clearproof-source">---
 title: How TCP opens and closes a connection
 tldr: Three messages prove both sides can send and receive; four messages close each direction on its own.
 subtitle: The handshake, the states, and why the numbers are what they are
@@ -432,21 +599,21 @@ Each side stops sending on its own. The server can still send data after the cli
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage may be blocked */ } },
   };
-  const pageKey = 'lucid:' + (document.title || location.pathname);
+  const pageKey = 'clearproof:' + (document.title || location.pathname);
   const params = new URLSearchParams(location.search);
 
   /* theme */
-  const savedTheme = store.get('lucid:theme');
+  const savedTheme = store.get('clearproof:theme');
   if (savedTheme && !root.dataset.theme) root.dataset.theme = savedTheme;
   $('[data-act="theme"]')?.addEventListener('click', () => {
     const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
     root.dataset.theme = dark ? 'light' : 'dark';
-    store.set('lucid:theme', root.dataset.theme);
+    store.set('clearproof:theme', root.dataset.theme);
   });
 
   /* copy the draft */
   $('[data-act="source"]')?.addEventListener('click', async (e) => {
-    const text = $('#lucid-source').textContent;
+    const text = $('#clearproof-source').textContent;
     try { await navigator.clipboard.writeText(text); } catch {
       const ta = Object.assign(document.createElement('textarea'), { value: text });
       document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
@@ -507,7 +674,7 @@ Each side stops sending on its own. The server can still send data after the cli
         timer = setInterval(() => (cur >= n ? (stop(), setTimeout(() => go(0), 1600)) : go(cur + 1)), 1900);
       }
     });
-    fig.lucid = { n, go, noteOf, stop };
+    fig.clearproof = { n, go, noteOf, stop };
   }
 
   /* hover previews: code refs and glossary terms */
@@ -535,7 +702,7 @@ Each side stops sending on its own. The server can still send data after the cli
 
   /* glossary: mark the first use of each term in every section */
   let gloss = {};
-  try { gloss = JSON.parse($('#lucid-glossary')?.textContent || '{}'); } catch { /* ignore */ }
+  try { gloss = JSON.parse($('#clearproof-glossary')?.textContent || '{}'); } catch { /* ignore */ }
   const terms = Object.keys(gloss).sort((a, b) => b.length - a.length);
   if (terms.length) {
     const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -565,6 +732,42 @@ Each side stops sending on its own. The server can still send data after the cli
     }
   }
 
+  /* linked highlighting: names in the prose light up the matching part of the section's diagram */
+  for (const sec of $$('main > section')) {
+    const figs = $$('figure.diagram', sec);
+    if (!figs.length) continue;
+    const names = [...new Set(figs.flatMap((f) => $$('[data-id]', f).map((g) => g.dataset.id)))].filter((n) => n.length >= 3).sort((a, b) => b.length - a.length);
+    if (!names.length) continue;
+    const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(^|[^\\w])(' + names.map(escRe).join('|') + ')(?![\\w])');
+    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => n.parentElement.closest('svg, code, pre, a, abbr, h2, button, .xref, figure.code, .player') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (let node of nodes) {
+      let m;
+      while (node && (m = node.nodeValue.match(re))) {
+        const at = m.index + m[1].length;
+        const after = node.splitText(at);
+        node = after.splitText(m[2].length);
+        const span = document.createElement('span');
+        span.className = 'xref'; span.dataset.x = m[2]; span.tabIndex = 0;
+        after.replaceWith(span); span.append(after);
+      }
+    }
+    const light = (name, on) => {
+      for (const f of figs) {
+        f.classList.toggle('linking', on);
+        $$('[data-id], [data-from]', f).forEach((g) => g.classList.toggle('lit', on && (g.dataset.id === name || g.dataset.from === name || g.dataset.to === name)));
+      }
+    };
+    sec.addEventListener('mouseover', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('mouseout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+    sec.addEventListener('focusin', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('focusout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+  }
+
   /* quiz */
   for (const quiz of $$('.quiz')) {
     let right = 0; let done = 0; const total = $$('.q', quiz).length;
@@ -572,6 +775,7 @@ Each side stops sending on its own. The server can still send data after the cli
     const finish = (q, ok) => {
       if (q.dataset.done) return;
       q.dataset.done = '1'; done++; if (ok) right++;
+      $$('.owhy', q).forEach((w) => w.removeAttribute('hidden'));
       $('.why', q)?.removeAttribute('hidden');
       if (score && done === total) score.textContent = right + ' of ' + total + ' right on the first try.';
     };
@@ -581,6 +785,7 @@ Each side stops sending on its own. The server can still send data after the cli
       const opt = e.target.closest('.opt'); if (!opt || q.dataset.done) return;
       const ok = opt.dataset.ok === 'true';
       opt.classList.add(ok ? 'right' : 'wrong');
+      opt.querySelector('.owhy')?.removeAttribute('hidden');
       const multi = q.dataset.multi === 'true';
       if (!ok) { q.dataset.miss = '1'; $$('.opt', q).forEach((o) => o.dataset.ok === 'true' && o.classList.add('right')); finish(q, false); return; }
       const all = $$('.opt', q).filter((o) => o.dataset.ok === 'true').every((o) => o.classList.contains('right'));
@@ -601,6 +806,89 @@ Each side stops sending on its own. The server can still send data after the cli
     update();
   }
 
+  /* figure kit: bespoke figures get consistent controls and theme colours */
+  const NS = 'http://www.w3.org/2000/svg';
+  const make = (ns) => (tag, attrs = {}, ...kids) => {
+    const el = ns ? document.createElementNS(NS, tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  };
+  const controls = (fig) => fig.querySelector(':scope > .fig-controls') || fig.appendChild(Object.assign(document.createElement('div'), { className: 'fig-controls' }));
+  const L = {
+    el: make(false),
+    svg: make(true),
+    color: (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim(),
+    readout(fig, label) {
+      const v = L.el('b', {}, '–');
+      controls(fig).append(L.el('span', { class: 'readout' }, `${label} `, v));
+      return { set: (x) => { v.textContent = x; } };
+    },
+    toggle(fig, labels, onChange, initial = 0) {
+      const box = L.el('span', { class: 'seg', role: 'group' });
+      const btns = labels.map((t, i) => L.el('button', { type: 'button', 'aria-pressed': String(i === initial), onclick: () => { btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))); onChange(i); } }, t));
+      box.append(...btns);
+      controls(fig).prepend(box);
+      return { set: (i) => btns[i].click() };
+    },
+    slider(fig, o, onInput) {
+      const out = L.el('output', {}, o.format ? o.format(o.value) : String(o.value));
+      const input = L.el('input', { type: 'range', min: o.min, max: o.max, step: o.step ?? 1, value: o.value });
+      input.addEventListener('input', () => { const v = Number(input.value); out.textContent = o.format ? o.format(v) : String(v); onInput(v); });
+      controls(fig).append(L.el('label', { class: 'slider' }, `${o.label} `, input, out));
+      return { set: (v) => { input.value = v; input.dispatchEvent(new Event('input')); } };
+    },
+    player(fig, o) {
+      let cur = o.start ?? o.steps - 1; let timer = null;
+      const count = L.el('span', { class: 'count' });
+      const cap = o.labels ? L.el('span', { class: 'caption' }) : null;
+      const go = (k) => { cur = Math.max(0, Math.min(o.steps - 1, k)); count.textContent = `${cur + 1} / ${o.steps}`; if (cap) cap.textContent = o.labels[cur] || ''; o.onStep(cur); };
+      const stop = () => { clearInterval(timer); timer = null; play.textContent = '▶'; };
+      const play = L.el('button', { type: 'button', 'aria-label': 'Play', onclick: () => {
+        if (timer) return stop();
+        if (cur >= o.steps - 1) go(0);
+        play.textContent = '❚❚';
+        timer = setInterval(() => (cur >= o.steps - 1 ? stop() : go(cur + 1)), o.interval ?? 800);
+      } }, '▶');
+      const bar = L.el('div', { class: 'player' },
+        L.el('button', { type: 'button', 'aria-label': 'Previous', onclick: () => { stop(); go(cur - 1); } }, '‹'),
+        play,
+        L.el('button', { type: 'button', 'aria-label': 'Next', onclick: () => { stop(); go(cur + 1); } }, '›'),
+        count, cap);
+      controls(fig).append(bar);
+      go(cur); // start on the most informative frame (the end state unless o.start says otherwise)
+      return { go, stop, get step() { return cur; } };
+    },
+  };
+  // Parts marked data-s="k" appear at step k; the current step is accented, future steps fade (text hidden).
+  L.steps = (fig, captions, o = {}) => {
+    const parts = [...fig.querySelectorAll('[data-s]')];
+    const n = captions?.length || Math.max(...parts.map((p) => +p.dataset.s));
+    return L.player(fig, { steps: n, labels: captions, start: o.start, interval: o.interval ?? 1600, onStep: (k) => {
+      for (const p of parts) { const s = +p.dataset.s; p.classList.toggle('future', s > k + 1); p.classList.toggle('now', s === k + 1); }
+      o.onStep?.(k);
+    } });
+  };
+  // One drawing, two states: .only-before / .only-after parts swap; what stays put is what did not change.
+  L.beforeAfter = (fig, labels = ['Before', 'After'], initial = 1) => {
+    const set = (i) => { fig.dataset.view = i ? 'after' : 'before'; };
+    set(initial);
+    return L.toggle(fig, labels, set, initial);
+  };
+  window.L = L;
+  for (const fig of $$('[data-fig]')) {
+    const src = $('.fig-src', fig)?.textContent;
+    if (!src) continue;
+    try { new Function('fig', 'L', src)(fig, L); } catch (err) {
+      console.error(`figure ${fig.id}: ${err.message}`);
+      fig.append(L.el('p', { class: 'fig-error' }, `This figure failed to run: ${err.message}`));
+    }
+  }
+
   /* tour: a narrated walk through the page; the video exporter drives the same code */
   const bar = $('.tourbar');
   const tcap = $('.tcap');
@@ -610,14 +898,14 @@ Each side stops sending on its own. The server can still send data after the cli
       if (sec.classList.contains('appendix') && !params.has('all')) continue;
       out.push({ sec, text: sec.dataset.say || sec.querySelector('h2')?.textContent || '' });
       const fig = $('figure.playable', sec);
-      if (fig?.lucid && fig.lucid.n > 1) for (let k = 1; k <= fig.lucid.n; k++) out.push({ sec, fig, step: k, text: fig.lucid.noteOf(k) });
+      if (fig?.clearproof && fig.clearproof.n > 1) for (let k = 1; k <= fig.clearproof.n; k++) out.push({ sec, fig, step: k, text: fig.clearproof.noteOf(k) });
     }
     const tldr = $('.tldr p');
     if (tldr) out.unshift({ sec: $('.hero'), text: (document.querySelector('.hero h1')?.textContent || '') + '. ' + tldr.textContent });
     return out;
   };
   let segs = []; let idx = -1; let timer = null; let paused = false;
-  const timings = window.LUCID_TIMINGS || null; // seconds per segment, set by the video exporter
+  const timings = window.CLEARPROOF_TIMINGS || null; // seconds per segment, set by the video exporter
   const voice = 'speechSynthesis' in window && !params.has('video') && !params.has('mute');
   const estimate = (t) => Math.max(2.2, t.split(/\s+/).length / 2.7 + 0.8);
   const clear = () => { clearTimeout(timer); if (voice) speechSynthesis.cancel(); };
@@ -630,8 +918,8 @@ Each side stops sending on its own. The server can still send data after the cli
     const s = segs[k];
     s.sec.classList.add('touring');
     if (!s.fig || s.step === 1) s.sec.scrollIntoView({ behavior: params.has('video') ? 'instant' : 'smooth', block: s.sec.offsetHeight > innerHeight * 0.8 ? 'start' : 'center' });
-    $$('figure.playable').forEach((f) => f !== s.fig && f.lucid.go(0));
-    if (s.fig) s.fig.lucid.go(s.step);
+    $$('figure.playable').forEach((f) => f !== s.fig && f.clearproof.go(0));
+    if (s.fig) s.fig.clearproof.go(s.step);
     tcap.textContent = s.text;
     if (paused) return;
     const dur = timings ? timings[k] : estimate(s.text);
@@ -648,11 +936,11 @@ Each side stops sending on its own. The server can still send data after the cli
   const endTour = () => {
     clear(); idx = -1;
     $$('.touring').forEach((s) => s.classList.remove('touring'));
-    $$('figure.playable').forEach((f) => f.lucid.go(0));
+    $$('figure.playable').forEach((f) => f.clearproof.go(0));
     if (bar) bar.hidden = true;
-    window.lucidTourDone = true;
+    window.clearproofTourDone = true;
   };
-  const startTour = () => { segs = segments(); paused = false; window.lucidTourDone = false; if (bar) bar.hidden = false; play(0); };
+  const startTour = () => { segs = segments(); paused = false; window.clearproofTourDone = false; if (bar) bar.hidden = false; play(0); };
   $('[data-act="tour"]')?.addEventListener('click', startTour);
   bar?.addEventListener('click', (e) => {
     const act = e.target.closest('button')?.dataset.act;
@@ -662,8 +950,8 @@ Each side stops sending on its own. The server can still send data after the cli
     if (act === 'tpause') { paused = !paused; e.target.textContent = paused ? '▶' : '❚❚'; if (paused) clear(); else play(idx); }
   });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && idx >= 0) endTour(); });
-  window.lucidSegments = () => segments().map((s) => s.text);
-  window.lucidStartTour = startTour;
+  window.clearproofSegments = () => segments().map((s) => s.text);
+  window.clearproofStartTour = startTour;
   if (params.has('video')) document.body.classList.add('video');
   if (params.has('tour')) addEventListener('load', () => setTimeout(startTour, 300));
 })();

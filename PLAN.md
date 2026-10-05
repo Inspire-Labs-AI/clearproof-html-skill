@@ -1,4 +1,4 @@
-# lucid — plan and thesis
+# clearproof — plan and thesis
 
 ## The two inputs
 
@@ -67,8 +67,8 @@ Where it stops short of the ladder above:
 | Writing | `tldr` required; STE-style lint (length, wordy words, passive, paragraph size, walls of text) |
 | Diagrams | `flow` (own layered layout engine, groups, shapes), `sequence`, `tree`, `timeline`, `chart` (bar/line), `kv`, `callout`, tables with ✓ ✗ ! |
 | Interactive page | step-through playback for `flow`/`sequence`, hover previews for `[[path:line]]`, `glossary`, `quiz`, `checklist`, contents rail, light/dark, narrated tour (Web Speech) |
-| Video | `lucid video`: records the tour and encodes MP4; ElevenLabs / `say` / `espeak` narration, captions-only fallback |
-| Code understanding | `lucid diff` (hunk ids over committed + uncommitted + untracked work), `diff` blocks with line notes, `changemap`, `risks`, coverage meter, all-changes appendix, `code` blocks from disk |
+| Video | `clearproof video`: records the tour and encodes MP4; ElevenLabs / `say` / `espeak` narration, captions-only fallback |
+| Code understanding | `clearproof diff` (hunk ids over committed + uncommitted + untracked work), `diff` blocks with line notes, `changemap`, `risks`, coverage meter, all-changes appendix, `code` blocks from disk |
 | Self-check | `--check`: headless Chromium at 1280px and 390px; overflow, overlapping labels, labels on nodes, overlapping groups, runtime errors; screenshot |
 
 ## Validation so far
@@ -83,10 +83,10 @@ Two cold-read trials: fresh agents given only SKILL.md and the CLI's help.
 ## Next
 
 1. **Comprehension benchmark.** Same questions and same diffs answered three ways (plain HTML, answer-me-with-html,
-   lucid). Score tokens, time and cost, plus how well a separate model, given only screenshots, answers quiz
+   clearproof). Score tokens, time and cost, plus how well a separate model, given only screenshots, answers quiz
    questions about the topic, and whether reviewers catch planted bugs.
 2. **Animated diagrams beyond stepping.** Moving tokens along edges, state values changing per step (the "3b1b" feel).
-3. **PR mode.** `lucid diff --pr <url>` and posting the page as a PR artifact; per-hunk "reviewed" state.
+3. **PR mode.** `clearproof diff --pr <url>` and posting the page as a PR artifact; per-hunk "reviewed" state.
 4. **Call graph from code.** Draft `changemap` arrows from static analysis instead of by hand.
 5. **Always-on hook** (optional plugin): after an agent edits code, offer a review page of its own change.
 6. **Commit-graph component** for git-history explainers (trial agents had to fake it with `flow`).

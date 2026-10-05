@@ -6,21 +6,21 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { parseDraft } from '../skills/lucid/scripts/lib/parse.mjs';
-import { md } from '../skills/lucid/scripts/lib/md.mjs';
-import { layoutGraph, isotonic } from '../skills/lucid/scripts/lib/layout.mjs';
-import { parseFlow } from '../skills/lucid/scripts/lib/components/flow.mjs';
-import { parseSequence } from '../skills/lucid/scripts/lib/components/sequence.mjs';
-import { renderDraft, fillRows } from '../skills/lucid/scripts/lib/render.mjs';
-import { lintDraft } from '../skills/lucid/scripts/lib/lint.mjs';
-import { parseUnified } from '../skills/lucid/scripts/lib/git.mjs';
-import { DraftError } from '../skills/lucid/scripts/lib/util.mjs';
+import { parseDraft } from '../skills/clearproof/scripts/lib/parse.mjs';
+import { md } from '../skills/clearproof/scripts/lib/md.mjs';
+import { layoutGraph, isotonic } from '../skills/clearproof/scripts/lib/layout.mjs';
+import { parseFlow } from '../skills/clearproof/scripts/lib/components/flow.mjs';
+import { parseSequence } from '../skills/clearproof/scripts/lib/components/sequence.mjs';
+import { renderDraft, fillRows } from '../skills/clearproof/scripts/lib/render.mjs';
+import { lintDraft } from '../skills/clearproof/scripts/lib/lint.mjs';
+import { parseUnified } from '../skills/clearproof/scripts/lib/git.mjs';
+import { DraftError } from '../skills/clearproof/scripts/lib/util.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CLI = join(ROOT, 'skills/lucid/scripts/lucid.mjs');
+const CLI = join(ROOT, 'skills/clearproof/scripts/clearproof.mjs');
 
 function demoRepo() {
-  const dir = mkdtempSync(join(tmpdir(), 'lucid-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'clearproof-test-'));
   const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
   git('init', '-q', '-b', 'main');
   git('config', 'user.email', 't@t');
@@ -136,7 +136,7 @@ test('explain page renders every example component into one self-contained file'
   assert.match(r.html, /class="quiz"/);
   assert.ok(!/<script src=|<link /.test(r.html), 'no external assets');
   assert.ok(!r.html.includes('[object Object]'));
-  assert.match(r.html, /id="lucid-source"/);
+  assert.match(r.html, /id="clearproof-source"/);
 });
 
 test('code references are checked against real files', () => {
@@ -179,15 +179,15 @@ test('unified diff parser tracks old and new line numbers', () => {
 });
 
 test('CLI: errors give line, component and a correct example; exit code 1', () => {
-  const r = spawnSync('node', [CLI, 'render', '-', '--no-open'], { input: '## A\n```flow\nA -> \n```\n', encoding: 'utf8', env: { ...process.env, LUCID_HOME: mkdtempSync(join(tmpdir(), 'lucid-home-')) } });
+  const r = spawnSync('node', [CLI, 'render', '-', '--no-open'], { input: '## A\n```flow\nA -> \n```\n', encoding: 'utf8', env: { ...process.env, CLEARPROOF_HOME: mkdtempSync(join(tmpdir(), 'clearproof-home-')) } });
   assert.equal(r.status, 1);
   assert.match(r.stdout, /✗ L\d+ \[flow\]/);
   assert.match(r.stdout, /correct example:/);
 });
 
 test('CLI: render writes the page and reports sections', () => {
-  const home = mkdtempSync(join(tmpdir(), 'lucid-home-'));
-  const r = spawnSync('node', [CLI, 'render', join(ROOT, 'examples/tcp.md'), '--no-open'], { encoding: 'utf8', cwd: ROOT, env: { ...process.env, LUCID_HOME: home } });
+  const home = mkdtempSync(join(tmpdir(), 'clearproof-home-'));
+  const r = spawnSync('node', [CLI, 'render', join(ROOT, 'examples/tcp.md'), '--no-open'], { encoding: 'utf8', cwd: ROOT, env: { ...process.env, CLEARPROOF_HOME: home } });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /^✓ .*pages\/how-tcp-opens-and-closes-a-connection\.html/m);
   assert.match(r.stdout, /7 sections/);
@@ -308,7 +308,7 @@ test('log-scale charts reject non-positive values', () => {
 });
 
 test('run output hides machine paths; small waffles use one cell per unit', async () => {
-  const { tidyPaths } = await import('../skills/lucid/scripts/lib/components/run.mjs');
+  const { tidyPaths } = await import('../skills/clearproof/scripts/lib/components/run.mjs');
   assert.equal(tidyPaths('cat /tmp/claude-0/abc/def/results.txt', '/repo'), 'cat $TMP/results.txt');
   assert.equal(tidyPaths('/repo/src/a.js and /repo', '/repo'), './src/a.js and .');
   const r = renderDraft('## W\n```waffle unit=ints\nOne line | 16 of 16\nUsed by a column walk | 1 of 16\n```', { cwd: ROOT });
@@ -333,7 +333,7 @@ test('figure blocks keep their script as inert text and get numbered captions', 
 });
 
 test('lint: label headlines, missing figures, x instead of ×; number inventory', async () => {
-  const { numberInventory } = await import('../skills/lucid/scripts/lib/lint.mjs');
+  const { numberInventory } = await import('../skills/clearproof/scripts/lib/lint.mjs');
   const doc = parseDraft('---\ntitle: T\ntldr: x\n---\n## Memory\nIt is 75x slower.\n## Caches\ntext\n## Lines\ntext');
   const rules = lintDraft(doc).map((w) => w.rule);
   assert.ok(rules.includes('headline'));
