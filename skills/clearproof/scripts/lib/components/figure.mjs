@@ -25,7 +25,7 @@ Kit: L.player(fig, {steps, onStep, interval, labels}) · L.toggle(fig, labels, o
      L.el(tag, attrs, ...children) · L.svg(tag, attrs, ...children) · L.color('accent'|'ok'|'risk'|'warn'|'ink'|'ink-3'|'line'|'node')
 Theme classes: .cell .cell.on .cell.hit .cell.miss .cell.dim  .tag  .mono  .muted
 Rules: real values in the figure (addresses, keys, counts); one idea per figure; label directly; no external
-scripts or fonts; keep it under ~120 lines; it must work with no clicks (initial frame) and with the controls.`,
+scripts or fonts; keep it under ~60 lines; it must work with no clicks (initial frame) and with the controls.`,
   example: '```figure caption="Each step reads one cell"\n<div class="row"></div>\n<script>\nconst row = fig.querySelector(\'.row\');\nfor (let i = 0; i < 8; i++) row.append(L.el(\'span\', { class: \'cell\' }, String(i)));\nL.player(fig, { steps: 8, onStep: (s) => [...row.children].forEach((c, i) => c.classList.toggle(\'on\', i === s)) });\n</script>\n```',
   render(text, ctx) {
     const m = text.match(/<script>([\s\S]*?)<\/script>/i);

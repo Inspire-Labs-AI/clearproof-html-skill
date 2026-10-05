@@ -21,6 +21,18 @@ L="node ${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs"   # if the variable is not e
 
 No page for one-line answers, commands to paste, pure code edits, or "plain text please".
 
+## 0. Work in few turns
+
+Every tool call re-reads the whole conversation, so the number of calls — not the words — sets the cost. Aim for **≤ 8 calls** for an explainer, ≤ 10 for a review:
+
+1. Do not call `$L help`: §3 has the syntax. Use help only when a render error names a component you do not know.
+2. Numbers that are the answer: write **one** small script and run it in the same call; use its first output, do not tune it. Well-known published numbers can be cited instead.
+3. Write the whole draft and render it in **one** call (`$L render - --check <<'CLEARPROOF'`, §5).
+4. Read the desktop screenshot and the figure sheet in **one** turn (two Reads side by side).
+5. **One** fix round: fix errors, layout problems and your three weakest points together, render, deliver. Never spend a round nudging pixel positions.
+
+Hand-write at most **two** `figure` blocks (the hero and one more), under ~60 lines each. Everything else uses built-in components, which lay themselves out.
+
 ## 1. Plan before you write (explain)
 
 1. **The one sentence** the reader must leave with. It becomes the `title`, stated as the answer — the key number first if there is one: "Memory costs **75×** an L1 hit", not "CPU caches".
@@ -80,11 +92,11 @@ Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
 | check understanding | `quiz` | `? q`, `- [x] right :: why`, `- [ ] wrong :: why` |
 | also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `$L help <name>` for full syntax |
 
-Figure craft: labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~120 lines.
+Figure craft: labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
 
 ## 3b. Before delivery: critique like a judge
 
-After `$L render - --check` (§5), read the desktop screenshot and **every figure close-up** it saves (`…-fig-N.png`), then score your page 1–5 on **Clarity, Visuals, Readability, Trust** as a strict reader who has never seen the topic. Fix the three weakest things and render again. Check:
+After `$L render - --check` (§5), read the desktop screenshot and the **figure sheet** it saves (`…-figs.png`, every figure close up on one image), then score your page 1–5 on **Clarity, Visuals, Readability, Trust** as a strict reader who has never seen the topic. Fix the three weakest things in one round and render again (§0). Check:
 □ first screen = the answer: headline + lead + hero figure
 □ every section title is a claim; every section has a figure with a caption
 □ every figure shows the mechanism with real values, readable without clicking
@@ -125,7 +137,7 @@ CLEARPROOF
 - Drafts with ```` ```run ```` blocks need `--allow-run`; the CLI reports how many commands ran and which checks failed.
 - `✓ <path>` → done. `--check` renders it in headless Chromium at desktop and phone width, reports cut-off tables, overflow, overlapping labels and groups, and saves both screenshots next to the page. **Look at the desktop screenshot** (read the PNG) before you answer; the check cannot judge everything (cramped diagrams, a confusing order).
 - `✗ L12 [flow] … correct example: …` → fix that line, render again.
-- Warnings (readability, coverage, layout) quote the sentence they mean → fix and re-render, at most 2 rounds; then ship and mention what is left. Diff notes and step captions are checked too.
+- Warnings (readability, coverage, layout) quote the sentence they mean → fix and re-render once; then ship and mention what is left. Diff notes and step captions are checked too.
 - Full-page screenshots are small. For detail, `$L check <page.html> --section 3` saves a sharp close-up of section 3.
 - Review drafts must be rendered from inside the repository (the CLI reads git and files from the current directory).
 - Pages go to `~/.clearproof/pages/` (`-o file.html` to choose). They are single offline files. The browser opens automatically on a desktop; pass `--no-open` when the user should not be interrupted.

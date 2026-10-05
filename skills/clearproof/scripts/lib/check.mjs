@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 // Look at the rendered page the way a reader would, and report what is broken.
 // Problems come back in the same "where / what" shape as draft errors so the agent can fix them.
 
@@ -84,6 +85,7 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
   if (!browser) return { skipped: 'Playwright is not installed, so the visual check was skipped (npm i -g playwright).' };
   const problems = [];
   let closeups = [];
+  let sheetFile = null;
   try {
     for (const [label, width, height] of [['desktop', 1280, 900], ['phone', 390, 844]]) {
       const page = await browser.newPage({ viewport: { width, height } });
@@ -112,6 +114,17 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
         } catch { /* hidden or detached figure */ }
       }
       await page.close();
+      // One contact sheet of all close-ups: one image to read instead of one per figure.
+      if (closeups.length > 1) {
+        const sheet = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+        const cells = closeups.map((f, i) => `<figure><figcaption>Fig. ${i + 1}</figcaption><img src="data:image/png;base64,${readFileSync(f).toString('base64')}"></figure>`).join('');
+        await sheet.setContent(`<style>body{margin:0;padding:12px;font:600 18px system-ui;background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}figure{margin:0;border:1px solid #ccc;padding:6px}img{width:100%;display:block}</style>${cells}`);
+        await sheet.waitForTimeout(100);
+        // grid rows size to the tallest figure; fine for a critique sheet
+        sheetFile = shot.replace(/\.png$/, '-figs.png');
+        await sheet.screenshot({ path: sheetFile, fullPage: true });
+        await sheet.close();
+      }
     }
     if (section && shot) {
       // A sharp close-up of one section: full-page shots are too small to read detail.
@@ -138,5 +151,6 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
     }),
     shot,
     closeups,
+    sheet: sheetFile,
   };
 }

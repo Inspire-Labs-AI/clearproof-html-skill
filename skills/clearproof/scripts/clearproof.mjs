@@ -145,7 +145,7 @@ async function cmdRender(opts) {
     for (const r of result.runs) for (const c of r.checks) if (!c.ok) console.log(`  ✗ $ ${r.cmd}: expected output that ${c.text}`);
   }
   if (result.warnings.length) {
-    console.log(`  ${result.warnings.length} warning${result.warnings.length > 1 ? 's' : ''} (fix and re-render; max 2 rounds):`);
+    console.log(`  ${result.warnings.length} warning${result.warnings.length > 1 ? 's' : ''} (fix in one round, then deliver):`);
     result.warnings.slice(0, 25).forEach((w) => console.log(`  ${formatWarning(w)}`));
     if (result.warnings.length > 25) console.log(`  … ${result.warnings.length - 25} more`);
   }
@@ -167,7 +167,8 @@ async function runCheck(file, shot, section) {
   }
   if (res.shot && section) console.log(`  close-up: ${res.shot}`);
   else if (res.shot) console.log(`  screenshots: ${res.shot} (desktop), ${res.shot.replace(/\.png$/, '-phone.png')} (phone) — look at them before you answer`);
-  if (res.closeups?.length) console.log(`  figure close-ups (critique each one): ${res.closeups.map((f) => f.split('/').pop()).join(', ')} — same folder`);
+  if (res.sheet) console.log(`  all figures on one sheet (read this one image to critique them): ${res.sheet}`);
+  else if (res.closeups?.length) console.log(`  figure close-up: ${res.closeups[0]}`);
 }
 
 async function main() {
