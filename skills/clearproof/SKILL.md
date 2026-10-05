@@ -9,15 +9,13 @@ Reading is now the bottleneck. clearproof turns an answer into a page whose **sp
 
 You write a **draft** (extended Markdown). The CLI does layout, typography, diagrams, charts, numbering, checks and screenshots. **Never retype code — reference it.** Hand-write HTML/SVG/JS only inside a ```` ```figure ```` block, for the figure that carries the explanation.
 
-```bash
-L="node ${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs"   # if the variable is not expanded, use this file's folder
-```
+The CLI is `${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs` (this file's folder). Below, **`clearproof <command>`** means: run `node ${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs <command>`, written out in full with the real path.
 
 | The user needs to… | Mode | First command |
 |---|---|---|
 | understand a concept, system, codebase, decision | **explain** (§1–3) | — |
-| understand / review a change (diff, branch, AI-written code) | **review** (§4) | `$L diff` |
-| watch it | either, then **video** (§6) | `$L video page.html` |
+| understand / review a change (diff, branch, AI-written code) | **review** (§4) | `clearproof diff` |
+| watch it | either, then **video** (§6) | `clearproof video page.html` |
 
 No page for one-line answers, commands to paste, pure code edits, or "plain text please".
 
@@ -25,9 +23,9 @@ No page for one-line answers, commands to paste, pure code edits, or "plain text
 
 Every tool call re-reads the whole conversation, so the number of calls — not the words — sets the cost. Aim for **≤ 8 calls** for an explainer, ≤ 10 for a review:
 
-1. Do not call `$L help`: §3 has the syntax. Use help only when a render error names a component you do not know.
+1. Do not call `clearproof help`: §3 has the syntax. Use help only when a render error names a component you do not know.
 2. Numbers that are the answer: write **one** small script and run it in the same call; use its first output, do not tune it. Well-known published numbers can be cited instead.
-3. Write the whole draft and render it in **one** call (`$L render - --check <<'CLEARPROOF'`, §5).
+3. Write the whole draft to a file in **one** call, then render it in **one** call (`clearproof render draft.md --check`, §5).
 4. Read the desktop screenshot and the figure sheet in **one** turn (two Reads side by side).
 5. **One** fix round: fix errors, layout problems and your three weakest points together, render, deliver. Never spend a round nudging pixel positions.
 
@@ -91,13 +89,13 @@ Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
 | claim confidence | `claims` | `verified \| claim \| [[file:line]]/run/URL`, `inferred \| claim \| basis`, `unverified \| claim` |
 | real code | `code path:10-40 [side]` | `12: note` (`side` = notes beside the code) |
 | check understanding | `quiz` | `? q`, `- [x] right :: why`, `- [ ] wrong :: why` |
-| also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `$L help <name>` for full syntax |
+| also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `clearproof help <name>` for full syntax |
 
 Figure craft: draw a system or codebase with `architecture` (tiers from people at the top to data and third parties at the bottom, each part typed, its subtitle the real tech or folder, the main request path as `==>`), never as a generic `flow`; labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
 
 ## 3b. Before delivery: critique like a judge
 
-After `$L render - --check` (§5), read the desktop screenshot and the **figure sheet** it saves (`…-figs.png`, every figure close up on one image), then score your page 1–5 on **Clarity, Visuals, Readability, Trust** as a strict reader who has never seen the topic. Fix the three weakest things in one round and render again (§0). Check:
+After `clearproof render draft.md --check` (§5), read the desktop screenshot and the **figure sheet** it saves (`…-figs.png`, every figure close up on one image), then score your page 1–5 on **Clarity, Visuals, Readability, Trust** as a strict reader who has never seen the topic. Fix the three weakest things in one round and render again (§0). Check:
 □ first screen = the answer: headline + lead + hero figure
 □ every section title is a claim; every section has a figure with a caption
 □ every figure shows the mechanism with real values, readable without clicking
@@ -110,7 +108,7 @@ After `$L render - --check` (§5), read the desktop screenshot and the **figure 
 
 The header automatically shows provenance (base, head, uncommitted work) and a **Checked** strip: code references checked, hunks shown, commands run, claims verified. Make those numbers high — that is what lets a reviewer trust the page.
 
-1. `$L diff` — read the index: base, files, hunk ids (`H1`…), and the changed lines (committed, uncommitted and untracked). Use `--base <rev>` if the user names one. Read surrounding code where you need context. If some work is uncommitted or `[untracked]`, check that the committed part stands on its own (imports, migrations) — merging only the commits is a common way to break things.
+1. `clearproof diff` — read the index: base, files, hunk ids (`H1`…), and the changed lines (committed, uncommitted and untracked). Use `--base <rev>` if the user names one. Read surrounding code where you need context. If some work is uncommitted or `[untracked]`, check that the committed part stands on its own (imports, migrations) — merging only the commits is a common way to break things.
 2. Write the draft. Copy `base:` from the diff output into the front matter. A reviewer is busy: verdict and risks first, evidence next, walkthrough last. Structure:
    - `tldr` + `verdict: approve | changes | discuss | block` — the finding, not a summary of the diff.
    - **Risks first** (section 1) — ```` ```risks ```` with `critical | src/x.js:42 | what breaks`; levels critical (security, data loss, data leak) / high / med / low. Under each serious risk add indented lines: `why:` (the mechanism), `trigger:` (a concrete input, e.g. the exploit payload), `fix:`. Include behaviour changes for callers (API shape, defaults) and committed code that depends on uncommitted or untracked files.
@@ -125,21 +123,17 @@ The header automatically shows provenance (base, head, uncommitted work) and a *
 
 ## 5. Render, check, look
 
+Save the draft with your file-writing tool (for example `draft.md` in a scratch folder), then run:
+
 ```bash
-$L render - --check <<'CLEARPROOF'
----
-title: …
-tldr: …
----
-## …
-CLEARPROOF
+node ${CLAUDE_SKILL_DIR}/scripts/clearproof.mjs render draft.md --check
 ```
 
 - Drafts with ```` ```run ```` blocks need `--allow-run`; the CLI reports how many commands ran and which checks failed.
 - `✓ <path>` → done. `--check` renders it in headless Chromium at desktop and phone width, reports cut-off tables, overflow, overlapping labels and groups, and saves both screenshots next to the page. **Look at the desktop screenshot** (read the PNG) before you answer; the check cannot judge everything (cramped diagrams, a confusing order).
 - `✗ L12 [flow] … correct example: …` → fix that line, render again.
 - Warnings (readability, coverage, layout) quote the sentence they mean → fix and re-render once; then ship and mention what is left. Diff notes and step captions are checked too.
-- Full-page screenshots are small. For detail, `$L check <page.html> --section 3` saves a sharp close-up of section 3.
+- Full-page screenshots are small. For detail, `clearproof check <page.html> --section 3` saves a sharp close-up of section 3.
 - Review drafts must be rendered from inside the repository (the CLI reads git and files from the current directory).
 - Pages go to `~/.clearproof/pages/` (`-o file.html` to choose). They are single offline files. The browser opens automatically on a desktop; pass `--no-open` when the user should not be interrupted.
 
@@ -147,4 +141,4 @@ Reply in the terminal with 1–3 lines: the conclusion (for reviews: the verdict
 
 ## 6. Video (optional)
 
-`$L video <page.html> [-o out.mp4] [--voice auto|elevenlabs|say|espeak|none]` records the page's tour — the tldr, each section's `say` text, each diagram step's caption — and encodes an MP4. Voice: ElevenLabs if `ELEVENLABS_API_KEY` is set, else macOS `say` or `espeak`, else captions only. Write good `say=` lines and step captions; they are the script. Takes about real time plus a few seconds.
+`clearproof video <page.html> [-o out.mp4] [--voice auto|say|espeak|none]` records the page's tour — the tldr, each section's `say` text, each diagram step's caption — and encodes an MP4. Voice: macOS `say` or `espeak`, else captions only. Everything runs locally. Write good `say=` lines and step captions; they are the script. Takes about real time plus a few seconds.

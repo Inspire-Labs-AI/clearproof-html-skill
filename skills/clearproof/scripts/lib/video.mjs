@@ -1,6 +1,6 @@
 // Explainer video: record the page's narrated tour and encode an MP4.
 // The tour is the script: the hero line, each section's narration, then each diagram step.
-// Voices: elevenlabs (ELEVENLABS_API_KEY), say (macOS), espeak (Linux), none (captions only).
+// Voices: say (macOS), espeak (Linux), none (captions only). Everything runs on this machine; nothing is sent anywhere.
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
@@ -22,19 +22,6 @@ const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show
 export const estimate = (t) => Math.max(2.2, t.split(/\s+/).length / 2.7 + 0.8);
 
 const VOICES = {
-  async elevenlabs(text, out) {
-    const key = process.env.ELEVENLABS_API_KEY;
-    if (!key) throw new Error('Set ELEVENLABS_API_KEY to use the elevenlabs voice');
-    const voice = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
-      method: 'POST',
-      headers: { 'xi-api-key': key, 'content-type': 'application/json', accept: 'audio/mpeg' },
-      body: JSON.stringify({ text, model_id: process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2' }),
-    });
-    if (!res.ok) throw new Error(`ElevenLabs returned ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    writeFileSync(`${out}.mp3`, Buffer.from(await res.arrayBuffer()));
-    return `${out}.mp3`;
-  },
   async say(text, out) {
     execFileSync('say', ['-o', `${out}.aiff`, text]);
     return `${out}.aiff`;
@@ -52,7 +39,6 @@ const VOICES = {
 
 export function pickVoice(name) {
   if (name && name !== 'auto') return name;
-  if (process.env.ELEVENLABS_API_KEY) return 'elevenlabs';
   if (process.platform === 'darwin' && has('say')) return 'say';
   if (has('espeak-ng') || has('espeak')) return 'espeak';
   return 'none';
@@ -74,7 +60,7 @@ export async function makeVideo(htmlPath, { out, voice = 'auto', width = 1280, h
 
     // 2. Voice each segment; its audio length sets how long the page stays on it.
     const v = pickVoice(voice);
-    if (v !== 'none' && !VOICES[v]) throw new Error(`Unknown voice "${v}". Use: auto, elevenlabs, say, espeak, none`);
+    if (v !== 'none' && !VOICES[v]) throw new Error(`Unknown voice "${v}". Use: auto, say, espeak, none`);
     log(`narration: ${texts.length} segments, voice: ${v}`);
     const GAP = 0.45;
     const clips = [];
