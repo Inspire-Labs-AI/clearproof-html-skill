@@ -102,6 +102,8 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
       // A sharp close-up of every figure: critique figures at the size a reader sees them, not in a shrunken page.
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1.5 });
       await page.goto(pathToFileURL(htmlPath).href);
+      // The sticky top bar would otherwise cover the top of tall figures in their close-ups.
+      await page.addStyleTag({ content: '.topbar{position:static!important}' });
       await page.waitForTimeout(200);
       const figs = page.locator('main .figwrap, main section > figure.diagram, main section > .cases, main section > figure.chart, main section > figure.waffle, main section > .custom-fig');
       const n = Math.min(await figs.count(), 10);

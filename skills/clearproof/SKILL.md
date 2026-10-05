@@ -92,7 +92,7 @@ Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
 | check understanding | `quiz` | `? q`, `- [x] right :: why`, `- [ ] wrong :: why` |
 | also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `$L help <name>` for full syntax |
 
-Figure craft: labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
+Figure craft: an architecture with more than ~6 parts goes top-down (`flow`, no `LR`) or in 2–3 `group`s, never one long row, which shrinks every label; labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
 
 ## 3b. Before delivery: critique like a judge
 
