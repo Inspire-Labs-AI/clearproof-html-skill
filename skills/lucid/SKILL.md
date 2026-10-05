@@ -5,79 +5,93 @@ description: Turn an answer or a code change into one HTML page a human understa
 
 # lucid — make the output understandable, not just correct
 
-Reading is now the bottleneck: people spend more time understanding model output than producing it. lucid moves an answer up the ladder **plain text → controlled prose → diagrams → interactive page → narrated video**, and turns code review into **code understanding**: context first, real code second, nothing hidden.
+Reading is now the bottleneck. lucid turns an answer into a page whose **spine is figures** (text is caption, not content) and turns code review into **code understanding**: verdict first, real code and real proof second, nothing hidden. Quality beats speed: take the extra minutes to plan, draw and critique.
 
-You write only the **draft** (extended Markdown). The CLI writes all HTML, CSS, SVG coordinates and JavaScript. **Never hand-write HTML/CSS/SVG. Never retype code — reference it.**
+You write a **draft** (extended Markdown). The CLI does layout, typography, diagrams, charts, numbering, checks and screenshots. **Never retype code — reference it.** Hand-write HTML/SVG/JS only inside a ```` ```figure ```` block, for the figure that carries the explanation.
 
 ```bash
 L="node ${CLAUDE_SKILL_DIR}/scripts/lucid.mjs"   # if the variable is not expanded, use this file's folder
 ```
 
-## 1. Pick the mode
-
 | The user needs to… | Mode | First command |
 |---|---|---|
-| understand a concept, system, codebase, decision | **explain** | — |
-| understand / review a change (diff, branch, AI-written code) | **review** | `$L diff` |
-| watch it (or share it as a clip) | either, then **video** | `$L video page.html` |
+| understand a concept, system, codebase, decision | **explain** (§1–3) | — |
+| understand / review a change (diff, branch, AI-written code) | **review** (§4) | `$L diff` |
+| watch it | either, then **video** (§6) | `$L video page.html` |
 
-No page for: one-line answers, commands to paste, pure code edits, "plain text please".
+No page for one-line answers, commands to paste, pure code edits, or "plain text please".
+
+## 1. Plan before you write (explain)
+
+1. **The one sentence** the reader must leave with. It becomes the `title`, stated as the answer — the key number first if there is one: "Memory costs **75×** an L1 hit", not "CPU caches".
+2. **The hero figure** that makes that sentence visible on the first screen.
+3. **3–6 sections**, each = one claim + the figure that proves it, in the order understanding builds: intuition → mechanism (stepped, with real values) → numbers → cases where it breaks → what to remember. Write each section title as its claim.
+4. For each figure, pick the form by the information (§3). Sketch it in your head with **real values** (actual addresses, keys, timings, sizes), not placeholders.
 
 ## 2. Write the draft
 
 ````markdown
 ---
-title: How TCP opens a connection
-tldr: Three messages prove both sides can send and receive.     ← REQUIRED: the answer in one line
-subtitle: optional
+kicker: CPU caches                          ← small label above the headline
+title: A cache hit takes 1 ns. Memory takes 90.     ← the answer, number first
+tldr: The CPU keeps recently used **64-byte lines** close to the core, so most reads skip the 90 ns trip.   ← lead: 1–2 sentences, one bold phrase
+for: a programmer who knows arrays and loops
 ---
-Optional one-paragraph intro.
+## The hero {hero}                           ← {hero}: no heading, sits right under the lead
+```chart bar unit= ns caption="One trip to memory costs as much as 90 L1 hits."
+L1 | 1
+*DRAM | 90 ! one cache miss
+```
 
-## The handshake {span=2 say="Watch the three messages."}
-```sequence
-Client -> Server: SYN | caption shown when this step plays
-Server --> Client: SYN+ACK
+## Each miss fetches a whole 64-byte line {kicker="Mechanism"}
+One short paragraph of why. Then the figure that shows it.
+```figure caption="Reading a[0] misses and brings in a[0]–a[15]; the next 15 reads hit."
+… HTML/SVG + <script> using the L kit (§3) …
 ```
 ````
 
-Rules that make pages good:
-- **Answer first.** `tldr` is the conclusion, not the topic. Then 3–8 sections (reviews: up to 10), each answering one question, ordered the way understanding builds (why → shape → mechanism → edge cases → check).
-- **Explainers open with "The short version":** a numbered list of 3–7 plain steps a newcomer can follow, before any diagram or table. Readers rate this the clearest part of a page.
-- **Draw the real data, not boxes.** Put actual values in diagrams: `[g; p]` record nodes for keys, fields or memory cells, `~` to fade what the process skips, `*` for the path it takes. A diagram of generic steps ("Row 1 → Row 2 → …") explains nothing — cut it.
-- **Keep run commands short and portable:** put a longer benchmark in a small script file and run it (`$ node bench/stride.js`); lucid shows the repo as `.` and temp dirs as `$TMP`.
-- **Never retype a measured number.** If a `run` block measured it, chart exactly those numbers (lint checks) or show the run output alone.
-- **Write for a named reader.** `for: a backend dev new to databases` in the front matter shows as "Written for: …" and should change what you include, not just the wording.
-- **Show, then tell.** Prefer a concrete example (real names, real numbers, real tool output via ```` ```run ````) over abstract description. State what you simplified in one `callout info` line; honest caveats raise trust.
-- **One visual per section** where the information has a shape; prose only for the why. More than ~160 words of prose with no visual is flagged.
-- **Write in plain English (ASD-STE100 style):** one idea per sentence, ≤25 words (≤20 for steps), active voice, steps as commands, common words (use, not utilize). lint warns.
-- **Ground every claim about code:** `[[src/auth.js:42]]` or `[[src/auth.js:40-52]]` inline (hover shows the real lines); ```` ```code src/auth.js:40-60 ```` to show them. lucid fails on a missing file or line — that is the point.
-- **No invented numbers.** Charts take real values; say "illustrative" otherwise.
-- Layout: one reading column by default (`cols: 2` gives a grid of cards for dashboard-like overviews; then sequences, LR flows, code and wide tables span the full row automatically). Give `{span=full}` to wide diagrams, LR flows and tables with long cells. `say="…"` sets what the tour narrates for that section.
-- Put a `glossary` in its own section near the end: hover definitions work everywhere, and a glossary first delays the overview.
+Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
+- **Figures carry the page.** Every section has a figure; figures outnumber prose paragraphs. If a sentence describes the picture, make it a label in the picture. Every figure gets `caption="…"`: one sentence that states its claim or what to notice ("Fig. N" is added).
+- **Draw the mechanism, not the name.** A request moving through a cache beats a box labelled "cache". Use real values. Show what the process does *not* touch (`~` fades it). A chain of generic boxes ("Step 1 → Step 2") explains nothing — cut it.
+- **A process that changes over time gets a stepper** with a one-line caption per step and real values in every caption. Open on the full picture; never autoplay.
+- **A setting the reader should feel gets a live figure:** 1–3 controls (slider/toggle) driving one pure `model(settings)` that redraws the figure and the numbers; default to the real value; say "illustrative" if simplified.
+- **Every number gets a picture** (chart, waffle, bars) with the comparison stated. Highlight the bar that matters (`*row`) and annotate it in place (`value ! note`). Use `scale=log` across orders of magnitude.
+- **Cases become small multiples** (`cases`): the same mini diagram per case; only the difference changes.
+- **One concept, one name, one number.** The same quantity must have the same value everywhere (render prints a per-unit number inventory — check it). Measured numbers are copied exactly from `run` output.
+- **Plain English (ASD-STE100):** one idea per sentence, ≤25 words, active voice, short paragraphs (1–3 sentences), common words, `×` not `x`, a space before units.
+- **Trust:** cite sources with links in a final `## Sources` section (never collapsed); ground code claims with `[[file:line]]`; label models "illustrative"; one `callout info` line for what you simplified. Proof beats assertion: a `run` block showing real output is the strongest evidence.
+- **Name the parts first, predict before the key figure.** Introduce the 3–5 parts by name (one line each, or in the hero) before the mechanism. Right before the most important figure, ask one `quiz` prediction ("What happens on the next read?"); the figure then shows the answer.
+- **End with understanding:** a `quiz` of 2–3 *application* questions (what happens if…), every option explained (`- [ ] option :: why`). Glossary, if any, goes last.
 
-## 3. Components (pick by the shape of the information)
+## 3. Figures and components (pick by the shape of the information)
 
-| Shape | Component | Minimal syntax |
+| Shape | Use | Minimal syntax |
 |---|---|---|
-| boxes & arrows, architecture, decisions, state machines | `flow [LR]` | `A -> B: label \| step caption`, `-->` dashed, `==>` main path, `A -> B & C`, `(Start)` `{Decision?}` `[(DB)]` `*Hot`, `group Name: A, B` |
-| messages between parties over time | `sequence` | `A -> B: msg \| caption`, `B --> A: reply`, `A -x B: lost`, `note A, B: text`, `== phase ==` |
-| hierarchy | `tree` | 2-space indent, `name \| description`, `*hot` |
-| history, phases | `timeline` | `when \| title \| description`, `*` highlights |
-| quantities | `chart bar\|line unit=ms` | `series: a, b` then `label \| 1.2, 3.4` |
-| key facts | `kv` | `Key: value` |
-| jargon | `glossary` | `Term: definition` → every later use gets a hover definition |
-| conclusion / warning | `callout key\|info\|tip\|ok\|warn\|risk Title` | Markdown body |
-| real code with notes | `code path:10-40 [side]` | `12: note`, `14-18: note on a range`; `side` puts plain-English notes in a column beside the code — best for line-by-line walkthroughs |
-| check understanding | `quiz` | `? question`, `- [x] right :: why`, `- [ ] wrong :: why it is wrong`, `> summary`; open: `? q` + `= answer`. Ask what would *happen* (change a condition, trace a request, pick a fix), never recall of names. Explain every option. |
-| how sure is each claim | `claims` | `verified \| claim \| [[file:line]] / H3 / run / URL`, `inferred \| claim \| what it rests on`, `unverified \| claim` |
-| things to verify | `checklist` | `- [ ] item [[file:line]]` (ticks persist) |
-| proof: real command output | `run` | `$ command`, `shows: text` (evidence of behaviour), `expect:` / `absent:` (assertions), `note: caption` — lucid runs it and embeds the output (render with `--allow-run`) |
-| comparison | Markdown table | cells starting `ok` / `no` / `warn` become ✓ ✗ ! |
-| one key ratio, felt | `waffle unit=requests` | `Cache hits \| 997 of 1000 \| note` — a grid of cells per row; put the big whole first |
+| **the mechanism itself** (a simulator, a walk with real data, before/after) | `figure` | HTML/SVG + `<script>` with the **L kit**: `L.player(fig,{steps,onStep,labels})` · `L.steps(fig,captions)` (parts with `data-s="k"` appear at step k) · `L.beforeAfter(fig)` (`.only-before`/`.only-after`) · `L.toggle(fig,labels,fn)` · `L.slider(fig,{label,min,max,value,format},fn)` · `L.readout(fig,label).set(x)` · `L.el` · `L.svg` · `L.color('accent')`. Theme classes: `.cell .cell.hit .cell.miss .cell.on .cell.dim .tag .mono .muted`. `wide` for full width. |
+| boxes & arrows, architecture, state machines | `flow [LR]` | `A -> B: label \| step caption`, `-->` dashed, `==>` main path, `[g; p]` record node with real values, `~X` faded, `*X` highlighted, `(Start)` `{Decision?}` `[(DB)]` |
+| messages between parties over time | `sequence` | `A -> B: msg \| caption`, `B --> A: reply`, `note A: text`, `== phase ==` |
+| cases, failure modes, options | `cases` | `# risk \| Key expired \| 9 ms` then flow lines; `*` = the part that matters, `~` = down |
+| magnitudes | `chart bar\|line unit=ms [scale=log]` | `label \| 1.2`, `*label \| 300 ! note`; `series: a, b` for 2–4 series |
+| one ratio, felt | `waffle unit=reads` | `Hash lookup \| 1 of 1000 \| note` |
+| hierarchy · history | `tree` · `timeline` | indent / `when \| title \| note` |
+| proof: real output | `run` | `$ command`, `shows: text`, `expect: text`, `note:` (render with `--allow-run`) |
+| claim confidence | `claims` | `verified \| claim \| [[file:line]]/run/URL`, `inferred \| claim \| basis`, `unverified \| claim` |
+| real code | `code path:10-40 [side]` | `12: note` (`side` = notes beside the code) |
+| check understanding | `quiz` | `? q`, `- [x] right :: why`, `- [ ] wrong :: why` |
+| also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `$L help <name>` for full syntax |
 
-`flow` and `sequence` play step by step (one step per arrow line; the text after ` | ` is the caption). Names of nodes and actors that you use in the section's prose light up the diagram on hover automatically — so use the same names in both.
+Figure craft: labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~120 lines.
 
-**Every number gets a picture** (a `chart`, a `waffle`, a table, a timeline) or it gets cut. **Open with a hero:** right after the short version, one big visual that makes the key number felt — e.g. a `waffle` of "3 of 1,000 requests" or a `chart` of before/after (`scale=log` when values span orders of magnitude). Use `flow LR` for linear chains; tall thin diagrams waste the page. When several cases differ in one detail, show the same small diagram once per case rather than one diagram with every branch. Full syntax: `$L help <component>`, `$L help format`, `$L help review`.
+## 3b. Before delivery: critique like a judge
+
+After `$L render - --check` (§5), read the desktop screenshot and **every figure close-up** it saves (`…-fig-N.png`), then score your page 1–5 on **Clarity, Visuals, Readability, Trust** as a strict reader who has never seen the topic. Fix the three weakest things and render again. Check:
+□ first screen = the answer: headline + lead + hero figure
+□ every section title is a claim; every section has a figure with a caption
+□ every figure shows the mechanism with real values, readable without clicking
+□ every number has a picture; the number inventory shows no conflicting values
+□ no text under 11 px; no overlaps; no layout warnings; phone width works
+□ sources listed; simplifications labelled; measured numbers match `run` output
+□ prose is short; nothing on the page repeats what a figure already shows
 
 ## 4. Review mode (code understanding)
 

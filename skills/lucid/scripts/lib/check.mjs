@@ -24,6 +24,15 @@ function inspect() {
     for (const t of sec.querySelectorAll('.tbl')) {
       if (t.scrollWidth > t.clientWidth + 4) out.push({ level: innerWidth < 600 ? 'warn' : 'error', where: name(t), message: `table is cut off (needs ${t.scrollWidth}px, has ${t.clientWidth}px); give the section span=full or shorten the cells` });
     }
+    if (innerWidth > 600) {
+      let small = null;
+      for (const t of sec.querySelectorAll('svg text, .custom-fig *')) {
+        if (!t.textContent.trim() || t.children.length && t.tagName !== 'text') continue;
+        const h = t.tagName === 'text' || t.tagName === 'tspan' ? t.getBoundingClientRect().height : parseFloat(getComputedStyle(t).fontSize);
+        if (h > 0 && h < 10.5 && (!small || h < small.h)) small = { h, text: t.textContent.trim().slice(0, 24) };
+      }
+      if (small) out.push({ level: 'warn', where: name(sec), message: `figure text renders at about ${Math.round(small.h)}px ("${small.text}"); make the figure wider or the labels shorter so text is at least 11px` });
+    }
     for (const svg of sec.querySelectorAll('svg')) {
       const r = svg.getBoundingClientRect();
       if (r.width > 0 && r.width < 260 && svg.viewBox.baseVal && svg.viewBox.baseVal.width > 520) {
@@ -70,6 +79,7 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
   const browser = await launch();
   if (!browser) return { skipped: 'Playwright is not installed, so the visual check was skipped (npm i -g playwright).' };
   const problems = [];
+  let closeups = [];
   try {
     for (const [label, width, height] of [['desktop', 1280, 900], ['phone', 390, 844]]) {
       const page = await browser.newPage({ viewport: { width, height } });
@@ -80,6 +90,23 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
       const found = await page.evaluate(inspect);
       for (const p of found) problems.push({ ...p, where: `${label} · ${p.where}` });
       if (shot) await page.screenshot({ path: label === 'desktop' ? shot : shot.replace(/\.png$/, '-phone.png'), fullPage: true });
+      await page.close();
+    }
+    if (shot && !section) {
+      // A sharp close-up of every figure: critique figures at the size a reader sees them, not in a shrunken page.
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1.5 });
+      await page.goto(pathToFileURL(htmlPath).href);
+      await page.waitForTimeout(200);
+      const figs = page.locator('main .figwrap, main section > figure.diagram, main section > .cases, main section > figure.chart, main section > figure.waffle, main section > .custom-fig');
+      const n = Math.min(await figs.count(), 10);
+      closeups = [];
+      for (let i = 0; i < n; i++) {
+        const file = shot.replace(/\.png$/, `-fig-${i + 1}.png`);
+        try {
+          await figs.nth(i).screenshot({ path: file });
+          closeups.push(file);
+        } catch { /* hidden or detached figure */ }
+      }
       await page.close();
     }
     if (section && shot) {
@@ -106,5 +133,6 @@ export async function checkPage(htmlPath, { shot, section } = {}) {
       return true;
     }),
     shot,
+    closeups,
   };
 }

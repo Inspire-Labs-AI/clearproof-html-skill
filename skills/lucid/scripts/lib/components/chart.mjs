@@ -11,11 +11,17 @@ export function parseChart(text) {
     if (!t || t.startsWith('//')) return;
     const s = t.match(/^series\s*:\s*(.+)$/i);
     if (s) return void (series = s[1].split(',').map((x) => x.trim()));
-    const [label, vals] = t.split(/\s+\|\s+/);
+    let [label, vals] = t.split(/\s+\|\s+/);
     if (vals === undefined) throw new DraftError(`Chart row needs "label | value": ${t}`, { line: k + 1 });
-    const values = vals.split(',').map((v) => Number(v.trim().replace(/[_,]/g, '')));
+    // "*label" highlights the row; "value ! note" writes a note beside the bar.
+    let note = '';
+    const bang = vals.indexOf(' ! ');
+    if (bang >= 0) [vals, note] = [vals.slice(0, bang), vals.slice(bang + 3).trim()];
+    const hot = label.trim().startsWith('*');
+    if (hot) label = label.trim().slice(1);
+    const values = vals.split(/,\s+|,(?=\s*-?\d)/).map((v) => Number(v.trim().replace(/[_]/g, '')));
     if (values.some((v) => !Number.isFinite(v))) throw new DraftError(`Not a number in: ${t}`, { line: k + 1 });
-    rows.push({ label: label.trim(), values });
+    rows.push({ label: label.trim(), values, hot, note });
   });
   if (!rows.length) throw new DraftError('chart has no rows', { line: 1 });
   const n = Math.max(...rows.map((r) => r.values.length));
@@ -31,6 +37,7 @@ export default {
 series: before, after          optional, for 2-4 series
 Redis | 0.4, 0.3               label | value[, value...]
 Postgres | 2.1, 1.2
+*DRAM | 300 ! ≈80 ns, 75× L1    * highlights one bar (others turn grey); " ! " writes a note beside it
 \`\`\`
 Use real numbers only. Say "illustrative" in the panel if they are not measured.
 scale=log for values that span orders of magnitude (1 vs 1,000,000). If the numbers come from a run block on the page,
@@ -50,11 +57,13 @@ copy them exactly: lucid warns when a chart value does not appear in any run out
     const legend = series.length > 1 ? `<div class="legend">${series.map((s, j) => `<span><i class="sw s${j}"></i>${esc(s)}</span>`).join('')}</div>` : '';
     const title = opts.title ? `<figcaption>${esc(opts.title)}</figcaption>` : '';
     if (type === 'bar') {
+      const anyHot = rows.some((r) => r.hot);
       const lw = Math.min(160, Math.max(...rows.map((r) => textWidth(r.label, 13))) + 12);
       const barH = 18;
       const rowH = series.length * (barH + 3) + 12;
-      const W = 440;
-      const plot = W - lw - 80;
+      const noteSpace = Math.min(240, Math.max(0, ...rows.map((r) => (r.note ? textWidth(r.note, 12) + 16 : 0))));
+      const plot = 440 - lw - 80;
+      const W = 440 + noteSpace;
       const H = rows.length * rowH + 4;
       const lmin = log ? Math.floor(Math.log10(Math.min(...rows.flatMap((r) => r.values)))) : 0;
       const lmax = log ? Math.ceil(Math.log10(max)) || 1 : 0;
@@ -65,7 +74,10 @@ copy them exactly: lucid warns when a chart value does not appear in any run out
           const by = y + j * (barH + 3);
           const x0 = log ? lw : lw + scale(Math.min(0, v));
           const w = Math.max(1, log ? scale(v) : Math.abs(scale(v) - scale(0)));
-          return `<rect class="s${j}" x="${x0.toFixed(1)}" y="${by}" width="${w.toFixed(1)}" height="${barH}" rx="3"/><text class="val" x="${(x0 + w + 6).toFixed(1)}" y="${by + 13}">${fmt(v)}${esc(v === 1 ? unit.replace(/s$/, '') : unit)}</text>`;
+          const cls = anyHot && series.length === 1 ? (r.hot ? 's0' : 'muted') : `s${j}`;
+          const valText = `${fmt(v)}${esc(v === 1 ? unit.replace(/s$/, '') : unit)}`;
+          const note = r.note && j === r.values.length - 1 ? `<tspan class="anno" dx="10">${esc(r.note)}</tspan>` : '';
+          return `<rect class="${cls}" x="${x0.toFixed(1)}" y="${by}" width="${w.toFixed(1)}" height="${barH}" rx="3"/><text class="val${r.hot ? ' hot' : ''}" x="${(x0 + w + 6).toFixed(1)}" y="${by + 13}">${valText}${note}</text>`;
         });
         return `<g data-step="${i + 1}"><text class="lab" x="${lw - 8}" y="${y + (series.length * (barH + 3)) / 2 + 3}">${esc(r.label)}</text>${bars.join('')}</g>`;
       });

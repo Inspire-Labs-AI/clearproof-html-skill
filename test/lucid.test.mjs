@@ -315,3 +315,38 @@ test('run output hides machine paths; small waffles use one cell per unit', asyn
   assert.equal((rows[0].match(/<i/g) ?? []).length, 16);
   assert.ok(!/Each square/.test(r.html));
 });
+
+test('charts highlight one bar and annotate it in place', () => {
+  const r = renderDraft('## C\n```chart bar unit= cycles\nL1 | 4\n*DRAM | 300 ! ≈80 ns, 75× L1\n```', { cwd: ROOT });
+  assert.match(r.html, /<rect class="muted"/);
+  assert.match(r.html, /<rect class="s0"/);
+  assert.match(r.html, /class="anno" dx="10">≈80 ns, 75× L1</);
+});
+
+test('figure blocks keep their script as inert text and get numbered captions', () => {
+  const r = renderDraft('## F\n```figure caption="Each step reads one cell"\n<div class="row"></div>\n<script>\nL.player(fig, { steps: 3, onStep: () => {} });\n</script>\n```\n```chart bar caption="Second figure"\nA | 1\n```', { cwd: ROOT });
+  assert.match(r.html, /data-fig><div class="row"><\/div><script type="text\/plain" class="fig-src">/);
+  assert.match(r.html, /<b>Fig\. 1<\/b> Each step reads one cell/);
+  assert.match(r.html, /<b>Fig\. 2<\/b> Second figure/);
+  assert.throws(() => renderDraft('## F\n```figure\n<script src="x.js"></script>\n```', { cwd: ROOT }), /inline/);
+});
+
+test('lint: label headlines, missing figures, x instead of ×; number inventory', async () => {
+  const { numberInventory } = await import('../skills/lucid/scripts/lib/lint.mjs');
+  const doc = parseDraft('---\ntitle: T\ntldr: x\n---\n## Memory\nIt is 75x slower.\n## Caches\ntext\n## Lines\ntext');
+  const rules = lintDraft(doc).map((w) => w.rule);
+  assert.ok(rules.includes('headline'));
+  assert.ok(rules.includes('figures'));
+  assert.ok(rules.includes('typography'));
+  assert.deepEqual(numberInventory('A hit is 1 ns. DRAM is 90 ns. Later: 100 ns and 1 ns.'), ['ns: 1 ×2, 90, 100']);
+});
+
+test('cases share one layout and mark the changed part', () => {
+  const r = renderDraft('## C\n```cases\n# ok | Hit\nApp -> *Cache\n# risk | Miss\nApp -> Cache\nApp -> *DB\n```', { cwd: ROOT });
+  const cards = r.html.split('class="case st-').slice(1);
+  assert.equal(cards.length, 2);
+  assert.match(cards[0], /class="cn faded"><rect[^>]*\/><text[^>]*>DB</);
+  assert.match(cards[1], /class="cn is-st"><rect[^>]*\/><text[^>]*>DB</);
+  const vb = (c) => c.match(/viewBox="([^"]+)"/)[1];
+  assert.equal(vb(cards[0]), vb(cards[1]));
+});

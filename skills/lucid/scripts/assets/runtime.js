@@ -214,6 +214,89 @@
     update();
   }
 
+  /* figure kit: bespoke figures get consistent controls and theme colours */
+  const NS = 'http://www.w3.org/2000/svg';
+  const make = (ns) => (tag, attrs = {}, ...kids) => {
+    const el = ns ? document.createElementNS(NS, tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  };
+  const controls = (fig) => fig.querySelector(':scope > .fig-controls') || fig.appendChild(Object.assign(document.createElement('div'), { className: 'fig-controls' }));
+  const L = {
+    el: make(false),
+    svg: make(true),
+    color: (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim(),
+    readout(fig, label) {
+      const v = L.el('b', {}, '–');
+      controls(fig).append(L.el('span', { class: 'readout' }, `${label} `, v));
+      return { set: (x) => { v.textContent = x; } };
+    },
+    toggle(fig, labels, onChange, initial = 0) {
+      const box = L.el('span', { class: 'seg', role: 'group' });
+      const btns = labels.map((t, i) => L.el('button', { type: 'button', 'aria-pressed': String(i === initial), onclick: () => { btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))); onChange(i); } }, t));
+      box.append(...btns);
+      controls(fig).prepend(box);
+      return { set: (i) => btns[i].click() };
+    },
+    slider(fig, o, onInput) {
+      const out = L.el('output', {}, o.format ? o.format(o.value) : String(o.value));
+      const input = L.el('input', { type: 'range', min: o.min, max: o.max, step: o.step ?? 1, value: o.value });
+      input.addEventListener('input', () => { const v = Number(input.value); out.textContent = o.format ? o.format(v) : String(v); onInput(v); });
+      controls(fig).append(L.el('label', { class: 'slider' }, `${o.label} `, input, out));
+      return { set: (v) => { input.value = v; input.dispatchEvent(new Event('input')); } };
+    },
+    player(fig, o) {
+      let cur = o.start ?? o.steps - 1; let timer = null;
+      const count = L.el('span', { class: 'count' });
+      const cap = o.labels ? L.el('span', { class: 'caption' }) : null;
+      const go = (k) => { cur = Math.max(0, Math.min(o.steps - 1, k)); count.textContent = `${cur + 1} / ${o.steps}`; if (cap) cap.textContent = o.labels[cur] || ''; o.onStep(cur); };
+      const stop = () => { clearInterval(timer); timer = null; play.textContent = '▶'; };
+      const play = L.el('button', { type: 'button', 'aria-label': 'Play', onclick: () => {
+        if (timer) return stop();
+        if (cur >= o.steps - 1) go(0);
+        play.textContent = '❚❚';
+        timer = setInterval(() => (cur >= o.steps - 1 ? stop() : go(cur + 1)), o.interval ?? 800);
+      } }, '▶');
+      const bar = L.el('div', { class: 'player' },
+        L.el('button', { type: 'button', 'aria-label': 'Previous', onclick: () => { stop(); go(cur - 1); } }, '‹'),
+        play,
+        L.el('button', { type: 'button', 'aria-label': 'Next', onclick: () => { stop(); go(cur + 1); } }, '›'),
+        count, cap);
+      controls(fig).append(bar);
+      go(cur); // start on the most informative frame (the end state unless o.start says otherwise)
+      return { go, stop, get step() { return cur; } };
+    },
+  };
+  // Parts marked data-s="k" appear at step k; the current step is accented, future steps fade (text hidden).
+  L.steps = (fig, captions, o = {}) => {
+    const parts = [...fig.querySelectorAll('[data-s]')];
+    const n = captions?.length || Math.max(...parts.map((p) => +p.dataset.s));
+    return L.player(fig, { steps: n, labels: captions, start: o.start, interval: o.interval ?? 1600, onStep: (k) => {
+      for (const p of parts) { const s = +p.dataset.s; p.classList.toggle('future', s > k + 1); p.classList.toggle('now', s === k + 1); }
+      o.onStep?.(k);
+    } });
+  };
+  // One drawing, two states: .only-before / .only-after parts swap; what stays put is what did not change.
+  L.beforeAfter = (fig, labels = ['Before', 'After'], initial = 1) => {
+    const set = (i) => { fig.dataset.view = i ? 'after' : 'before'; };
+    set(initial);
+    return L.toggle(fig, labels, set, initial);
+  };
+  window.L = L;
+  for (const fig of $$('[data-fig]')) {
+    const src = $('.fig-src', fig)?.textContent;
+    if (!src) continue;
+    try { new Function('fig', 'L', src)(fig, L); } catch (err) {
+      console.error(`figure ${fig.id}: ${err.message}`);
+      fig.append(L.el('p', { class: 'fig-error' }, `This figure failed to run: ${err.message}`));
+    }
+  }
+
   /* tour: a narrated walk through the page; the video exporter drives the same code */
   const bar = $('.tourbar');
   const tcap = $('.tcap');

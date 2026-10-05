@@ -76,6 +76,24 @@ export function lintDraft(doc, { coverage } = {}) {
     const n = words(clean(prose));
     if (!visual && n > 160 && !/\|/.test(prose)) out.push({ line: p.line, rule: 'wall', message: `"${p.title}" is ${n} words of prose and no visual; add a diagram, table or list, or cut` });
   }
+  if (meta.kind !== 'review' && panels.length >= 3) {
+    const skip = /^(the short version|short version|glossary|words used here|check yourself|sources|quiz|summary)$/i;
+    const titled = panels.filter((p) => !skip.test(p.title.trim()) && !p.attrs.hero);
+    const labels = titled.filter((p) => p.title.trim().split(/\s+/).length <= 3 && !/\d/.test(p.title));
+    if (labels.length * 2 > titled.length) out.push({ line: labels[0].line, rule: 'headline', message: `${labels.length} of ${titled.length} section titles are topic labels (e.g. "${labels[0].title}")`, suggestion: 'state the takeaway: "Memory costs 75× an L1 hit", not "Memory"' });
+    const pictures = panels.filter((p) => p.blocks.some((b) => b.type === 'fence' && !['callout', 'quiz', 'glossary', 'checklist', 'claims', 'kv'].includes(b.lang)));
+    if (pictures.length * 2 < titled.length) out.push({ line: panels[0].line, rule: 'figures', message: `only ${pictures.length} of ${panels.length} sections have a figure`, suggestion: 'let figures carry the page: a diagram, chart, waffle, cases or figure per section' });
+  }
+  for (const b of panels.flatMap((p) => p.blocks).filter((x) => x.type === 'fence')) {
+    const cap = (b.args.match(/caption="([^"]*)"/) ?? [])[1];
+    if (cap !== undefined && (/^(diagram|figure|overview|chart|illustration|graph)\b/i.test(cap.trim()) || cap.trim().split(/\s+/).length < 4)) {
+      out.push({ line: b.line, rule: 'caption', message: `caption "${cap}" names the figure instead of saying what to notice`, suggestion: 'state the claim: "Row order misses once per line; column order misses every read."' });
+    }
+  }
+  for (const b of [...intro, ...panels.flatMap((p) => p.blocks)].filter((x) => x.type === 'md')) {
+    const m = b.text.match(/\b\d+(?:\.\d+)?x\b/);
+    if (m) out.push({ line: b.line, rule: 'typography', message: `"${m[0]}"`, suggestion: `use × ("${m[0].replace(/x$/, '×')}")` });
+  }
   if (meta.kind === 'review') {
     for (const b of panels.flatMap((p) => p.blocks)) {
       if (b.type === 'fence' && ['quiz', 'glossary'].includes(b.lang)) out.push({ line: b.line, rule: 'review', message: `a ${b.lang} in a review is padding for a busy reviewer`, suggestion: 'drop it' });
@@ -90,3 +108,18 @@ export function lintDraft(doc, { coverage } = {}) {
 }
 
 export const formatWarning = (w) => `L${w.line} [${w.rule}] ${w.message}${w.suggestion ? ` → ${w.suggestion}` : ''}`;
+
+// Every number with a unit, grouped by unit, so the author can spot "90 ns" here and "100 ns" there.
+const UNITS = 'ns|µs|us|ms|s|KB|KiB|MB|MiB|GB|GiB|TB|bytes|B|cycles|×|%|req/s|rows|pages';
+export function numberInventory(source) {
+  const text = String(source).replace(/```(?:run|code|diff)[\s\S]*?```/g, '');
+  const re = new RegExp(`(\\d[\\d,]*(?:\\.\\d+)?)\\s?(${UNITS})(?![A-Za-z])`, 'g');
+  const by = new Map();
+  for (const m of text.matchAll(re)) {
+    const unit = m[2];
+    const v = m[1].replace(/,/g, '');
+    if (!by.has(unit)) by.set(unit, new Map());
+    by.get(unit).set(v, (by.get(unit).get(v) ?? 0) + 1);
+  }
+  return [...by].filter(([, vals]) => vals.size > 1).map(([unit, vals]) => `${unit}: ${[...vals].sort((a, b) => a - b).map(([v, n]) => (n > 1 ? `${v} ×${n}` : v)).join(', ')}`);
+}

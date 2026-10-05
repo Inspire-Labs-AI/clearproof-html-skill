@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import { renderDraft, VERSION } from './lib/render.mjs';
 import { loadDiff, formatDiffIndex } from './lib/git.mjs';
 import { COMPONENTS } from './lib/components/index.mjs';
-import { formatWarning } from './lib/lint.mjs';
+import { formatWarning, numberInventory } from './lib/lint.mjs';
 import { DraftError, slug } from './lib/util.mjs';
 import { parseDraft } from './lib/parse.mjs';
 
@@ -149,6 +149,8 @@ async function cmdRender(opts) {
     result.warnings.slice(0, 25).forEach((w) => console.log(`  ${formatWarning(w)}`));
     if (result.warnings.length > 25) console.log(`  … ${result.warnings.length - 25} more`);
   }
+  const inv = numberInventory(src);
+  if (inv.length) console.log(`  numbers by unit (check they agree): ${inv.join(' · ')}`);
   if (opts.check) await runCheck(out, opts.shot || out.replace(/\.html$/, '.png'));
   if (shouldOpen(opts)) openFile(out);
 }
@@ -165,6 +167,7 @@ async function runCheck(file, shot, section) {
   }
   if (res.shot && section) console.log(`  close-up: ${res.shot}`);
   else if (res.shot) console.log(`  screenshots: ${res.shot} (desktop), ${res.shot.replace(/\.png$/, '-phone.png')} (phone) — look at them before you answer`);
+  if (res.closeups?.length) console.log(`  figure close-ups (critique each one): ${res.closeups.map((f) => f.split('/').pop()).join(', ')} — same folder`);
 }
 
 async function main() {

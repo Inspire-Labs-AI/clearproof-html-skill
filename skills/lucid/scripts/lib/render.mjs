@@ -33,6 +33,7 @@ export function renderDraft(source, opts = {}) {
   const ctx = {
     repo,
     covered: new Set(),
+    figN: 0,
     runs: [],
     chartValues: [],
     claims: {},
@@ -73,7 +74,12 @@ export function renderDraft(source, opts = {}) {
         if (!comp) return `<pre class="block"><code${b.lang ? ` data-lang="${esc(b.lang)}"` : ''}>${esc(b.text)}</code></pre>`;
         ctx.stats[b.lang] = (ctx.stats[b.lang] ?? 0) + 1;
         try {
-          return comp.render(b.text, { ...ctx, args: b.args, line: b.line });
+          const out = comp.render(b.text, { ...ctx, args: b.args, line: b.line });
+          // Any figure can carry caption="what to notice"; figures are numbered in reading order.
+          const cap = (b.args.match(/caption="([^"]*)"/) ?? [])[1];
+          if (!cap) return out;
+          ctx.figN++;
+          return `<div class="figwrap">${out}<p class="figcap"><b>Fig. ${ctx.figN}</b> ${inline(cap, ctx)}</p></div>`;
         } catch (e) {
           if (!(e instanceof DraftError)) throw e;
           // Component lines are relative to the fence body; the fence line itself is b.line.
@@ -119,6 +125,11 @@ export function renderDraft(source, opts = {}) {
 
   const html = page({ meta, introHtml, panels, appendix, coverage, review, source, glossary: ctx.glossary, ctx, grounding: grounding(ctx, coverage) });
   return { html, warnings, meta, coverage, runs: ctx.runs, stats: { panels: panels.length, components: ctx.stats } };
+}
+
+// The first number in a headline is the answer: give it the accent colour ("<b>75×</b> slower").
+export function accentNumber(html) {
+  return html.replace(/(^|[\s(>])((?:≈|~)?\d[\d,.]*\s?(?:%|×|x\b|ms\b|ns\b|µs\b|s\b|KB\b|MB\b|GB\b|cycles\b)?)(?![^<]*>)/, '$1<span class="num-accent">$2</span>');
 }
 
 // What on this page was checked by the machine rather than asserted by the model.
@@ -183,13 +194,19 @@ function page({ meta, introHtml, panels, appendix, coverage, review, source, glo
     p.blocks.some((b) => b.type === 'md' && b.text.split('\n').some((l) => /^\s*\|/.test(l) && (l.split('|').length - 2 >= 4 || l.length > 110))) ||
     p.blocks.some((b) => b.type === 'fence' && (b.lang === 'sequence' || b.lang === 'code' || b.lang === 'diff' || (['flow', 'changemap'].includes(b.lang) && /\bLR\b/.test(b.args))));
   const spans = fillRows(panels.map((p) => (p.attrs.span === 'full' ? cols : Number(p.attrs.span) || (wide(p) ? cols : 1))), cols);
+  // Explain pages read like an editorial: a hairline, a numbered kicker, a headline that states the takeaway.
+  const editorial = !review && cols === 1;
+  const opener = (p, i) =>
+    editorial
+      ? `<div class="kick"><span>${String(i + 1).padStart(2, '0')}</span>${p.attrs.kicker ? ` ${esc(p.attrs.kicker)}` : ''}</div><h2>${accentNumber(inline(p.title))}</h2>`
+      : `<h2><span class="num">${i + 1}</span> ${inline(p.title)}${p.attrs.meta ? ` <small>${esc(p.attrs.meta)}</small>` : ''}</h2>`;
   const sections = panels
-    .map((p, i) => `<section class="panel${spans[i] >= cols ? ' span-full' : ` span-${spans[i]}`}" id="${esc(p.id)}" data-say="${esc(narration(p))}"><h2><span class="num">${i + 1}</span> ${inline(p.title)}${p.attrs.meta ? ` <small>${esc(p.attrs.meta)}</small>` : ''}</h2>${p.html}</section>`)
+    .map((p, i) => `<section class="panel${spans[i] >= cols ? ' span-full' : ` span-${spans[i]}`}${p.attrs.hero ? ' hero-fig' : ''}" id="${esc(p.id)}" data-say="${esc(narration(p))}">${p.attrs.hero ? '' : opener(p, i)}${p.html}</section>`)
     .join('\n');
   const toc = panels.length >= 3 || review
     ? `<nav class="toc" aria-label="Contents"><p>Contents</p><ol>${panels.map((p) => `<li><a href="#${esc(p.id)}">${inline(p.title)}</a></li>`).join('')}${review ? '<li class="all"><a href="#all-changes">All changes</a></li>' : ''}</ol></nav>`
     : '';
-  const known = new Set(['title', 'subtitle', 'tldr', 'kind', 'cols', 'mode', 'style', 'base', 'verdict', 'link', 'lang', 'for']);
+  const known = new Set(['title', 'subtitle', 'tldr', 'kind', 'cols', 'mode', 'style', 'base', 'verdict', 'link', 'lang', 'for', 'kicker']);
   const chips = Object.entries(meta).filter(([k]) => !known.has(k)).map(([k, v]) => `<span class="chip"><b>${esc(k)}</b> ${inline(v)}</span>`);
   let reviewHead = '';
   if (review && coverage) {
@@ -211,14 +228,16 @@ function page({ meta, introHtml, panels, appendix, coverage, review, source, glo
 ${asset('style.css')}
 </style>
 </head>
-<body class="kind-${review ? 'review' : 'explain'}">
+<body class="kind-${review ? 'review' : 'explain'}${editorial ? ' editorial' : ''}">
 <div class="topbar"><span class="brand">lucid</span><span class="tb-title">${esc(title)}</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
 <header class="hero">
-<h1>${inline(title)}</h1>
+${editorial && meta.kicker ? `<p class="eyebrow">${esc(meta.kicker)}</p>` : ''}
+<h1>${editorial ? accentNumber(inline(title)) : inline(title)}</h1>
 ${meta.subtitle ? `<p class="sub">${inline(meta.subtitle)}</p>` : ''}
 ${reviewHead}
+${editorial && meta.tldr ? `<p class="lead">${inline(meta.tldr)}</p>` : ''}
 ${meta.for ? `<p class="for">Written for: ${inline(meta.for)}</p>` : ''}
-${meta.tldr ? `<div class="tldr"><span>In one line</span><p>${inline(meta.tldr)}</p></div>` : ''}
+${!editorial && meta.tldr ? `<div class="tldr"><span>In one line</span><p>${inline(meta.tldr)}</p></div>` : ''}
 ${grounding}
 ${introHtml ? `<div class="intro">${introHtml}</div>` : ''}
 ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
