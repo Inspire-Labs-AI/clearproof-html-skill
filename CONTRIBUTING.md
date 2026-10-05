@@ -21,7 +21,7 @@ npm test          # Node.js 20+; no install step
 | `skills/clearproof/scripts/lib/` | Draft parser, layout engine, components, git diff, lint, browser check, video. |
 | `skills/clearproof/scripts/assets/` | Page CSS and the in-browser runtime. |
 | `examples/` | Drafts. Each renders with `node skills/clearproof/scripts/clearproof.mjs render <draft> --check`. |
-| `docs/` | Example pages, screenshots and the project website. |
+| `docs/` | Example pages and screenshots. |
 | `test/` | `node --test` suite. |
 
 ## Pull requests
