@@ -4,7 +4,8 @@
 
 First public release.
 
-- **Explain mode:** editorial pages with the answer as the headline; `flow`, `sequence`, `tree`, `timeline`, `chart`,
+- **Explain mode:** editorial pages with the answer as the headline; `architecture` (tiers of typed components with icons,
+  labelled connections routed around cards, step-through playback); `flow`, `sequence`, `tree`, `timeline`, `chart`,
   `waffle`, `cases`, `kv`, `callout`, `glossary`, `quiz`, `checklist`; bespoke interactive `figure` blocks with a small kit
   (player, steps, before/after, toggle, slider, readouts).
 - **Review mode:** `clearproof diff` hunk index over committed, uncommitted and untracked work; `diff` blocks with line

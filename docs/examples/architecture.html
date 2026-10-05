@@ -1,3 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="clearproof 0.1.0">
+<title>An order goes from the shopper's tap to the database in 4 hops</title>
+<style>
 :root {
   --bg: #f7f7f4; --surface: #ffffff; --sunk: #f0f0ec; --ink: #1b1d21; --ink-2: #4a4f58; --ink-3: #7a808a;
   --line: #e2e2dc; --line-2: #c9c9c1; --accent: #2457d6; --accent-soft: #e8eefc; --accent-ink: #1a3fa0;
@@ -488,3 +496,451 @@ rect.muted { fill: var(--line-2); }
 .stepping .apill.now rect { stroke: var(--accent); }
 .arch-fig { overflow-x: auto; }
 .arch-fig .archsvg { min-width: 680px; }
+
+</style>
+</head>
+<body class="kind-explain editorial">
+<div class="topbar"><span class="brand">clearproof</span><span class="tb-title">An order goes from the shopper's tap to the database in 4 hops</span><span class="tb-actions"><button type="button" data-act="tour" title="Narrated walkthrough of this page">▶ Tour</button><button type="button" data-act="theme" title="Switch light / dark">Theme</button><button type="button" data-act="source" title="Copy the draft that made this page">Copy draft</button></span></div>
+<header class="hero">
+<p class="eyebrow">System architecture</p>
+<h1>An order goes from the shopper's tap to the database in <span class="num-accent">4 </span>hops</h1>
+
+
+<p class="lead">The <strong>API gateway</strong> checks every request, the <strong>Orders</strong> service writes the order, and slow work moves to a queue.</p>
+<p class="for">Written for: anyone new to the shop's backend</p>
+
+
+
+
+</header>
+<div class="layout">
+
+<main class="grid" style="--cols:1">
+<section class="panel span-full hero-fig" id="the-system" data-say="The system"><div class="figwrap"><figure class="diagram arch-fig playable" data-steps="13"><svg class="graph archsvg" viewBox="0 0 847 930" style="max-width:847px" role="img" aria-label="Architecture diagram"><defs><marker id="l1a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrowhead"/></marker></defs><g class="tier"><rect x="8" y="0.0" width="830.8" height="110.0" rx="14"/><text x="24" y="21.0">Users</text></g><g class="tier"><rect x="8" y="164.0" width="830.8" height="110.0" rx="14"/><text x="24" y="185.0">Apps</text></g><g class="tier"><rect x="8" y="328.0" width="830.8" height="110.0" rx="14"/><text x="24" y="349.0">Edge</text></g><g class="tier"><rect x="8" y="492.0" width="830.8" height="110.0" rx="14"/><text x="24" y="513.0">Services</text></g><g class="tier"><rect x="8" y="656.0" width="830.8" height="110.0" rx="14"/><text x="24" y="677.0">Data</text></g><g class="tier"><rect x="8" y="820.0" width="830.8" height="110.0" rx="14"/><text x="24" y="841.0">External</text></g><g class="edge" data-step="1" data-from="Shopper" data-to="Web app" data-note="The shopper buys from the web or the phone app."><path d="M412.4,92.0 C412.4,145.0 326.1,145.0 326.1,198.0" marker-end="url(#l1a)"/></g><g class="edge" data-step="1" data-from="Shopper" data-to="Mobile app" data-note="The shopper buys from the web or the phone app."><path d="M434.4,92.0 C434.4,145.0 516.4,145.0 516.4,198.0" marker-end="url(#l1a)"/></g><g class="edge thick" data-step="2" data-from="Web app" data-to="API gateway" data-note="Every request passes the gateway. It checks the token and the rate limit."><path d="M326.1,256.0 C326.1,309.0 412.4,309.0 412.4,362.0" marker-end="url(#l1a)"/></g><g class="edge" data-step="3" data-from="Mobile app" data-to="API gateway" data-note="The phone app uses the same gateway."><path d="M516.4,256.0 C516.4,309.0 434.4,309.0 434.4,362.0" marker-end="url(#l1a)"/></g><g class="edge thick" data-step="4" data-from="API gateway" data-to="Orders" data-note="The gateway forwards the order to the Orders service."><path d="M423.4,420.0 C423.4,473.0 525.7,473.0 525.7,526.0" marker-end="url(#l1a)"/></g><g class="edge thick" data-step="5" data-from="Orders" data-to="Orders DB" data-note="Orders writes the order in one transaction."><path d="M503.7,584.0 C503.7,637.0 155.4,637.0 155.4,690.0" marker-end="url(#l1a)"/></g><g class="edge" data-step="6" data-from="Orders" data-to="Cache" data-note="Orders checks stock in the cache before it writes."><path d="M525.7,584.0 C525.7,637.0 334.1,637.0 334.1,690.0" marker-end="url(#l1a)"/></g><g class="edge" data-step="7" data-from="Orders" data-to="Payments" data-note="Orders asks Payments to charge the card."><path d="M449.4,555.0 L413.4,555.0" marker-end="url(#l1a)"/></g><g class="edge" data-step="8" data-from="Payments" data-to="Stripe" data-note="Payments calls Stripe, and Stripe charges the card."><path d="M328.7,584.0 L328.7,625.0 Q328.7,637.0 316.7,637.0 L255.1,637.0 Q243.1,637.0 243.1,649.0 L243.1,789.0 Q243.1,801.0 255.1,801.0 L318.4,801.0 Q330.4,801.0 330.4,813.0 L330.4,854.0" marker-end="url(#l1a)"/></g><g class="edge dashed" data-step="9" data-from="Orders" data-to="Events" data-note="After the commit, Orders publishes an event. Nothing waits for it."><path d="M547.7,584.0 C547.7,637.0 509.1,637.0 509.1,690.0" marker-end="url(#l1a)"/></g><g class="edge dashed" data-step="10" data-from="Events" data-to="Email worker" data-note="The email worker reads the event from the queue."><path d="M531.1,690.0 C531.1,637.0 706.4,637.0 706.4,584.0" marker-end="url(#l1a)"/></g><g class="edge dashed" data-step="11" data-from="Email worker" data-to="SendGrid" data-note="The worker sends the receipt through SendGrid."><path d="M728.4,584.0 L728.4,625.0 Q728.4,637.0 716.4,637.0 L627.1,637.0 Q615.1,637.0 615.1,649.0 L615.1,789.0 Q615.1,801.0 603.1,801.0 L538.1,801.0 Q526.1,801.0 526.1,813.0 L526.1,854.0" marker-end="url(#l1a)"/></g><g class="edge dashed" data-step="12" data-from="Email worker" data-to="Receipts" data-note="The worker stores a PDF copy in S3."><path d="M750.4,584.0 C750.4,637.0 706.1,637.0 706.1,690.0" marker-end="url(#l1a)"/></g><g class="edge dashed" data-step="13" data-from="Recommender" data-to="Orders DB" data-note="Separately, the recommender reads order history."><path d="M118.0,584.0 C118.0,637.0 133.4,637.0 133.4,690.0" marker-end="url(#l1a)"/></g><g class="node arch fam-people" data-step="1" data-id="Shopper"><rect class="card" x="336.6" y="34.0" width="173.6" height="58" rx="12"/><rect class="tile" x="348.6" y="48.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(351.6,51.0)" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/><text class="t" x="388.6" y="60.0">Shopper</text><text class="s" x="388.6" y="77.0">mobile and web</text></g><g class="node arch fam-people" data-step="1" data-id="Web app"><rect class="card" x="251.1" y="198.0" width="150.0" height="58" rx="12"/><rect class="tile" x="263.1" y="212.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(266.1,215.0)" d="M3 4.5h18v11.5H3z M8 20h8 M12 16v4"/><text class="t" x="303.1" y="224.0">Web app</text><text class="s" x="303.1" y="241.0">Next.js</text></g><g class="node arch fam-people" data-step="1" data-id="Mobile app"><rect class="card" x="437.1" y="198.0" width="158.7" height="58" rx="12"/><rect class="tile" x="449.1" y="212.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(452.1,215.0)" d="M7 2.5h10v19H7z M11 18h2"/><text class="t" x="489.1" y="224.0">Mobile app</text><text class="s" x="489.1" y="241.0">React Native</text></g><g class="node arch fam-edge" data-step="2" data-id="API gateway"><rect class="card" x="330.0" y="362.0" width="186.8" height="58" rx="12"/><rect class="tile" x="342.0" y="376.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(345.0,379.0)" d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4"/><text class="t" x="382.0" y="388.0">API gateway</text><text class="s" x="382.0" y="405.0">auth + rate limit</text></g><g class="node arch fam-compute hot" data-step="4" data-id="Orders"><rect class="card" x="449.4" y="526.0" width="152.6" height="58" rx="12"/><rect class="tile" x="461.4" y="540.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(464.4,543.0)" d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M4 7.5l8 4.5 8-4.5 M12 12v9"/><text class="t" x="501.4" y="552.0">Orders</text><text class="s" x="501.4" y="569.0">src/orders/</text></g><g class="node arch fam-compute" data-step="7" data-id="Payments"><rect class="card" x="244.0" y="526.0" width="169.4" height="58" rx="12"/><rect class="tile" x="256.0" y="540.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(259.0,543.0)" d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M4 7.5l8 4.5 8-4.5 M12 12v9"/><text class="t" x="296.0" y="552.0">Payments</text><text class="s" x="296.0" y="569.0">src/payments/</text></g><g class="node arch fam-compute" data-step="10" data-id="Email worker"><rect class="card" x="638.0" y="526.0" width="180.8" height="58" rx="12"/><rect class="tile" x="650.0" y="540.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(653.0,543.0)" d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z M12 2.5v3 M12 18.5v3 M2.5 12h3 M18.5 12h3 M5.3 5.3l2.1 2.1 M16.6 16.6l2.1 2.1 M5.3 18.7l2.1-2.1 M16.6 7.4l2.1-2.1"/><text class="t" x="690.0" y="552.0">Email worker</text><text class="s" x="690.0" y="569.0">BullMQ</text></g><g class="node arch fam-compute" data-step="13" data-id="Recommender"><rect class="card" x="28.0" y="526.0" width="180.0" height="58" rx="12"/><rect class="tile" x="40.0" y="540.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(43.0,543.0)" d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/><text class="t" x="80.0" y="552.0">Recommender</text><text class="s" x="80.0" y="569.0">embeddings</text></g><g class="node arch fam-data" data-step="5" data-id="Orders DB"><rect class="card" x="65.7" y="690.0" width="157.5" height="58" rx="12"/><rect class="tile" x="77.7" y="704.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(80.7,707.0)" d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/><text class="t" x="117.7" y="716.0">Orders DB</text><text class="s" x="117.7" y="733.0">Postgres 15</text></g><g class="node arch fam-data" data-step="6" data-id="Cache"><rect class="card" x="259.1" y="690.0" width="150.0" height="58" rx="12"/><rect class="tile" x="271.1" y="704.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(274.1,707.0)" d="M13 2L4.5 14H11l-1 8 8.5-12H12z"/><text class="t" x="311.1" y="716.0">Cache</text><text class="s" x="311.1" y="733.0">Redis</text></g><g class="node arch fam-data" data-step="9" data-id="Events"><rect class="card" x="445.1" y="690.0" width="150.0" height="58" rx="12"/><rect class="tile" x="457.1" y="704.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(460.1,707.0)" d="M2.5 8h5v8h-5z M9.5 8h5v8h-5z M16.5 8h5v8h-5z"/><text class="t" x="497.1" y="716.0">Events</text><text class="s" x="497.1" y="733.0">Kafka</text></g><g class="node arch fam-data" data-step="12" data-id="Receipts"><rect class="card" x="631.1" y="690.0" width="150.0" height="58" rx="12"/><rect class="tile" x="643.1" y="704.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(646.1,707.0)" d="M3 6h7l2 2h9v11H3z"/><text class="t" x="683.1" y="716.0">Receipts</text><text class="s" x="683.1" y="733.0">S3</text></g><g class="node arch fam-external" data-step="8" data-id="Stripe"><rect class="card" x="245.7" y="854.0" width="169.4" height="58" rx="12"/><rect class="tile" x="257.7" y="868.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(260.7,871.0)" d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/><text class="t" x="297.7" y="880.0">Stripe</text><text class="s" x="297.7" y="897.0">card payments</text></g><g class="node arch fam-external" data-step="11" data-id="SendGrid"><rect class="card" x="451.1" y="854.0" width="150.0" height="58" rx="12"/><rect class="tile" x="463.1" y="868.0" width="30" height="30" rx="8"/><path class="ico" transform="translate(466.1,871.0)" d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/><text class="t" x="503.1" y="880.0">SendGrid</text><text class="s" x="503.1" y="897.0">email</text></g><g class="edge apill" data-step="1"><rect x="327.7" y="135.0" width="83.1" height="20" rx="10"/><text class="elabel" x="369.2" y="149.0">taps &quot;Buy&quot;</text></g><g class="edge thick apill" data-step="2"><rect x="342.0" y="299.0" width="54.4" height="20" rx="10"/><text class="elabel" x="369.2" y="313.0">HTTPS</text></g><g class="edge apill" data-step="3"><rect x="448.2" y="299.0" width="54.4" height="20" rx="10"/><text class="elabel" x="475.4" y="313.0">HTTPS</text></g><g class="edge thick apill" data-step="4"><rect x="424.8" y="463.0" width="99.5" height="20" rx="10"/><text class="elabel" x="474.6" y="477.0">POST /orders</text></g><g class="edge thick apill" data-step="5"><rect x="298.5" y="627.0" width="62.1" height="20" rx="10"/><text class="elabel" x="329.6" y="641.0">INSERT</text></g><g class="edge apill" data-step="6"><rect x="385.6" y="627.0" width="88.6" height="20" rx="10"/><text class="elabel" x="429.9" y="641.0">stock check</text></g><g class="edge apill" data-step="7"><rect x="403.6" y="495.0" width="55.6" height="20" rx="10"/><text class="elabel" x="431.4" y="509.0">charge</text></g><g class="edge apill" data-step="8"><rect x="191.3" y="627.0" width="88.6" height="20" rx="10"/><text class="elabel" x="235.6" y="641.0">charge card</text></g><g class="edge dashed apill" data-step="9"><rect x="479.0" y="627.0" width="98.8" height="20" rx="10"/><text class="elabel" x="528.4" y="641.0">order.created</text></g><g class="edge dashed apill" data-step="10"><rect x="585.9" y="627.0" width="65.8" height="20" rx="10"/><text class="elabel" x="618.8" y="641.0">consume</text></g><g class="edge dashed apill" data-step="11"><rect x="677.8" y="627.0" width="92.2" height="20" rx="10"/><text class="elabel" x="723.9" y="641.0">send receipt</text></g><g class="edge dashed apill" data-step="12"><rect x="708.7" y="601.0" width="39.0" height="20" rx="10"/><text class="elabel" x="728.3" y="615.0">PDF</text></g><g class="edge dashed apill" data-step="13"><rect x="76.3" y="627.0" width="98.8" height="20" rx="10"/><text class="elabel" x="125.7" y="641.0">reads history</text></g></svg><div class="player" data-steps="13">
+<button type="button" data-act="prev" aria-label="Previous step">‹</button>
+<button type="button" data-act="play" aria-label="Play">▶</button>
+<button type="button" data-act="next" aria-label="Next step">›</button>
+<span class="count">13 steps</span>
+<span class="caption" aria-live="polite">Press ▶ or › to walk through it.</span>
+</div></figure><p class="figcap"><b>Fig. 1</b> The bold line is the order itself. Dashed lines happen later, in the background. Press ▶ to follow one order.</p></div></section>
+<section class="panel span-full" id="what-to-remember" data-say="One entry point. Every request passes the API gateway, so auth and rate limits live in one place."><div class="kick"><span>02</span></div><h2>What to remember</h2><div class="prose"><ul><li><strong>One entry point.</strong> Every request passes the API gateway, so auth and rate limits live in one place.</li><li><strong>Orders writes the order before anything slow happens.</strong> Email and receipts run later, from the queue.</li><li><strong>Only Payments talks to Stripe.</strong> Card data never touches the Orders service.</li></ul></div></section>
+
+</main>
+</div>
+<div class="tourbar" hidden><button type="button" data-act="tprev" aria-label="Previous">‹</button><button type="button" data-act="tpause" aria-label="Pause">❚❚</button><button type="button" data-act="tnext" aria-label="Next">›</button><p class="tcap" aria-live="polite"></p><button type="button" data-act="tstop" aria-label="Close tour">✕</button></div>
+<div class="snip" role="tooltip" hidden></div>
+<footer>Made with clearproof 0.1.0 · 2026-10-05 12:13</footer>
+<script type="application/json" id="clearproof-glossary">{}</script>
+<script type="text/plain" id="clearproof-source">---
+kicker: System architecture
+title: An order goes from the shopper's tap to the database in 4 hops
+tldr: The **API gateway** checks every request, the **Orders** service writes the order, and slow work moves to a queue.
+for: anyone new to the shop's backend
+---
+## The system {hero}
+```architecture caption=&quot;The bold line is the order itself. Dashed lines happen later, in the background. Press ▶ to follow one order.&quot;
+tier Users
+  Shopper (user) mobile and web
+tier Apps
+  Web app (client) Next.js, Mobile app (mobile) React Native
+tier Edge
+  API gateway (gateway) auth + rate limit
+tier Services
+  *Orders (service) src/orders/, Payments (service) src/payments/, Email worker (worker) BullMQ, Recommender (ai) embeddings
+tier Data
+  Orders DB (db) Postgres 15, Cache (cache) Redis, Events (queue) Kafka, Receipts (storage) S3
+tier External
+  Stripe (external) card payments, SendGrid (external) email
+Shopper -&gt; Web app &amp; Mobile app: taps &quot;Buy&quot; | The shopper buys from the web or the phone app.
+Web app ==&gt; API gateway: HTTPS | Every request passes the gateway. It checks the token and the rate limit.
+Mobile app -&gt; API gateway: HTTPS | The phone app uses the same gateway.
+API gateway ==&gt; Orders: POST /orders | The gateway forwards the order to the Orders service.
+Orders ==&gt; Orders DB: INSERT | Orders writes the order in one transaction.
+Orders -&gt; Cache: stock check | Orders checks stock in the cache before it writes.
+Orders -&gt; Payments: charge | Orders asks Payments to charge the card.
+Payments -&gt; Stripe: charge card | Payments calls Stripe, and Stripe charges the card.
+Orders --&gt; Events: order.created | After the commit, Orders publishes an event. Nothing waits for it.
+Events --&gt; Email worker: consume | The email worker reads the event from the queue.
+Email worker --&gt; SendGrid: send receipt | The worker sends the receipt through SendGrid.
+Email worker --&gt; Receipts: PDF | The worker stores a PDF copy in S3.
+Recommender --&gt; Orders DB: reads history | Separately, the recommender reads order history.
+```
+
+## What to remember
+- **One entry point.** Every request passes the API gateway, so auth and rate limits live in one place.
+- **Orders writes the order before anything slow happens.** Email and receipts run later, from the queue.
+- **Only Payments talks to Stripe.** Card data never touches the Orders service.
+</script>
+<script>
+(() => {
+  'use strict';
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const root = document.documentElement;
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage may be blocked */ } },
+  };
+  const pageKey = 'clearproof:' + (document.title || location.pathname);
+  const params = new URLSearchParams(location.search);
+
+  /* theme */
+  const savedTheme = store.get('clearproof:theme');
+  if (savedTheme && !root.dataset.theme) root.dataset.theme = savedTheme;
+  $('[data-act="theme"]')?.addEventListener('click', () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    store.set('clearproof:theme', root.dataset.theme);
+  });
+
+  /* copy the draft */
+  $('[data-act="source"]')?.addEventListener('click', async (e) => {
+    const text = $('#clearproof-source').textContent;
+    try { await navigator.clipboard.writeText(text); } catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    const b = e.currentTarget; const t = b.textContent; b.textContent = 'Copied ✓'; setTimeout(() => (b.textContent = t), 1400);
+  });
+
+  /* sticky title + contents highlight */
+  addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 120), { passive: true });
+  const tocLinks = new Map($$('.toc a').map((a) => [a.getAttribute('href').slice(1), a]));
+  if (tocLinks.size && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) {
+        tocLinks.forEach((a) => a.classList.remove('on'));
+        tocLinks.get(en.target.id)?.classList.add('on');
+      }
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    $$('main > section').forEach((s) => io.observe(s));
+  }
+
+  /* wide architecture diagrams on a phone: start centred, scroll sideways */
+  for (const f of $$('.arch-fig')) if (f.scrollWidth > f.clientWidth) f.scrollLeft = (f.scrollWidth - f.clientWidth) / 2;
+
+  /* step-through diagrams */
+  for (const fig of $$('figure.playable')) {
+    const n = +fig.dataset.steps || 0;
+    const items = $$('[data-step]', fig);
+    const cap = $('.caption', fig);
+    const count = $('.count', fig);
+    let cur = 0; let timer = null;
+    const noteOf = (k) => items.find((el) => +el.dataset.step === k && el.dataset.note)?.dataset.note || '';
+    const go = (k) => {
+      cur = Math.max(0, Math.min(n, k));
+      if (!cur) {
+        fig.classList.remove('stepping');
+        items.forEach((el) => el.classList.remove('now', 'future'));
+        if (cap) cap.textContent = 'Press ▶ or › to walk through it.';
+        if (count) count.textContent = n + ' steps';
+        return;
+      }
+      fig.classList.add('stepping');
+      for (const el of items) {
+        const s = +el.dataset.step;
+        el.classList.toggle('future', s > cur);
+        el.classList.toggle('now', s === cur && !el.classList.contains('node'));
+      }
+      if (cap) cap.textContent = noteOf(cur);
+      if (count) count.textContent = cur + ' / ' + n;
+    };
+    const stop = () => { clearInterval(timer); timer = null; const p = $('[data-act="play"]', fig); if (p) p.textContent = '▶'; };
+    fig.addEventListener('click', (e) => {
+      const act = e.target.closest('button')?.dataset.act;
+      if (!act) return;
+      if (act === 'next') { stop(); go(cur >= n ? 0 : cur + 1); }
+      if (act === 'prev') { stop(); go(cur - 1); }
+      if (act === 'play') {
+        if (timer) return stop();
+        e.target.textContent = '❚❚';
+        if (cur >= n) go(0);
+        go(cur + 1);
+        timer = setInterval(() => (cur >= n ? (stop(), setTimeout(() => go(0), 1600)) : go(cur + 1)), 1900);
+      }
+    });
+    fig.clearproof = { n, go, noteOf, stop };
+  }
+
+  /* hover previews: code refs and glossary terms */
+  const tip = $('.snip');
+  const show = (el, text, cls) => {
+    if (!tip) return;
+    tip.className = 'snip' + (cls ? ' ' + cls : '');
+    tip.textContent = text;
+    tip.hidden = false;
+    const r = el.getBoundingClientRect();
+    const w = tip.offsetWidth; const h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+    tip.style.top = (r.bottom + h + 12 < innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+  };
+  const hide = () => tip && (tip.hidden = true);
+  document.addEventListener('mouseover', (e) => {
+    const ref = e.target.closest('a.ref[data-snip]');
+    const term = e.target.closest('abbr.term');
+    if (ref) show(ref, ref.dataset.snip);
+    else if (term) show(term, term.dataset.def, 'term');
+  });
+  document.addEventListener('mouseout', (e) => { if (e.target.closest('a.ref, abbr.term')) hide(); });
+  document.addEventListener('focusin', (e) => { const r = e.target.closest('a.ref[data-snip]'); if (r) show(r, r.dataset.snip); });
+  document.addEventListener('focusout', hide);
+
+  /* glossary: mark the first use of each term in every section */
+  let gloss = {};
+  try { gloss = JSON.parse($('#clearproof-glossary')?.textContent || '{}'); } catch { /* ignore */ }
+  const terms = Object.keys(gloss).sort((a, b) => b.length - a.length);
+  if (terms.length) {
+    const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    for (const sec of $$('main > section')) {
+      const seen = new Set();
+      const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => n.parentElement.closest('code, pre, a, abbr, svg, h2, .glossary, button, figure.code') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        for (const t of terms) {
+          if (seen.has(t)) continue;
+          const re = new RegExp('(^|[^\\w])(' + escRe(t) + ')(?![\\w])', t === t.toUpperCase() ? '' : 'i');
+          const m = node.nodeValue.match(re);
+          if (!m) continue;
+          seen.add(t);
+          const at = m.index + m[1].length;
+          const after = node.splitText(at);
+          after.nodeValue = after.nodeValue.slice(m[2].length);
+          const ab = document.createElement('abbr');
+          ab.className = 'term'; ab.textContent = m[2]; ab.dataset.def = t + ': ' + gloss[t]; ab.tabIndex = 0;
+          node.parentNode.insertBefore(ab, after);
+          break;
+        }
+      }
+    }
+  }
+
+  /* linked highlighting: names in the prose light up the matching part of the section's diagram */
+  for (const sec of $$('main > section')) {
+    const figs = $$('figure.diagram', sec);
+    if (!figs.length) continue;
+    const names = [...new Set(figs.flatMap((f) => $$('[data-id]', f).map((g) => g.dataset.id)))].filter((n) => n.length >= 3).sort((a, b) => b.length - a.length);
+    if (!names.length) continue;
+    const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(^|[^\\w])(' + names.map(escRe).join('|') + ')(?![\\w])');
+    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => n.parentElement.closest('svg, code, pre, a, abbr, h2, button, .xref, figure.code, .player') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (let node of nodes) {
+      let m;
+      while (node && (m = node.nodeValue.match(re))) {
+        const at = m.index + m[1].length;
+        const after = node.splitText(at);
+        node = after.splitText(m[2].length);
+        const span = document.createElement('span');
+        span.className = 'xref'; span.dataset.x = m[2]; span.tabIndex = 0;
+        after.replaceWith(span); span.append(after);
+      }
+    }
+    const light = (name, on) => {
+      for (const f of figs) {
+        f.classList.toggle('linking', on);
+        $$('[data-id], [data-from]', f).forEach((g) => g.classList.toggle('lit', on && (g.dataset.id === name || g.dataset.from === name || g.dataset.to === name)));
+      }
+    };
+    sec.addEventListener('mouseover', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('mouseout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+    sec.addEventListener('focusin', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, true); });
+    sec.addEventListener('focusout', (e) => { const x = e.target.closest('.xref'); if (x) light(x.dataset.x, false); });
+  }
+
+  /* quiz */
+  for (const quiz of $$('.quiz')) {
+    let right = 0; let done = 0; const total = $$('.q', quiz).length;
+    const score = $('.score', quiz);
+    const finish = (q, ok) => {
+      if (q.dataset.done) return;
+      q.dataset.done = '1'; done++; if (ok) right++;
+      $$('.owhy', q).forEach((w) => w.removeAttribute('hidden'));
+      $('.why', q)?.removeAttribute('hidden');
+      if (score && done === total) score.textContent = right + ' of ' + total + ' right on the first try.';
+    };
+    quiz.addEventListener('click', (e) => {
+      const q = e.target.closest('.q'); if (!q) return;
+      if (e.target.closest('.reveal')) { $('.ans', q).hidden = false; e.target.closest('.reveal').hidden = true; finish(q, true); return; }
+      const opt = e.target.closest('.opt'); if (!opt || q.dataset.done) return;
+      const ok = opt.dataset.ok === 'true';
+      opt.classList.add(ok ? 'right' : 'wrong');
+      opt.querySelector('.owhy')?.removeAttribute('hidden');
+      const multi = q.dataset.multi === 'true';
+      if (!ok) { q.dataset.miss = '1'; $$('.opt', q).forEach((o) => o.dataset.ok === 'true' && o.classList.add('right')); finish(q, false); return; }
+      const all = $$('.opt', q).filter((o) => o.dataset.ok === 'true').every((o) => o.classList.contains('right'));
+      if (!multi || all) finish(q, !q.dataset.miss);
+    });
+  }
+
+  /* checklist */
+  for (const cl of $$('.checklist')) {
+    const boxes = $$('input', cl);
+    const prog = $('.progress span', cl);
+    const update = () => { if (prog) prog.textContent = boxes.filter((b) => b.checked).length; };
+    for (const b of boxes) {
+      const k = pageKey + ':' + b.dataset.k; const v = store.get(k);
+      if (v !== null) b.checked = v === '1';
+      b.addEventListener('change', () => { store.set(k, b.checked ? '1' : '0'); update(); });
+    }
+    update();
+  }
+
+  /* figure kit: bespoke figures get consistent controls and theme colours */
+  const NS = 'http://www.w3.org/2000/svg';
+  const make = (ns) => (tag, attrs = {}, ...kids) => {
+    const el = ns ? document.createElementNS(NS, tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  };
+  const controls = (fig) => fig.querySelector(':scope > .fig-controls') || fig.appendChild(Object.assign(document.createElement('div'), { className: 'fig-controls' }));
+  const L = {
+    el: make(false),
+    svg: make(true),
+    color: (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim(),
+    readout(fig, label) {
+      const v = L.el('b', {}, '–');
+      controls(fig).append(L.el('span', { class: 'readout' }, `${label} `, v));
+      return { set: (x) => { v.textContent = x; } };
+    },
+    toggle(fig, labels, onChange, initial = 0) {
+      const box = L.el('span', { class: 'seg', role: 'group' });
+      const btns = labels.map((t, i) => L.el('button', { type: 'button', 'aria-pressed': String(i === initial), onclick: () => { btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))); onChange(i); } }, t));
+      box.append(...btns);
+      controls(fig).prepend(box);
+      return { set: (i) => btns[i].click() };
+    },
+    slider(fig, o, onInput) {
+      const out = L.el('output', {}, o.format ? o.format(o.value) : String(o.value));
+      const input = L.el('input', { type: 'range', min: o.min, max: o.max, step: o.step ?? 1, value: o.value });
+      input.addEventListener('input', () => { const v = Number(input.value); out.textContent = o.format ? o.format(v) : String(v); onInput(v); });
+      controls(fig).append(L.el('label', { class: 'slider' }, `${o.label} `, input, out));
+      return { set: (v) => { input.value = v; input.dispatchEvent(new Event('input')); } };
+    },
+    player(fig, o) {
+      let cur = o.start ?? o.steps - 1; let timer = null;
+      const count = L.el('span', { class: 'count' });
+      const cap = o.labels ? L.el('span', { class: 'caption' }) : null;
+      const go = (k) => { cur = Math.max(0, Math.min(o.steps - 1, k)); count.textContent = `${cur + 1} / ${o.steps}`; if (cap) cap.textContent = o.labels[cur] || ''; o.onStep(cur); };
+      const stop = () => { clearInterval(timer); timer = null; play.textContent = '▶'; };
+      const play = L.el('button', { type: 'button', 'aria-label': 'Play', onclick: () => {
+        if (timer) return stop();
+        if (cur >= o.steps - 1) go(0);
+        play.textContent = '❚❚';
+        timer = setInterval(() => (cur >= o.steps - 1 ? stop() : go(cur + 1)), o.interval ?? 800);
+      } }, '▶');
+      const bar = L.el('div', { class: 'player' },
+        L.el('button', { type: 'button', 'aria-label': 'Previous', onclick: () => { stop(); go(cur - 1); } }, '‹'),
+        play,
+        L.el('button', { type: 'button', 'aria-label': 'Next', onclick: () => { stop(); go(cur + 1); } }, '›'),
+        count, cap);
+      controls(fig).append(bar);
+      go(cur); // start on the most informative frame (the end state unless o.start says otherwise)
+      return { go, stop, get step() { return cur; } };
+    },
+  };
+  // Parts marked data-s="k" appear at step k; the current step is accented, future steps fade (text hidden).
+  L.steps = (fig, captions, o = {}) => {
+    const parts = [...fig.querySelectorAll('[data-s]')];
+    const n = captions?.length || Math.max(...parts.map((p) => +p.dataset.s));
+    return L.player(fig, { steps: n, labels: captions, start: o.start, interval: o.interval ?? 1600, onStep: (k) => {
+      for (const p of parts) { const s = +p.dataset.s; p.classList.toggle('future', s > k + 1); p.classList.toggle('now', s === k + 1); }
+      o.onStep?.(k);
+    } });
+  };
+  // One drawing, two states: .only-before / .only-after parts swap; what stays put is what did not change.
+  L.beforeAfter = (fig, labels = ['Before', 'After'], initial = 1) => {
+    const set = (i) => { fig.dataset.view = i ? 'after' : 'before'; };
+    set(initial);
+    return L.toggle(fig, labels, set, initial);
+  };
+  window.L = L;
+  for (const fig of $$('[data-fig]')) {
+    const src = $('.fig-src', fig)?.textContent;
+    if (!src) continue;
+    try { new Function('fig', 'L', src)(fig, L); } catch (err) {
+      console.error(`figure ${fig.id}: ${err.message}`);
+      fig.append(L.el('p', { class: 'fig-error' }, `This figure failed to run: ${err.message}`));
+    }
+  }
+
+  /* tour: a narrated walk through the page; the video exporter drives the same code */
+  const bar = $('.tourbar');
+  const tcap = $('.tcap');
+  const segments = () => {
+    const out = [];
+    for (const sec of $$('main > section')) {
+      if (sec.classList.contains('appendix') && !params.has('all')) continue;
+      out.push({ sec, text: sec.dataset.say || sec.querySelector('h2')?.textContent || '' });
+      const fig = $('figure.playable', sec);
+      if (fig?.clearproof && fig.clearproof.n > 1) for (let k = 1; k <= fig.clearproof.n; k++) out.push({ sec, fig, step: k, text: fig.clearproof.noteOf(k) });
+    }
+    const tldr = $('.tldr p');
+    if (tldr) out.unshift({ sec: $('.hero'), text: (document.querySelector('.hero h1')?.textContent || '') + '. ' + tldr.textContent });
+    return out;
+  };
+  let segs = []; let idx = -1; let timer = null; let paused = false;
+  const timings = window.CLEARPROOF_TIMINGS || null; // seconds per segment, set by the video exporter
+  const voice = 'speechSynthesis' in window && !params.has('video') && !params.has('mute');
+  const estimate = (t) => Math.max(2.2, t.split(/\s+/).length / 2.7 + 0.8);
+  const clear = () => { clearTimeout(timer); if (voice) speechSynthesis.cancel(); };
+  const play = (k) => {
+    clear();
+    $$('.touring').forEach((s) => s.classList.remove('touring'));
+    if (k < 0) k = 0;
+    if (k >= segs.length) return endTour();
+    idx = k;
+    const s = segs[k];
+    s.sec.classList.add('touring');
+    if (!s.fig || s.step === 1) s.sec.scrollIntoView({ behavior: params.has('video') ? 'instant' : 'smooth', block: s.sec.offsetHeight > innerHeight * 0.8 ? 'start' : 'center' });
+    $$('figure.playable').forEach((f) => f !== s.fig && f.clearproof.go(0));
+    if (s.fig) s.fig.clearproof.go(s.step);
+    tcap.textContent = s.text;
+    if (paused) return;
+    const dur = timings ? timings[k] : estimate(s.text);
+    if (voice && !timings) {
+      const u = new SpeechSynthesisUtterance(s.text);
+      u.rate = 1.04;
+      let moved = false;
+      const next = () => { if (!moved && idx === k && !paused) { moved = true; play(k + 1); } };
+      u.onend = next;
+      speechSynthesis.speak(u);
+      timer = setTimeout(next, (dur * 1.6 + 2) * 1000);
+    } else timer = setTimeout(() => play(k + 1), dur * 1000);
+  };
+  const endTour = () => {
+    clear(); idx = -1;
+    $$('.touring').forEach((s) => s.classList.remove('touring'));
+    $$('figure.playable').forEach((f) => f.clearproof.go(0));
+    if (bar) bar.hidden = true;
+    window.clearproofTourDone = true;
+  };
+  const startTour = () => { segs = segments(); paused = false; window.clearproofTourDone = false; if (bar) bar.hidden = false; play(0); };
+  $('[data-act="tour"]')?.addEventListener('click', startTour);
+  bar?.addEventListener('click', (e) => {
+    const act = e.target.closest('button')?.dataset.act;
+    if (act === 'tnext') play(idx + 1);
+    if (act === 'tprev') play(idx - 1);
+    if (act === 'tstop') endTour();
+    if (act === 'tpause') { paused = !paused; e.target.textContent = paused ? '▶' : '❚❚'; if (paused) clear(); else play(idx); }
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && idx >= 0) endTour(); });
+  window.clearproofSegments = () => segments().map((s) => s.text);
+  window.clearproofStartTour = startTour;
+  if (params.has('video')) document.body.classList.add('video');
+  if (params.has('tour')) addEventListener('load', () => setTimeout(startTour, 300));
+})();
+
+</script>
+</body>
+</html>

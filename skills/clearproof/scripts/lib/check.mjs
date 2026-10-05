@@ -18,7 +18,7 @@ function inspect() {
     const box = sec.getBoundingClientRect();
     if (!sec.textContent.trim() && !sec.querySelector('svg')) out.push({ level: 'error', where: name(sec), message: 'section is empty' });
     for (const el of sec.querySelectorAll('svg, table, img, pre, figure, .callout, .tree')) {
-      if (el.closest('.scroll, .tbl, pre')) continue;
+      if (el.closest('.scroll, .tbl, pre, .arch-fig')) continue; // these scroll sideways on purpose
       const r = el.getBoundingClientRect();
       if (r.right > box.right + 2) out.push({ level: 'error', where: name(el), message: `${el.tagName.toLowerCase()} sticks out of its section by ${Math.round(r.right - box.right)}px` });
     }

@@ -42,6 +42,9 @@
     $$('main > section').forEach((s) => io.observe(s));
   }
 
+  /* wide architecture diagrams on a phone: start centred, scroll sideways */
+  for (const f of $$('.arch-fig')) if (f.scrollWidth > f.clientWidth) f.scrollLeft = (f.scrollWidth - f.clientWidth) / 2;
+
   /* step-through diagrams */
   for (const fig of $$('figure.playable')) {
     const n = +fig.dataset.steps || 0;

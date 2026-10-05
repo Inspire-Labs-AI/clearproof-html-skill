@@ -80,7 +80,8 @@ Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
 | Shape | Use | Minimal syntax |
 |---|---|---|
 | **the mechanism itself** (a simulator, a walk with real data, before/after) | `figure` | HTML/SVG + `<script>` with the **L kit**: `L.player(fig,{steps,onStep,labels})` · `L.steps(fig,captions)` (parts with `data-s="k"` appear at step k) · `L.beforeAfter(fig)` (`.only-before`/`.only-after`) · `L.toggle(fig,labels,fn)` · `L.slider(fig,{label,min,max,value,format},fn)` · `L.readout(fig,label).set(x)` · `L.el` · `L.svg` · `L.color('accent')`. Theme classes: `.cell .cell.hit .cell.miss .cell.on .cell.dim .tag .mono .muted`. `wide` for full width. |
-| boxes & arrows, architecture, state machines | `flow [LR]` | `A -> B: label \| step caption`, `-->` dashed, `==>` main path, `[g; p]` record node with real values, `~X` faded, `*X` highlighted, `(Start)` `{Decision?}` `[(DB)]` |
+| **system / repo architecture** (who calls what, where data lives) | `architecture` | `tier Services` then `Orders (service) src/orders/` (kinds: user, client, mobile, gateway, lb, cdn, service, worker, function, ai, db, cache, queue, storage, file, external); `A -> B: label \| caption`, `-->` async, `==>` main path, `*` highlight |
+| boxes & arrows, call chains, state machines | `flow [LR]` | `A -> B: label \| step caption`, `-->` dashed, `==>` main path, `[g; p]` record node with real values, `~X` faded, `*X` highlighted, `(Start)` `{Decision?}` `[(DB)]` |
 | messages between parties over time | `sequence` | `A -> B: msg \| caption`, `B --> A: reply`, `note A: text`, `== phase ==` |
 | cases, failure modes, options | `cases` | `# risk \| Key expired \| 9 ms` then flow lines; `*` = the part that matters, `~` = down |
 | magnitudes | `chart bar\|line unit=ms [scale=log]` | `label \| 1.2`, `*label \| 300 ! note`; `series: a, b` for 2–4 series |
@@ -92,7 +93,7 @@ Rules (the judges' rubric is Clarity · Visuals · Readability · Trust):
 | check understanding | `quiz` | `? q`, `- [x] right :: why`, `- [ ] wrong :: why` |
 | also | `callout`, `kv`, `glossary`, `checklist`, tables (`ok`/`no`/`warn` cells → ✓ ✗ !) | `$L help <name>` for full syntax |
 
-Figure craft: an architecture with more than ~6 parts goes top-down (`flow`, no `LR`) or in 2–3 `group`s, never one long row, which shrinks every label; labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
+Figure craft: draw a system or codebase with `architecture` (tiers from people at the top to data and third parties at the bottom, each part typed, its subtitle the real tech or folder, the main request path as `==>`), never as a generic `flow`; labels ≥ 12 px (the check warns below 11 px — widen the figure or shorten labels); one idea per figure; label directly instead of legends; colour encodes status only (accent = the thing that matters); the initial frame (no clicks) must already show the answer, because many readers never press play. Keep a `figure` under ~60 lines.
 
 ## 3b. Before delivery: critique like a judge
 
