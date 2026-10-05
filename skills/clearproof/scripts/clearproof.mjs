@@ -26,7 +26,7 @@ const HELP = `clearproof ${VERSION} — answers and code reviews as pages people
                                           index of the change: files, hunk ids (H1, H2, ...) and their lines
   clearproof check <page.html> [--shot <png>] [--section <n|id>]
                                           layout check + screenshots; --section saves a sharp close-up
-  clearproof video <page.html> [-o out.mp4] [--voice auto|elevenlabs|say|espeak|none]
+  clearproof video <page.html> [-o out.mp4] [--voice auto|say|espeak|none]
                                           narrated explainer video of the page's tour
   clearproof lint <draft.md>                   readability and coverage warnings only
   clearproof list                              components
@@ -204,7 +204,7 @@ async function main() {
       const out = resolve(opts.out || file.replace(/\.html$/, '.mp4'));
       const res = await makeVideo(file, { out, voice: opts.voice, log: (m) => console.log(`  ${m}`) });
       console.log(`✓ ${res.out}`);
-      console.log(`  ${res.seconds.toFixed(1)} s · ${res.segments} segments · voice: ${res.voice}${res.voice === 'none' ? ' (captions only; set ELEVENLABS_API_KEY for narration)' : ''}`);
+      console.log(`  ${res.seconds.toFixed(1)} s · ${res.segments} segments · voice: ${res.voice}${res.voice === 'none' ? ' (captions only; install espeak, or use macOS, for a spoken voice)' : ''}`);
       return;
     }
     case 'lint': {

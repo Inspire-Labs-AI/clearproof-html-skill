@@ -14,4 +14,4 @@ First public release.
 - **Self-check:** `--check` renders at 1280 px and 390 px, reports layout faults, and saves screenshots plus one sheet of
   every figure for the agent's critique pass.
 - **Plain-English lint** inspired by ASD-STE100; a number inventory that flags one quantity with two values.
-- **Video:** `clearproof video` records the page tour to MP4 with ElevenLabs, `say` or `espeak` narration.
+- **Video:** `clearproof video` records the page tour to MP4 with the computer's own voice (`say` on macOS, `espeak` on Linux) or captions only.
