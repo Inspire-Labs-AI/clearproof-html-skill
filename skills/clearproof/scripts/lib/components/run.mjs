@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { homedir } from 'node:os';
 import { esc, DraftError } from '../util.mjs';
 import { inline } from '../md.mjs';
 
@@ -31,7 +32,7 @@ export function tidyPaths(text, root) {
   if (root) t = t.split(root + '/').join('./').split(root).join('.');
   return t
     .replace(/\/tmp\/[^\s'"`]*\/([^\s/'"`]+)/g, '$TMP/$1')
-    .replace(new RegExp(`${(process.env.HOME || '/root').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=/)`, 'g'), '~');
+    .replace(new RegExp(`${(homedir()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=/)`, 'g'), '~');
 }
 
 function clip(out) {
@@ -53,8 +54,9 @@ absent: Error                assertion: the output must not contain this
 note: Page 1 should start at row 0.                 one-line caption
 \`\`\`
 Call the real code (import the module, run the test) rather than copying a line into eval; if that is impossible, say why in note:.
-Use it for: reproducing a bug (shows:), showing a test failing or passing, real tool output (dig, curl -I, git log).
-Render with --allow-run. Keep commands fast, local and read-only.`,
+Use it for: reproducing a bug (shows:), showing a test failing or passing, real tool output (git log, a test run).
+Render with --allow-run. Keep commands fast, local and read-only. Commands get a minimal environment with no
+secrets: PATH, HOME and the locale only.`,
   example: '```run\n$ git log --oneline -3\nnote: The last three commits\n```',
   render(text, ctx) {
     const steps = parseRun(text);
@@ -64,7 +66,7 @@ Render with --allow-run. Keep commands fast, local and read-only.`,
     const flag = process.platform === 'win32' ? '/c' : '-c';
     const blocks = steps.map((s) => {
       const t0 = Date.now();
-      const r = spawnSync(shell, [flag, s.cmd], { cwd: ctx.repo.root, encoding: 'utf8', timeout, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' } });
+      const r = spawnSync(shell, [flag, s.cmd], { cwd: ctx.repo.root, encoding: 'utf8', timeout, maxBuffer: 4 * 1024 * 1024, env: cleanEnv() });
       const ms = Date.now() - t0;
       const out = `${r.stdout ?? ''}${r.stderr ? (r.stdout ? '\n' : '') + r.stderr : ''}`.replace(/\x1b\[[0-9;]*m/g, '');
       const timedOut = r.error?.code === 'ETIMEDOUT';
@@ -84,3 +86,11 @@ Render with --allow-run. Keep commands fast, local and read-only.`,
     return `<figure class="run"><figcaption>Ran while this page was made · real output</figcaption>${blocks.join('')}</figure>`;
   },
 };
+
+// Commands from a draft run with a minimal environment: never the user's tokens or API keys.
+function cleanEnv() {
+  const keep = ['PATH', 'HOME', 'USERPROFILE', 'SYSTEMROOT', 'TMPDIR', 'TEMP', 'TMP', 'LANG', 'LC_ALL', 'TZ'];
+  const env = { NO_COLOR: '1', FORCE_COLOR: '0' };
+  for (const k of keep) if (process.env[k] !== undefined) env[k] = process.env[k];
+  return env;
+}

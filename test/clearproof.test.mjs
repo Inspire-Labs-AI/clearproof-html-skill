@@ -403,3 +403,15 @@ test('architecture: errors name the problem and the fix', () => {
   assert.throws(run('tier A\n  X\nX -> Y'), /"Y" is not in any tier/);
   assert.throws(run('X (service)'), /Start with a tier line/);
 });
+
+test('run blocks never pass the user\'s secrets to commands', () => {
+  process.env.CLEARPROOF_TEST_SECRET = 'sk-should-not-leak';
+  try {
+    const draft = '---\ntitle: T\ntldr: x\n---\n## S\n```run\n$ node -e "console.log(process.env.CLEARPROOF_TEST_SECRET || \'no secret\')"\nshows: no secret\n```';
+    const { html } = renderDraft(draft, { cwd: ROOT, allowRun: true });
+    assert.doesNotMatch(html, /sk-should-not-leak/);
+    assert.match(html, /no secret/);
+  } finally {
+    delete process.env.CLEARPROOF_TEST_SECRET;
+  }
+});

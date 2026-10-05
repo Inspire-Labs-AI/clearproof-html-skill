@@ -98,7 +98,7 @@ const readDraft = (p) => (p === '-' || !p ? readFileSync(0, 'utf8') : readFileSy
 function shouldOpen(opts) {
   if (opts.noOpen) return false;
   if (opts.open) return true;
-  if (process.env.CLEARPROOF_OPEN === '0' || process.env.CI || process.env.SSH_CONNECTION) return false;
+  if (process.env.CLEARPROOF_OPEN === '0' || process.env.CI) return false;
   if (process.env.CLEARPROOF_OPEN === '1') return true;
   return platform() === 'darwin' || platform() === 'win32' || Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
 }
