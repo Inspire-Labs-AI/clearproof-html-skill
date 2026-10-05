@@ -10,7 +10,7 @@
   "repository": "https://github.com/Inspire-Labs-AI/clearproof-html-skill",
   "documentationUrl": "https://github.com/Inspire-Labs-AI/clearproof-html-skill#readme",
   "supportUrl": "https://github.com/Inspire-Labs-AI/clearproof-html-skill/issues",
-  "icon": "./docs/images/icon.png",
+  "icon": "./.claude-plugin/icon.png",
   "license": "MIT",
   "keywords": [
     "code-review",
