@@ -339,7 +339,8 @@ test('lint: label headlines, missing figures, x instead of ×; number inventory'
   assert.ok(rules.includes('headline'));
   assert.ok(rules.includes('figures'));
   assert.ok(rules.includes('typography'));
-  assert.deepEqual(numberInventory('A hit is 1 ns. DRAM is 90 ns. Later: 100 ns and 1 ns.'), ['ns: 1 ×2, 90, 100']);
+  assert.deepEqual(numberInventory('A hit is 1 ns. DRAM is 90 ns. Later: 100 ns and 1 ns.'), ['ns: 1 (×2), 90, 100']);
+  assert.deepEqual(numberInventory('Young pauses are about 1 ms. Fig: ~1–10 ms each.'), ['ms: 1, 1–10']);
 });
 
 test('cases share one layout and mark the changed part', () => {

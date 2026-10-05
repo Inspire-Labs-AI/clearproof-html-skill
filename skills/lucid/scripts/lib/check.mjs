@@ -39,6 +39,10 @@ function inspect() {
         out.push({ level: 'warn', where: name(svg), message: `diagram is squeezed to ${Math.round(r.width)}px; give the section span=2 or use LR/TB the other way` });
       }
       const texts = [...svg.querySelectorAll('text')].filter((t) => t.textContent.trim()).map((t) => ({ t, r: t.getBoundingClientRect() }));
+      if (getComputedStyle(svg).overflow !== 'visible') {
+        const clipped = texts.find(({ r: tr }) => tr.width > 0 && (tr.right > r.right + 1 || tr.left < r.left - 1 || tr.bottom > r.bottom + 1 || tr.top < r.top - 1));
+        if (clipped) out.push({ level: 'warn', where: name(svg), message: `label "${clipped.t.textContent.trim().slice(0, 30)}" is cut off at the edge of its figure; widen the viewBox or move the label` });
+      }
       const shapes = [...svg.querySelectorAll('.node')].map((g) => ({ g, r: g.querySelector('rect,polygon,path').getBoundingClientRect() }));
       const area = (r) => Math.max(0, r.width) * Math.max(0, r.height);
       const inter = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));

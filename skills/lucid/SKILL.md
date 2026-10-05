@@ -24,7 +24,7 @@ No page for one-line answers, commands to paste, pure code edits, or "plain text
 ## 1. Plan before you write (explain)
 
 1. **The one sentence** the reader must leave with. It becomes the `title`, stated as the answer — the key number first if there is one: "Memory costs **75×** an L1 hit", not "CPU caches".
-2. **The hero figure** that makes that sentence visible on the first screen.
+2. **The hero figure** that makes that sentence visible on the first screen. For **"how does X work?"** the hero is the mechanism itself (a stepper or simulator with real values). For **"how much / which is faster?"** the hero is the number (an annotated chart or waffle). Never open a how-question with a chart of consequences before the reader has seen what happens.
 3. **3–6 sections**, each = one claim + the figure that proves it, in the order understanding builds: intuition → mechanism (stepped, with real values) → numbers → cases where it breaks → what to remember. Write each section title as its claim.
 4. For each figure, pick the form by the information (§3). Sketch it in your head with **real values** (actual addresses, keys, timings, sizes), not placeholders.
 
@@ -88,7 +88,7 @@ After `$L render - --check` (§5), read the desktop screenshot and **every figur
 □ first screen = the answer: headline + lead + hero figure
 □ every section title is a claim; every section has a figure with a caption
 □ every figure shows the mechanism with real values, readable without clicking
-□ every number has a picture; the number inventory shows no conflicting values
+□ every number has a picture; the number inventory (printed by render) shows no conflicting values — "about 1 ms" in the text and "1–10 ms" in a figure is a conflict
 □ no text under 11 px; no overlaps; no layout warnings; phone width works
 □ sources listed; simplifications labelled; measured numbers match `run` output
 □ prose is short; nothing on the page repeats what a figure already shows

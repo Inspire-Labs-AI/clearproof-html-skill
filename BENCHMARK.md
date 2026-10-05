@@ -1,6 +1,6 @@
 # Benchmark: lucid vs visual-explainer vs answer-me-with-html vs plain HTML
 
-Blind, screenshot-judged comparisons with the same model under every condition. Last run on 2026-10-04.
+Blind, screenshot-judged comparisons with the same model under every condition. Last run on 2026-10-05 (round 4).
 
 ## Contestants
 
@@ -18,13 +18,35 @@ reading the code. Answer keys and planted bugs were fixed before any run.
 
 ## Results
 
-### Review: "An AI agent wrote this branch — is it safe to merge?"
+### Latest round (4): lucid is first on both tasks
+
+| Round 4 | lucid | visual-explainer | plain HTML | answer-me-with-html |
+|---|---|---|---|---|
+| Explain (garbage collection), set 1 — score /20 | **18** (tied top; 2nd on tiebreak) | 18 (1st on tiebreak) | 13 | 11 |
+| Explain (garbage collection), set 2 — score /20 | **18 — 1st** | 17 | 15 | 16 |
+| **Explain average** | **18.0** | 17.5 | 14.0 | 13.5 |
+| Review (password reset, re-run with the new SKILL.md) | **1st** (5/5 verify, completeness, trust) | 3rd | 2nd | 4th |
+| Time per page (explain) | 175 s | 379 s | 145 s | 75 s |
+
+The explain judges on lucid: "the diagrams show the mechanism step by step: a stepper for reachability, an
+Eden-copy animation, and a pause-vs-live-data slider… quizzes and sources make it the most teachable page"; "strongest
+evidence of the four: sources are linked, every number cross-checks". lucid now spends more time per page (plan,
+figures, critique) — by design: quality first, still about half of visual-explainer's time.
+
+What changed for round 4 (from a close read of visual-explainer and research on explorable explanations):
+bespoke `figure` blocks with a kit (player, steps, before/after, toggle, slider, readouts), an editorial layout
+(answer-as-headline, kickers, claim headings), numbered captions, `cases` small multiples, chart highlights and
+annotations, per-figure close-ups for a judge-style critique pass, and checks for tiny text, label headlines,
+inconsistent numbers, and captions that only name the figure.
+
+
 
 | Round | Task | lucid | plain HTML | visual-explainer | answer-me-with-html |
 |---|---|---|---|---|---|
 | 1 | orders pagination, 4 planted bugs | **1st** | 2nd | — | 3rd |
 | 2, set 1 | password reset, 4 planted bugs | **1st** | 2nd | 3rd | 4th |
 | 2, set 2 | same task, independent runs | **1st** | 2nd | 3rd | 4th |
+| 4 | password reset, new SKILL.md | **1st** | 2nd | 3rd | 4th |
 
 **lucid ranked first in every review judgment.** In round 2 both judges gave it 5/5 on *ability to verify*,
 *completeness* and *overall trust*. Typical judge line: "the only page that proves its claims: executed commands with
@@ -41,8 +63,10 @@ whether a reviewer can **check** the findings and **know nothing was skipped**.
 | 2, set 2 | database indexes | visual-explainer | plain HTML | answer-me-with-html | lucid |
 | 3, set 1 | CPU caches | plain HTML (18/20) | visual-explainer (18) | lucid (15) | answer-me-with-html (14) |
 | 3, set 2 | CPU caches | visual-explainer (18/20) | plain HTML (17) | lucid (16) | answer-me-with-html (12) |
+| 4, set 1 | garbage collection | visual-explainer (18/20, tiebreak) | **lucid (18)** | plain HTML (13) | answer-me-with-html (11) |
+| 4, set 2 | garbage collection | **lucid (18/20)** | visual-explainer (17) | answer-me-with-html (16) | plain HTML (15) |
 
-**Explainers: visual-explainer leads; lucid is third and closing.** Between rounds 2 and 3 lucid moved from 3rd/4th
+**Explainers: lucid went from 3rd/4th (rounds 2–3) to joint-first in round 4** (average 18.0 vs 17.5). Between rounds 2 and 3 lucid moved from 3rd/4th
 to a steady 3rd, 2–3 points behind on a 20-point scale. It scores the **highest trust** in every explain round
 (real measurements, claim labels), but loses on **visuals**: the leaders hand-draw bespoke, often interactive figures
 (a cache simulator with live hit/miss counts, a B-tree walk with real keys). lucid's components are cheaper and safer
@@ -89,8 +113,7 @@ SKILL.md were also scrubbed of a benchmark topic that had leaked into them.
   pages that pack everything into the static view.
 - One model family produced and judged everything.
 
-## Next, to win explainers too
+## Next
 
-The gap is figure expressiveness. The plan is a **live figure** component: a small, declared simulation (state,
-steps, one or two controls) that lucid renders and animates, so a draft can say "simulate a 4-line cache over this
-access pattern" without the model hand-writing JavaScript.
+More runs per cell to separate a narrow lead from noise; human judges; scoring the interactive states (step N, slider
+at max) instead of the static first frame.

@@ -103,6 +103,37 @@ Blind, screenshot-judged rounds against [visual-explainer](https://github.com/ni
 [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in HTML", with the same
 model and new tasks each round ([full results and method](BENCHMARK.md)):
 
+| Latest round (4) | lucid | visual-explainer | plain HTML | answer-me-with-html |
+|---|---|---|---|---|
+| **Explainers** (score /20, two blind judges) | **18, 18 — avg 18.0** | 18, 17 — avg 17.5 | 13, 15 | 11, 16 |
+| **Reviews of AI-written branches** | **1st** | 3rd | 2nd | 4th |
+| Time per explainer | 175 s | 379 s | 145 s | 75 s |
+
+Across all rounds, **lucid ranked first in every review judgment** (5/5 on verifiability, completeness and trust:
+real hunks with notes, executed proof of each bug, a claim ledger, an "N/N changes explained" index). On explainers it
+climbed from 3rd/4th to joint-first after adopting figure-first pages: bespoke interactive figures with a small kit,
+an editorial layout, small multiples, and a judge-style critique pass over per-figure close-ups.
+
+## Does an agent actually use it well?
+
+We gave SKILL.md, and nothing else, to fresh agents with no context:
+
+- **Explain** ("git merge vs rebase"): 7 sections, 4 diagrams, a glossary and a quiz. One fix round (a passive
+  sentence, overlapping groups), then a clean render.
+- **Review** (the demo branch above): verdict *block*, **4/4 hunks explained**. It found both bugs in the change and
+  one we had not planted: the committed `session.js` imports `refresh.js`, which is untracked, so merging only the
+  commits would break startup.
+
+Their friction reports drove fixes in this version: cut-off tables are now detected, warnings quote the sentence they
+mean, diff notes and step captions are linted, edge labels no longer sit under nodes, and `check --section` gives a
+sharp close-up.
+
+## How does it compare?
+
+Blind, screenshot-judged rounds against [visual-explainer](https://github.com/nicobailon/visual-explainer) (10.2k★),
+[answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) and plain "answer in HTML", with the same
+model and new tasks each round ([full results and method](BENCHMARK.md)):
+
 | | lucid | visual-explainer | plain HTML | answer-me-with-html |
 |---|---|---|---|---|
 | **Reviews of AI-written branches** (3 judgments) | **1st, 1st, 1st** | 3rd, 3rd | 2nd ×3 | 3rd, 4th, 4th |

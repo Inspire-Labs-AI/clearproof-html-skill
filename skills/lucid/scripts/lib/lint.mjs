@@ -124,13 +124,13 @@ export const formatWarning = (w) => `L${w.line} [${w.rule}] ${w.message}${w.sugg
 const UNITS = 'ns|µs|us|ms|s|KB|KiB|MB|MiB|GB|GiB|TB|bytes|B|cycles|×|%|req/s|rows|pages';
 export function numberInventory(source) {
   const text = String(source).replace(/```(?:run|code|diff)[\s\S]*?```/g, '');
-  const re = new RegExp(`(\\d[\\d,]*(?:\\.\\d+)?)\\s?(${UNITS})(?![A-Za-z])`, 'g');
+  const re = new RegExp(`(\\d[\\d,]*(?:\\.\\d+)?(?:\\s?[–-]\\s?\\d[\\d,]*(?:\\.\\d+)?)?)\\s?(${UNITS})(?![A-Za-z])`, 'g');
   const by = new Map();
   for (const m of text.matchAll(re)) {
     const unit = m[2];
-    const v = m[1].replace(/,/g, '');
+    const v = m[1].replace(/,/g, '').replace(/\s?[–-]\s?/, '–');
     if (!by.has(unit)) by.set(unit, new Map());
     by.get(unit).set(v, (by.get(unit).get(v) ?? 0) + 1);
   }
-  return [...by].filter(([, vals]) => vals.size > 1).map(([unit, vals]) => `${unit}: ${[...vals].sort((a, b) => a - b).map(([v, n]) => (n > 1 ? `${v} ×${n}` : v)).join(', ')}`);
+  return [...by].filter(([, vals]) => vals.size > 1).map(([unit, vals]) => `${unit}: ${[...vals].sort((a, b) => parseFloat(a) - parseFloat(b)).map(([v, n]) => (n > 1 ? `${v} (×${n})` : v)).join(', ')}`);
 }
